@@ -2,11 +2,6 @@ class WeeklyScheduleCard extends HTMLElement {
   constructor() {
     super();
     this.attachShadow({ mode: 'open' });
-    this._schedule = {};
-    this._activePreset = 0;
-    this._isDragging = false;
-    this._dragStartSlot = null;
-    this._dragDay = null;
   }
 
   set hass(hass) {
@@ -25,95 +20,95 @@ class WeeklyScheduleCard extends HTMLElement {
     return 7;
   }
 
-  get _presets() {
-    return this._config.presets || [
-      { name: 'Comfort', value: 20, color: '#F44336' },
-      { name: 'Eco', value: 18, color: '#FF9800' },
-      { name: 'Night', value: 16, color: '#2196F3' },
-      { name: 'Off', value: 'off', color: '#607D8B' },
-    ];
-  }
-
-  get _timeStep() {
-    return this._config.time_step || 30;
-  }
-
-  get _days() {
-    return ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-  }
-
-  get _slotsPerDay() {
-    return Math.floor((24 * 60) / this._timeStep);
-  }
-
-  _getSlotColor(dayIndex, slotIndex) {
-    const key = `${dayIndex}-${slotIndex}`;
-    const presetIndex = this._schedule[key];
-    if (presetIndex === undefined) return 'var(--divider-color, #e0e0e0)';
-    return this._presets[presetIndex]?.color || 'var(--divider-color, #e0e0e0)';
-  }
-
-  _getScheduleEntities() {
+  _getSchedules() {
     if (!this._hass) return [];
-    return Object.keys(this._hass.states)
-      .filter(e => e.startsWith('switch.schedule_'))
-      .map(e => this._hass.states[e]);
+    return Object.values(this._hass.states).filter(s =>
+      s.entity_id.startsWith('switch.schedule_') &&
+      s.attributes.entities &&
+      s.attributes.entities.includes(this._config.entity)
+    );
   }
 
-  _openSchedulePopup(scheduleEntityId) {
-    const event = new CustomEvent('hass-more-info', {
-      detail: { entityId: scheduleEntityId },
-      bubbles: true,
-      composed: true,
-    });
-    this.dispatchEvent(event);
+  _tempToColor(temp) {
+    if (temp === null || temp === undefined) return '#9E9E9E';
+    const min = 10, max = 25;
+    const ratio = Math.min(1, Math.max(0, (temp - min) / (max - min)));
+    const r = Math.round(33 + ratio * (244 - 33));
+    const g = Math.round(150 - ratio * (150 - 67));
+    const b = Math.round(243 - ratio * (243 - 54));
+    return `rgb(${r},${g},${b})`;
   }
 
-  _getBlocksForDay(dayIndex) {
-    const slots = this._slotsPerDay;
+  _parseTime(timeStr) {
+    const [h, m] = timeStr.split(':').map(Number);
+    return h * 60 + m;
+  }
+
+  _minutesToPercent(minutes) {
+    return (minutes / (24 * 60)) * 100;
+  }
+
+  _getDayIndex(day) {
+    const map = {
+      'mon': 0, 'tue': 1, 'wed': 2, 'thu': 3,
+      'fri': 4, 'sat': 5, 'sun': 6,
+      'monday': 0, 'tuesday': 1, 'wednesday': 2, 'thursday': 3,
+      'friday': 4, 'saturday': 5, 'sunday': 6,
+      'daily': -1, 'workday': -2, 'weekend': -3
+    };
+    return map[day.toLowerCase()] ?? -1;
+  }
+
+  _getBlocksForDay(dayIndex, schedules) {
     const blocks = [];
-    let currentPreset = null;
-    let startSlot = 0;
+    for (const schedule of schedules) {
+      const { weekdays, timeslots, actions } = schedule.attributes;
+      const temp = actions?.[0]?.data?.temperature ?? null;
+      const color = this._tempToColor(temp);
 
-    for (let s = 0; s <= slots; s++) {
-      const key = `${dayIndex}-${s}`;
-      const preset = s < slots ? this._schedule[key] : null;
+      const appliesToDay = weekdays.some(wd => {
+        const idx = this._getDayIndex(wd);
+        if (idx === -1) return true; // daily
+        if (idx === -2) return dayIndex < 5; // workday
+        if (idx === -3) return dayIndex >= 5; // weekend
+        return idx === dayIndex;
+      });
 
-      if (preset !== currentPreset) {
-        if (s > 0) {
-          blocks.push({
-            presetIndex: currentPreset,
-            startSlot,
-            endSlot: s - 1,
-            color: currentPreset !== null && currentPreset !== undefined
-              ? this._presets[currentPreset]?.color
-              : 'var(--divider-color, #e0e0e0)',
-          });
-        }
-        currentPreset = preset !== undefined ? preset : null;
-        startSlot = s;
+      if (!appliesToDay) continue;
+
+      for (const slot of timeslots) {
+        const [startStr, endStr] = slot.split(' - ');
+        const startMin = this._parseTime(startStr);
+        let endMin = this._parseTime(endStr);
+        if (endMin === 0) endMin = 24 * 60; // midnight
+
+        blocks.push({
+          startPct: this._minutesToPercent(startMin),
+          heightPct: this._minutesToPercent(endMin - startMin),
+          color,
+          temp,
+          entityId: schedule.entity_id,
+          label: temp !== null ? `${temp}°` : schedule.attributes.friendly_name,
+        });
       }
     }
-    return blocks;
+    return blocks.sort((a, b) => a.startPct - b.startPct);
   }
 
   render() {
     if (!this._config || !this._hass) return;
 
-    const days = this._days;
-    const slots = this._slotsPerDay;
-    const timeStep = this._timeStep;
-    const scheduleEntities = this._getScheduleEntities();
+    const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+    const schedules = this._getSchedules();
+    const columnHeight = 480;
 
     // Time labels every 2h
     const timeLabels = [];
-    for (let s = 0; s < slots; s++) {
-      const totalMin = s * timeStep;
-      const hours = Math.floor(totalMin / 60);
-      const minutes = totalMin % 60;
-      if (minutes === 0 && hours % 2 === 0) {
-        timeLabels.push({ slot: s, label: `${String(hours).padStart(2, '0')}:00` });
-      }
+    for (let h = 0; h < 24; h += 2) {
+      timeLabels.push({
+        label: `${String(h).padStart(2, '0')}:00`,
+        pct: (h / 24) * 100,
+      });
     }
 
     this.shadowRoot.innerHTML = `
@@ -133,7 +128,7 @@ class WeeklyScheduleCard extends HTMLElement {
         }
         .grid-container {
           display: grid;
-          grid-template-columns: 36px repeat(${days.length}, 1fr);
+          grid-template-columns: 36px repeat(7, 1fr);
           gap: 4px;
         }
         .header-cell {
@@ -145,8 +140,7 @@ class WeeklyScheduleCard extends HTMLElement {
         }
         .time-axis {
           position: relative;
-          grid-column: 1;
-          height: ${slots * 4}px;
+          height: ${columnHeight}px;
         }
         .time-label {
           position: absolute;
@@ -158,211 +152,109 @@ class WeeklyScheduleCard extends HTMLElement {
         }
         .day-column {
           position: relative;
-          height: ${slots * 4}px;
+          height: ${columnHeight}px;
           background: var(--divider-color, #e0e0e0);
           border-radius: 4px;
           overflow: hidden;
-          cursor: crosshair;
         }
         .block {
           position: absolute;
           left: 0;
           right: 0;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 0.65em;
+          font-weight: 600;
+          color: white;
+          text-shadow: 0 1px 2px rgba(0,0,0,0.4);
           cursor: pointer;
-          transition: filter 0.1s;
+          transition: filter 0.15s;
+          overflow: hidden;
         }
         .block:hover {
           filter: brightness(0.85);
         }
-        .presets {
+        .legend {
           display: flex;
           flex-wrap: wrap;
           gap: 8px;
           margin-top: 12px;
         }
-        .preset-btn {
-          padding: 4px 12px;
-          border-radius: 12px;
-          border: 2px solid transparent;
-          cursor: pointer;
-          font-size: 0.8em;
-          color: white;
-          font-weight: 500;
-        }
-        .preset-btn.active {
-          border-color: var(--primary-text-color);
-        }
-        .schedules-list {
-          margin-top: 12px;
-          font-size: 0.8em;
-          color: var(--secondary-text-color);
-        }
-        .schedule-item {
+        .legend-item {
           display: flex;
           align-items: center;
-          gap: 8px;
-          padding: 4px 0;
-          cursor: pointer;
-          border-bottom: 1px solid var(--divider-color);
-        }
-        .schedule-item:hover {
+          gap: 4px;
+          font-size: 0.75em;
           color: var(--primary-text-color);
+          cursor: pointer;
         }
-        .schedule-dot {
-          width: 8px;
-          height: 8px;
+        .legend-dot {
+          width: 12px;
+          height: 12px;
           border-radius: 50%;
-          background: var(--accent-color);
+          flex-shrink: 0;
         }
       </style>
       <ha-card>
         <div class="card-title">${this._config.title || 'Weekly Schedule'}</div>
-
         <div class="grid-container">
-          <!-- Headers -->
           <div class="header-cell"></div>
           ${days.map(d => `<div class="header-cell">${d}</div>`).join('')}
 
-          <!-- Time axis -->
           <div class="time-axis">
             ${timeLabels.map(tl => `
-              <div class="time-label" style="top: ${tl.slot * 4}px">${tl.label}</div>
+              <div class="time-label" style="top: ${tl.pct}%">${tl.label}</div>
             `).join('')}
           </div>
 
-          <!-- Day columns -->
-          ${days.map((day, dayIndex) => `
-            <div class="day-column" data-day="${dayIndex}">
-              ${this._getBlocksForDay(dayIndex).map(block => `
-                <div 
-                  class="block"
-                  data-day="${dayIndex}"
-                  data-start="${block.startSlot}"
-                  data-end="${block.endSlot}"
-                  data-preset="${block.presetIndex}"
-                  style="
-                    top: ${block.startSlot * 4}px;
-                    height: ${(block.endSlot - block.startSlot + 1) * 4}px;
-                    background: ${block.color};
-                  "
-                ></div>
-              `).join('')}
-            </div>
-          `).join('')}
-        </div>
-
-        <!-- Presets -->
-        <div class="presets">
-          ${this._presets.map((preset, index) => `
-            <button 
-              class="preset-btn ${this._activePreset === index ? 'active' : ''}"
-              style="background: ${preset.color}"
-              data-preset="${index}"
-            >${preset.name}: ${preset.value}${typeof preset.value === 'number' ? '°' : ''}
-            </button>
-          `).join('')}
-        </div>
-
-        <!-- Schedule entities list -->
-        ${scheduleEntities.length > 0 ? `
-          <div class="schedules-list">
-            <div style="font-weight:600; margin-bottom:4px; color: var(--primary-text-color)">Schedules</div>
-            ${scheduleEntities.map(e => `
-              <div class="schedule-item" data-entity="${e.entity_id}">
-                <div class="schedule-dot"></div>
-                <span>${e.attributes.friendly_name || e.entity_id}</span>
-                <span style="margin-left:auto">${e.state}</span>
+          ${days.map((day, dayIndex) => {
+            const blocks = this._getBlocksForDay(dayIndex, schedules);
+            return `
+              <div class="day-column">
+                ${blocks.map(b => `
+                  <div
+                    class="block"
+                    data-entity="${b.entityId}"
+                    style="
+                      top: ${b.startPct}%;
+                      height: ${b.heightPct}%;
+                      background: ${b.color};
+                      min-height: 4px;
+                    "
+                  >${b.heightPct > 8 ? b.label : ''}</div>
+                `).join('')}
               </div>
-            `).join('')}
-          </div>
-        ` : ''}
+            `;
+          }).join('')}
+        </div>
+
+        <div class="legend">
+          ${schedules.map(s => {
+            const temp = s.attributes.actions?.[0]?.data?.temperature ?? null;
+            const color = this._tempToColor(temp);
+            const name = s.attributes.friendly_name || s.entity_id;
+            return `
+              <div class="legend-item" data-entity="${s.entity_id}">
+                <div class="legend-dot" style="background: ${color}"></div>
+                <span>${name}${temp !== null ? ` — ${temp}°` : ''}</span>
+              </div>
+            `;
+          }).join('')}
+        </div>
       </ha-card>
     `;
 
-    this._addEventListeners();
-  }
-
-  _addEventListeners() {
-    // Preset buttons
-    this.shadowRoot.querySelectorAll('.preset-btn').forEach(btn => {
-      btn.addEventListener('click', (e) => {
-        this._activePreset = parseInt(e.currentTarget.dataset.preset);
-        this.render();
+    // Click → open more-info
+    this.shadowRoot.querySelectorAll('.block, .legend-item').forEach(el => {
+      el.addEventListener('click', () => {
+        this.dispatchEvent(new CustomEvent('hass-more-info', {
+          detail: { entityId: el.dataset.entity },
+          bubbles: true,
+          composed: true,
+        }));
       });
     });
-
-    // Paint on day columns
-    this.shadowRoot.querySelectorAll('.day-column').forEach(col => {
-      col.addEventListener('mousedown', (e) => {
-        this._isDragging = true;
-        this._dragDay = parseInt(col.dataset.day);
-        this._paintAtEvent(e, col);
-      });
-      col.addEventListener('mousemove', (e) => {
-        if (this._isDragging && this._dragDay === parseInt(col.dataset.day)) {
-          this._paintAtEvent(e, col);
-        }
-      });
-      col.addEventListener('touchstart', (e) => {
-        this._isDragging = true;
-        this._dragDay = parseInt(col.dataset.day);
-        this._paintAtEvent(e.touches[0], col);
-      });
-      col.addEventListener('touchmove', (e) => {
-        e.preventDefault();
-        if (this._isDragging) this._paintAtEvent(e.touches[0], col);
-      });
-    });
-
-    document.addEventListener('mouseup', () => { this._isDragging = false; });
-    document.addEventListener('touchend', () => { this._isDragging = false; });
-
-    // Click on block → open schedule popup
-    this.shadowRoot.querySelectorAll('.block').forEach(block => {
-      block.addEventListener('click', (e) => {
-        e.stopPropagation();
-        // Find matching schedule entity
-        const scheduleEntities = this._getScheduleEntities();
-        if (scheduleEntities.length > 0) {
-          this._openSchedulePopup(scheduleEntities[0].entity_id);
-        }
-      });
-    });
-
-    // Click on schedule list item
-    this.shadowRoot.querySelectorAll('.schedule-item').forEach(item => {
-      item.addEventListener('click', () => {
-        this._openSchedulePopup(item.dataset.entity);
-      });
-    });
-  }
-
-  _paintAtEvent(e, col) {
-    const rect = col.getBoundingClientRect();
-    const y = (e.clientY || e.pageY) - rect.top;
-    const slotHeight = 4;
-    const slotIndex = Math.floor(y / slotHeight);
-    const day = parseInt(col.dataset.day);
-
-    if (slotIndex < 0 || slotIndex >= this._slotsPerDay) return;
-
-    const key = `${day}-${slotIndex}`;
-    this._schedule[key] = this._activePreset;
-
-    // Update block visually without full re-render
-    const block = col.querySelector(`[data-start="${slotIndex}"]`);
-    if (block) {
-      block.style.background = this._presets[this._activePreset]?.color;
-    }
-
-    // Throttle re-render
-    if (!this._renderPending) {
-      this._renderPending = true;
-      requestAnimationFrame(() => {
-        this._renderPending = false;
-        this.render();
-      });
-    }
   }
 }
 
@@ -372,5 +264,5 @@ window.customCards = window.customCards || [];
 window.customCards.push({
   type: 'weekly-schedule-card',
   name: 'Weekly Schedule Card',
-  description: 'Visual weekly schedule card with continuous bars and color-coded presets',
+  description: 'Visual weekly schedule card with color-coded temperature blocks',
 });
