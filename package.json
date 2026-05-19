@@ -1,0 +1,12 @@
+{
+  "name": "weekly-schedule-card",
+  "version": "0.1.0",
+  "description": "Visual weekly schedule card for Home Assistant",
+  "main": "dist/weekly-schedule-card.js",
+  "scripts": {
+    "build": "npx rollup -c"
+  },
+  "devDependencies": {
+    "rollup": "^3.0.0"
+  }
+}
