@@ -1,6 +1,8 @@
 {
   "name": "Weekly Schedule Card",
-  "description": "Visual weekly schedule card for Home Assistant with drag-and-drop time slots and color-coded presets.",
+  "description": "Visual weekly schedule cards for Home Assistant with drag-and-drop time slots and color-coded presets.",
   "render_readme": true,
-  "homeassistant": "2024.1.0"
+  "homeassistant": "2024.1.0",
+  "content_in_root": false,
+  "filename": "dist/weekly-schedule-card.js"
 }

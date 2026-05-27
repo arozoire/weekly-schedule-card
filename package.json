@@ -4,7 +4,9 @@
   "description": "Visual weekly schedule card for Home Assistant",
   "main": "dist/weekly-schedule-card.js",
   "scripts": {
-    "build": "npx rollup -c"
+    "build": "npx rollup -c",
+    "watch": "npx rollup -c --watch",
+    "deploy": "npm run build && cp dist/*.js /config/www/"
   },
   "devDependencies": {
     "rollup": "^3.0.0"

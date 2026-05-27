@@ -1,0 +1,2603 @@
+// src/base-card.js
+// Last modified: 2026-05-25 CEST
+
+const PALETTE=['#F44336','#E91E63','#9C27B0','#673AB7','#3F51B5','#2196F3','#03A9F4','#00BCD4','#009688','#4CAF50','#8BC34A','#CDDC39','#FFEB3B','#FFC107','#FF9800','#FF5722','#795548','#9E9E9E','#607D8B','#000000','#FFFFFF','#FF80AB','#69F0AE','#40C4FF'];
+
+const LOCALES = {
+  en: {
+    card:{ title:'Weekly Schedule',new_profile:'New profile',groups:'Groups',no_entities:'No entities configured',no_entities_sub:'Add entities via YAML config, or create a Group to get started.',manage_groups:'Manage Groups',layout_rows_view:'Rows view',layout_cols_view:'Columns view',no_schedule_now:'No schedule active now',empty_schedule:'No schedule' },
+    popup:{ new_schedule:'New Schedule',edit_schedule:'Edit Schedule',schedule_active:'Schedule Active',time_slot:'Time slot',snap:'Snap',days:'Days',start:'Start',end:'End',drag_hint:'Drag handles to resize.',next_slot:'＋ Next slot',temperature:'Temperature',hvac_mode:'HVAC Mode',preset_mode:'Preset Mode',fan_mode:'Fan Mode',swing_mode:'Swing Mode',climate_actions:'Climate Actions',light_action:'Light Action',action:'Action',brightness:'Brightness',auto_off:'Auto at slot end',none:'None',turn_off:'Turn Off',turn_on:'Turn On',set_temp:'Set temp',conditions:'Conditions',add_condition:'+ Condition',notifications:'Notifications',notify_service_label:'Service (e.g. notify.mobile_app_phone)',notify_message_label:'Message',name:'Name',name_placeholder:'Schedule name (optional)',save:'Save',delete:'Delete',cancel:'Cancel' },
+    days:{ mon:'Mon',tue:'Tue',wed:'Wed',thu:'Thu',fri:'Fri',sat:'Sat',sun:'Sun',all:'All',workdays:'Workdays',weekend:'Weekend' },
+    profile:{ exclusive_label:'🔒 Exclusive (deactivates other exclusive profiles)',shared_label:'🔓 Shared (coexists with other profiles)',new_profile:'New Profile',create:'Create',name_placeholder:'Profile name',new_profile_mode:'new profile',rename:'Rename',duplicate:'Duplicate',delete:'Delete',viewing:'Viewing',active:'Active',activate:'Activate',deactivate:'Deactivate' },
+    group:{ title:'Groups',back:'← Back',edit:'Edit',create:'Create Group',tab_color:'Tab color',select_entities:'Select entities',no_groups:'No groups yet.',create_new:'Create new group',delete_confirm:'Delete this group?',name:'Group name',enter_name:'Enter a group name.',select_entity:'Please select at least one entity.',create_placeholder:'e.g. Home Climate',removed_active:'active schedule(s) found on removed entit(ies). Deactivate?' },
+    errors:{ no_days:'Please select at least one day.',delete_confirm:'Delete this schedule?',delete_profile_confirm:'Delete this profile and all its schedules?',save_failed:'Failed',overlap:'Overlap with existing schedule in this profile' },
+    warnings:{ temp_unusual:'⚠️ Unusual value — check device compatibility',temp_very_high:'🔴 Warning: very high temperature',out_of_slider_range:'Outside typical range for this entity' },
+    cond:{ add:'Add condition',entity:'Entity',operator:'Operator',value:'Value',and_all:'All (AND)',or_any:'Any (OR)',recheck:'Re-check interval' },
+    notify:{ restore_auto:'Restore auto text',trigger_label:'When to notify',trigger_none:'Never',trigger_start:'On start',trigger_end:'On end',trigger_both:'Start + end',msg_start_label:'Start message',msg_end_label:'End message',default_start:'Schedule started',default_end:'Schedule ended' }
+  },
+  it: {
+    card:{ title:'Pianificazione Settimanale',new_profile:'Nuovo profilo',groups:'Gruppi',no_entities:'Nessuna entità configurata',no_entities_sub:'Aggiungi entità via YAML o crea un Gruppo per iniziare.',manage_groups:'Gestisci Gruppi',layout_rows_view:'Vista righe',layout_cols_view:'Vista colonne',no_schedule_now:'Nessuno schedule attivo ora',empty_schedule:'Nessuno schedule' },
+    popup:{ new_schedule:'Nuovo Schedule',edit_schedule:'Modifica Schedule',schedule_active:'Schedule Attivo',time_slot:'Fascia oraria',snap:'Snap',days:'Giorni',start:'Inizio',end:'Fine',drag_hint:'Trascina le maniglie per ridimensionare.',next_slot:'＋ Slot successivo',temperature:'Temperatura',hvac_mode:'Modalità HVAC',preset_mode:'Modalità preset',fan_mode:'Modalità ventola',swing_mode:'Modalità oscillazione',climate_actions:'Azioni clima',light_action:'Azione luce',action:'Azione',brightness:'Luminosità',auto_off:'Azione al termine slot',none:'Nessuna',turn_off:'Spegni',turn_on:'Accendi',set_temp:'Imposta temp',conditions:'Condizioni',add_condition:'+ Condizione',notifications:'Notifiche',notify_service_label:'Servizio (es. notify.mobile_app_phone)',notify_message_label:'Messaggio',name:'Nome',name_placeholder:'Nome schedule (opzionale)',save:'Salva',delete:'Elimina',cancel:'Annulla' },
+    days:{ mon:'Lun',tue:'Mar',wed:'Mer',thu:'Gio',fri:'Ven',sat:'Sab',sun:'Dom',all:'Tutti',workdays:'Feriali',weekend:'Weekend' },
+    profile:{ exclusive_label:'🔒 Esclusivo (disattiva altri profili esclusivi)',shared_label:'🔓 Condiviso (coesiste con altri profili)',new_profile:'Nuovo Profilo',create:'Crea',name_placeholder:'Nome profilo',new_profile_mode:'nuovo profilo',rename:'Rinomina',duplicate:'Duplica',delete:'Elimina',viewing:'Stai visualizzando',active:'Attivo',activate:'Attiva',deactivate:'Disattiva' },
+    group:{ title:'Gruppi',back:'← Indietro',edit:'Modifica',create:'Crea Gruppo',tab_color:'Colore tab',select_entities:'Seleziona entità',no_groups:'Nessun gruppo.',create_new:'Crea nuovo gruppo',delete_confirm:'Eliminare questo gruppo?',name:'Nome gruppo',enter_name:'Inserisci un nome gruppo.',select_entity:"Seleziona almeno un'entità.",create_placeholder:'es. Clima Casa',removed_active:'schedule attivi su entità rimosse. Disattivarli?' },
+    errors:{ no_days:'Seleziona almeno un giorno.',delete_confirm:'Eliminare questo schedule?',delete_profile_confirm:'Eliminare questo profilo e tutti i suoi schedule?',save_failed:'Errore',overlap:'Sovrapposizione con schedule esistente in questo profilo' },
+    warnings:{ temp_unusual:'⚠️ Valore insolito — verifica compatibilità con il tuo dispositivo',temp_very_high:'🔴 Attenzione: temperatura molto alta',out_of_slider_range:'Fuori dal range tipico per questa entità' },
+    cond:{ add:'Aggiungi condizione',entity:'Entità',operator:'Operatore',value:'Valore',and_all:'Tutte (AND)',or_any:'Una qualsiasi (OR)',recheck:'Intervallo rivalutazione' },
+    notify:{ restore_auto:'Ripristina testo automatico',trigger_label:'Quando notificare',trigger_none:'Mai',trigger_start:"All'inizio",trigger_end:'Alla fine',trigger_both:'Inizio + fine',msg_start_label:'Messaggio inizio',msg_end_label:'Messaggio fine',default_start:'Schedule attivato',default_end:'Schedule terminato' }
+  },
+  fr: {
+    card:{ title:'Planning Hebdomadaire',new_profile:'Nouveau profil',groups:'Groupes',no_entities:'Aucune entité configurée',no_entities_sub:'Ajoutez des entités via la config YAML, ou créez un Groupe pour commencer.',manage_groups:'Gérer les Groupes',layout_rows_view:'Vue lignes',layout_cols_view:'Vue colonnes',no_schedule_now:'Aucun planning actif',empty_schedule:'Aucun planning' },
+    popup:{ new_schedule:'Nouveau Schedule',edit_schedule:'Modifier Schedule',schedule_active:'Schedule Actif',time_slot:'Créneau horaire',snap:'Snap',days:'Jours',start:'Début',end:'Fin',drag_hint:'Glissez les poignées pour redimensionner.',next_slot:'＋ Créneau suivant',temperature:'Température',hvac_mode:'Mode HVAC',preset_mode:'Mode preset',fan_mode:'Mode ventilateur',swing_mode:'Mode oscillation',climate_actions:'Actions climatisation',light_action:'Action lumière',action:'Action',brightness:'Luminosité',auto_off:'Action en fin de créneau',none:'Aucune',turn_off:'Éteindre',turn_on:'Allumer',set_temp:'Définir temp',conditions:'Conditions',add_condition:'+ Condition',notifications:'Notifications',notify_service_label:'Service (ex. notify.mobile_app_phone)',notify_message_label:'Message',name:'Nom',name_placeholder:'Nom du schedule (optionnel)',save:'Sauvegarder',delete:'Supprimer',cancel:'Annuler' },
+    days:{ mon:'Lun',tue:'Mar',wed:'Mer',thu:'Jeu',fri:'Ven',sat:'Sam',sun:'Dim',all:'Tous',workdays:'Jours ouvrés',weekend:'Week-end' },
+    profile:{ exclusive_label:"🔒 Exclusif (désactive les autres profils exclusifs)",shared_label:"🔓 Partagé (coexiste avec d'autres profils)",new_profile:'Nouveau Profil',create:'Créer',name_placeholder:'Nom du profil',new_profile_mode:'nouveau profil',rename:'Renommer',duplicate:'Dupliquer',delete:'Supprimer',viewing:'En vue',active:'Actif',activate:'Activer',deactivate:'Désactiver' },
+    group:{ title:'Groupes',back:'← Retour',edit:'Modifier',create:'Créer Groupe',tab_color:'Couleur onglet',select_entities:'Sélectionner entités',no_groups:'Aucun groupe.',create_new:'Créer nouveau groupe',delete_confirm:'Supprimer ce groupe ?',name:'Nom du groupe',enter_name:'Entrez un nom de groupe.',select_entity:'Sélectionnez au moins une entité.',create_placeholder:'ex. Climat Maison',removed_active:'planning(s) actif(s) sur entité(s) retirée(s). Désactiver ?' },
+    errors:{ no_days:'Sélectionnez au moins un jour.',delete_confirm:'Supprimer ce schedule ?',delete_profile_confirm:'Supprimer ce profil et tous ses schedules ?',save_failed:'Échec',overlap:'Chevauchement avec un planning existant dans ce profil' },
+    warnings:{ temp_unusual:"⚠️ Valeur inhabituelle — vérifiez la compatibilité avec votre appareil",temp_very_high:"🔴 Attention : température très élevée",out_of_slider_range:'Hors de la plage typique pour cette entité' },
+    cond:{ add:'Ajouter condition',entity:'Entité',operator:'Opérateur',value:'Valeur',and_all:'Toutes (AND)',or_any:"N'importe laquelle (OR)",recheck:'Intervalle de réévaluation' },
+    notify:{ restore_auto:'Restaurer texte auto',trigger_label:'Quand notifier',trigger_none:'Jamais',trigger_start:'Au début',trigger_end:'À la fin',trigger_both:'Début + fin',msg_start_label:'Message début',msg_end_label:'Message fin',default_start:'Schedule démarré',default_end:'Schedule terminé' }
+  }
+};
+
+export default class WeeklyScheduleBase extends HTMLElement {
+  constructor() {
+    super();
+    this.attachShadow({ mode: 'open' });
+    this._popupState = null;
+    this._snap = 15;
+    this._activeTab = 0;
+    this._profilesMode = false;
+    this._groupsMode = false;
+    this._storageData = null;
+    this._loadingStorage = false;
+    this._layout = 'columns';
+    this._compactExpanded = new Set(); // BF-2: Set vuoto, non null
+    this._focusDay = null;
+    this._profileEdit = null;
+    this._selectedProfileId = null;
+    this._profileEditMode = null;
+    this._dialogOpen = false;
+    this._timeInterval = null;
+    this._ttTimer = null;
+    this._ttEl = null;
+    this._lang = null;
+    this._prevHass = null;
+  }
+
+  set hass(hass) {
+    const prev = this._prevHass;
+    this._prevHass = hass;
+    this._hass = hass;
+    if (prev && this._storageData) this._checkNotifyTriggers(prev, hass);
+    // Auto re-fetch storage when a schedule entity is added/removed (cross-card sync)
+    if (prev && this._storageData && !this._loadingStorage) {
+      const prevSet = new Set(Object.keys(prev.states).filter(k => k.startsWith('switch.schedule_')));
+      const currKeys = Object.keys(hass.states).filter(k => k.startsWith('switch.schedule_'));
+      const addedOrRemoved = currKeys.length !== prevSet.size || currKeys.some(k => !prevSet.has(k));
+      if (addedOrRemoved) {
+        this._loadingStorage = true;
+        this._wsGet().then(data => {
+          if (data) this._storageData = data;
+          this._loadingStorage = false;
+          if (!this._popupState && !this._profilesMode && !this._groupsMode && !this._dialogOpen) this.render();
+        }).catch(() => { this._loadingStorage = false; });
+        return;
+      }
+    }
+    if (!this._storageData && !this._loadingStorage) {
+      this._loadingStorage = true;
+      this._wsGet().then(data => {
+        this._storageData = data;
+        this._ensureDefaultProfile();
+        this._loadingStorage = false;
+        if (!this._popupState && !this._profilesMode && !this._groupsMode && !this._dialogOpen) this.render();
+      }).catch(() => {
+        this._storageData = { groups: [], profiles: [], activeProfiles: [] };
+        this._ensureDefaultProfile();
+        this._loadingStorage = false;
+        if (!this._popupState && !this._profilesMode && !this._groupsMode && !this._dialogOpen) this.render();
+      });
+    } else if (!this._popupState && !this._profilesMode && !this._groupsMode && !this._dialogOpen) {
+      this._scheduleRender(prev);
+    }
+  }
+
+  // Wrap a render() call with a View Transition (crossfade) when supported.
+  // Falls back to a short opacity fade for older browsers. Used by view-toggle handlers.
+  _animatedRender() {
+    if (typeof document.startViewTransition === 'function') {
+      try { document.startViewTransition(() => this.render()); return; } catch {}
+    }
+    const card = this.shadowRoot?.querySelector('ha-card');
+    if (!card) { this.render(); return; }
+    card.style.transition = 'opacity .12s ease-out';
+    card.style.opacity = '0';
+    setTimeout(() => {
+      this.render();
+      const fresh = this.shadowRoot?.querySelector('ha-card');
+      if (!fresh) return;
+      fresh.style.opacity = '0';
+      fresh.style.transition = 'opacity .18s ease-in';
+      requestAnimationFrame(() => { fresh.style.opacity = '1'; });
+    }, 120);
+  }
+
+  _scheduleRender(prevHass) {
+    if (this._renderTimer) return;
+    this._pendingPrev = this._pendingPrev || prevHass;
+    this._renderTimer = setTimeout(() => {
+      this._renderTimer = null;
+      const p = this._pendingPrev;
+      this._pendingPrev = null;
+      if (this._popupState || this._profilesMode || this._groupsMode || this._dialogOpen) return;
+      if (this._hassChangedRelevant(p, this._hass)) this.render();
+    }, 100);
+  }
+
+  _hassChangedRelevant(prev, curr) {
+    if (!prev || !curr) return true;
+    const watched = new Set();
+    for (const ec of this._entities || []) if (ec.entity) watched.add(ec.entity);
+    for (const p of this._storageData?.profiles || [])
+      for (const g of p.groups || [])
+        for (const ec of g.entities || []) if (ec.entity) watched.add(ec.entity);
+    if (watched.size === 0) return true;
+    for (const eid of watched) {
+      const s = curr.states[eid], ps = prev.states[eid];
+      if (!ps || !s) return true;
+      if (ps.state !== s.state || ps.last_changed !== s.last_changed) return true;
+    }
+    for (const s of Object.values(curr.states)) {
+      if (!s.entity_id.startsWith('switch.schedule_')) continue;
+      const ents = s.attributes?.entities || [];
+      if (!ents.some(e => watched.has(e))) continue;
+      const ps = prev.states[s.entity_id];
+      if (!ps || ps.state !== s.state || ps.last_changed !== s.last_changed) return true;
+    }
+    return false;
+  }
+
+  setConfig(config) {
+    if (config.entities) {
+      this._entities = config.entities;
+    } else if (config.entity) {
+      this._entities = [{ entity: config.entity, name: config.name || null, color: null }];
+    } else {
+      this._entities = [];
+    }
+    this._config = config;
+    this._snap = config.snap || 15;
+    this._lang = null;
+    try {
+      const idx = parseInt(localStorage.getItem('weekly-schedule-tab') || '0');
+      if (idx >= 0) this._activeTab = idx;
+      const lv = localStorage.getItem('weekly-schedule-layout');
+      this._layout = lv === 'rows' ? 'rows' : lv === 'compact' ? 'compact' : lv === 'focus' ? 'focus' : 'columns';
+    } catch {}
+    // BF-2: inizializza compactExpanded con il giorno corrente
+    const todayIdx = (new Date().getDay() + 6) % 7;
+    this._compactExpanded = new Set([todayIdx]);
+  }
+
+  t(key) {
+    if (!this._lang) {
+      const cfg = (this._config?.language || '').toLowerCase().slice(0, 2);
+      const ha  = (this._hass?.language || '').toLowerCase().slice(0, 2);
+      const nav = (navigator?.language || '').toLowerCase().slice(0, 2);
+      const raw = cfg || ha || nav || 'en';
+      this._lang = LOCALES[raw] ? raw : 'en';
+    }
+    const parts = key.split('.');
+    let obj = LOCALES[this._lang];
+    for (const p of parts) { if (obj == null) break; obj = obj[p]; }
+    if (obj != null && typeof obj === 'string') return obj;
+    let en = LOCALES.en;
+    for (const p of parts) { if (en == null) break; en = en[p]; }
+    return (en != null && typeof en === 'string') ? en : key;
+  }
+
+  getCardSize() { return 7; }
+
+  // ── WebSocket storage ─────────────────────────────────────────────────────
+
+  async _wsGet() {
+    const result = await this._hass.connection.sendMessagePromise({
+      type: 'frontend/get_user_data',
+      key: 'weekly_schedule_card',
+    });
+    return result?.value || { groups: [], profiles: [], activeProfiles: [] };
+  }
+
+  async _wsSet(data) {
+    this._storageData = data;
+    await this._hass.connection.sendMessagePromise({
+      type: 'frontend/set_user_data',
+      key: 'weekly_schedule_card',
+      value: data,
+    });
+    // Notify other card instances on the same page
+    try {
+      window.dispatchEvent(new CustomEvent('wsc-storage-changed', { detail: { source: this, data } }));
+    } catch {}
+  }
+
+  // ── Profile bootstrap ─────────────────────────────────────────────────────
+
+  _ensureDefaultProfile() {
+    const data = this._storageData;
+    if (!data.activeProfiles) data.activeProfiles = [];
+    let dirty = false;
+    if (!data.profiles || !data.profiles.length) {
+      const existingSchedules = this._hass
+        ? Object.keys(this._hass.states).filter(k => k.startsWith('switch.schedule_'))
+        : [];
+      data.profiles = [{ id: 'default', name: 'Default', exclusive: true, groups: [], schedules: existingSchedules, scheduleLinks: [] }];
+      if (existingSchedules.length) data.activeProfiles = ['default'];
+      dirty = true;
+    }
+    for (const p of data.profiles) {
+      if (!p.groups) { p.groups = []; dirty = true; }
+      if (!p.scheduleLinks) { p.scheduleLinks = []; dirty = true; }
+      for (const link of p.scheduleLinks)
+        if (link.autoChild) { delete link.autoChild; dirty = true; }
+    }
+    if (data.groups?.length) {
+      const def = data.profiles.find(p => p.id === 'default') || data.profiles[0];
+      if (def) {
+        const existing = new Set(def.groups.map(g => g.id));
+        for (const g of data.groups) if (!existing.has(g.id)) def.groups.push(g);
+      }
+      data.groups = [];
+      dirty = true;
+    }
+    if (dirty) this._wsSet(data).catch(() => {});
+    if (!this._selectedProfileId || !data.profiles.find(p => p.id === this._selectedProfileId))
+      this._selectedProfileId = data.activeProfiles[0] || data.profiles[0]?.id || null;
+  }
+
+  _getSelectedProfile() {
+    const profiles = this._storageData?.profiles || [];
+    return profiles.find(p => p.id === this._selectedProfileId) || profiles[0] || null;
+  }
+
+  _getProfileSchedules(entityId) {
+    const all = this._getSchedules(entityId).filter(s => !s.attributes.tags?.includes('weekly_schedule_auto'));
+    const profile = this._getSelectedProfile();
+    if (!profile) return all;
+    const ids = profile.schedules || [];
+    const profiles = this._storageData?.profiles || [];
+    if (profiles.length === 1 && !ids.length) return all;
+    if (!ids.length) return [];
+    const set = new Set(ids);
+    return all.filter(s => set.has(s.entity_id));
+  }
+
+  async _waitForNewSchedule(beforeIds) {
+    for (let i = 0; i < 6; i++) {
+      await new Promise(r => setTimeout(r, 500));
+      const newId = Object.keys(this._hass.states).find(k => k.startsWith('switch.schedule_') && !beforeIds.has(k));
+      if (newId) return newId;
+    }
+    return null;
+  }
+
+  async _addScheduleToProfile(entityId) {
+    const data = this._storageData;
+    const profile = this._getSelectedProfile();
+    if (!profile) return;
+    if (!profile.schedules) profile.schedules = [];
+    if (!profile.scheduleLinks) profile.scheduleLinks = [];
+    if (!profile.schedules.includes(entityId)) profile.schedules.push(entityId);
+    await this._wsSet({ ...data, profiles: data.profiles });
+  }
+
+  // ── Auto-child helpers ────────────────────────────────────────────────────
+
+  _getAutoChildId(parentEntityId) {
+    for (const p of this._storageData?.profiles || []) {
+      const link = (p.scheduleLinks || []).find(l => l.id === parentEntityId);
+      if (link?.autoChildId) return link.autoChildId;
+    }
+    return null;
+  }
+
+  _hasAutoChild(entityId) { return !!this._getAutoChildId(entityId); }
+
+  async _saveAutoChildId(parentEntityId, childId) {
+    const data = this._storageData;
+    let found = false;
+    for (const p of data.profiles || []) {
+      if (!p.scheduleLinks) p.scheduleLinks = [];
+      const link = p.scheduleLinks.find(l => l.id === parentEntityId);
+      if (link) { link.autoChildId = childId; found = true; }
+    }
+    if (!found) {
+      const profile = this._getSelectedProfile();
+      if (profile) {
+        if (!profile.scheduleLinks) profile.scheduleLinks = [];
+        let link = profile.scheduleLinks.find(l => l.id === parentEntityId);
+        if (!link) { link = { id: parentEntityId }; profile.scheduleLinks.push(link); }
+        link.autoChildId = childId;
+      }
+    }
+    await this._wsSet(data);
+  }
+
+  async _clearAutoChildId(parentEntityId) {
+    const data = this._storageData;
+    for (const p of data.profiles || []) {
+      const link = (p.scheduleLinks || []).find(l => l.id === parentEntityId);
+      if (link) delete link.autoChildId;
+    }
+    await this._wsSet(data);
+  }
+
+  // ── Condition storage helpers ─────────────────────────────────────────────
+
+  _getStoredConditions(scheduleEntityId) {
+    for (const p of this._storageData?.profiles || []) {
+      const link = (p.scheduleLinks || []).find(l => l.id === scheduleEntityId);
+      if (link?.conditions) return { conditions: link.conditions, condCombinator: link.condCombinator || 'and', condInterval: link.condInterval || 15 };
+    }
+    return { conditions: [], condCombinator: 'and', condInterval: 15 };
+  }
+
+  _getCondAutoId(scheduleEntityId) {
+    for (const p of this._storageData?.profiles || []) {
+      const link = (p.scheduleLinks || []).find(l => l.id === scheduleEntityId);
+      if (link?.condAutoId) return link.condAutoId;
+    }
+    return null;
+  }
+
+  async _saveCondData(scheduleEntityId, condAutoId, conditions, condCombinator, condInterval=15) {
+    const data = this._storageData;
+    let found = false;
+    for (const p of data.profiles || []) {
+      if (!p.scheduleLinks) p.scheduleLinks = [];
+      const link = p.scheduleLinks.find(l => l.id === scheduleEntityId);
+      if (link) {
+        if (condAutoId !== null) link.condAutoId = condAutoId;
+        link.conditions = conditions;
+        link.condCombinator = condCombinator;
+        link.condInterval = condInterval;
+        found = true;
+      }
+    }
+    if (!found) {
+      const profile = this._getSelectedProfile();
+      if (profile) {
+        if (!profile.scheduleLinks) profile.scheduleLinks = [];
+        let link = profile.scheduleLinks.find(l => l.id === scheduleEntityId);
+        if (!link) { link = { id: scheduleEntityId }; profile.scheduleLinks.push(link); }
+        if (condAutoId !== null) link.condAutoId = condAutoId;
+        link.conditions = conditions;
+        link.condCombinator = condCombinator;
+        link.condInterval = condInterval;
+      }
+    }
+    await this._wsSet(data);
+  }
+
+  async _clearCondData(scheduleEntityId) {
+    const data = this._storageData;
+    for (const p of data.profiles || []) {
+      const link = (p.scheduleLinks || []).find(l => l.id === scheduleEntityId);
+      if (link) { delete link.condAutoId; delete link.conditions; delete link.condCombinator; delete link.condInterval; }
+    }
+    await this._wsSet(data);
+  }
+
+  // ── Auto-child sync ───────────────────────────────────────────────────────
+
+  async _syncAutoChild(parentEntityId, ps) {
+    const existingChildId = this._getAutoChildId(parentEntityId);
+    if (!ps.stopAction) {
+      if (existingChildId) {
+        try { await this._hass.callService('scheduler', 'remove', { entity_id: existingChildId }); } catch {}
+        await this._clearAutoChildId(parentEntityId);
+      }
+      return;
+    }
+    const childStartMin = Math.min(ps.endMin, 1439);
+    const childStopMin  = (childStartMin + 1) >= 1440 ? 0 : childStartMin + 1;
+    const childStart = this._minutesToTime(childStartMin);
+    const childStop  = this._minutesToTime(childStopMin);
+    const eid = ps.entityConf.entity;
+    const dom = ps.domain;
+    let childService, childData = {};
+    if (ps.stopAction === 'set_temperature') {
+      childService = 'climate.set_temperature'; childData = { temperature: ps.stopTemp };
+    } else if (ps.stopAction === 'turn_on') {
+      childService = `${dom}.turn_on`;
+    } else {
+      childService = `${dom}.turn_off`;
+    }
+    const childActions   = [{ entity_id: eid, service: childService, service_data: childData }];
+    const childTimeslots = [{ start: childStart, stop: childStop, actions: childActions }];
+    const weekdays       = ps.days.map(d => this._getDayKey(d));
+    const childTags      = ['weekly_schedule_auto', `parent:${parentEntityId}`];
+
+    if (existingChildId && this._hass.states[existingChildId]) {
+      try {
+        await this._hass.callService('scheduler', 'edit', {
+          entity_id: existingChildId, weekdays, timeslots: childTimeslots, tags: childTags,
+        });
+      } catch (e) { console.error('WSC syncAutoChild edit failed', e); }
+    } else {
+      try {
+        const beforeIds = new Set(Object.keys(this._hass.states).filter(k => k.startsWith('switch.schedule_')));
+        await this._hass.callService('scheduler', 'add', {
+          weekdays, timeslots: childTimeslots, repeat_type: 'repeat', tags: childTags,
+        });
+        const newChildId = await this._waitForNewSchedule(beforeIds);
+        if (newChildId) await this._saveAutoChildId(parentEntityId, newChildId);
+      } catch (e) { console.error('WSC syncAutoChild add failed', e); }
+    }
+  }
+
+  // ── In-browser notification triggers ─────────────────────────────────────
+
+  _checkNotifyTriggers(prevHass, newHass) {
+    for (const p of this._storageData?.profiles || []) {
+      for (const link of p.scheduleLinks || []) {
+        if (!link.notifyService || !link.id) continue;
+        const trig = link.notifyTrigger || 'start';
+        if (trig === 'none') continue;
+        const nst = newHass.states[link.id];
+        const pst = prevHass.states[link.id];
+        if (!nst || !pst) continue;
+        if (nst.state !== 'on') continue; // schedule disabilitato → nessuna notifica
+        const wasInSlot = pst.attributes.current_slot !== null && pst.attributes.current_slot !== undefined;
+        const isInSlot = nst.attributes.current_slot !== null && nst.attributes.current_slot !== undefined;
+        const slotStarted = !wasInSlot && isInSlot;
+        const slotEnded = wasInSlot && !isInSlot;
+        const fireStart = slotStarted && (trig === 'start' || trig === 'both');
+        const fireEnd = slotEnded && (trig === 'end' || trig === 'both');
+        if (!fireStart && !fireEnd) continue;
+        const message = fireEnd
+          ? (link.notifyMessageEnd || link.notifyMessage || this.t('notify.default_end'))
+          : (link.notifyMessage || this.t('notify.default_start'));
+        const parts = link.notifyService.split('.');
+        if (parts.length < 2) continue;
+        const [domain, ...rest] = parts;
+        newHass.callService(domain, rest.join('.'), {
+          message,
+          title: this.t('card.title'),
+        }).catch(e => console.error('WSC notify failed', e));
+      }
+    }
+  }
+
+  // ── Default notification message ──────────────────────────────────────────
+
+  _buildDefaultNotifyMessage(ps, kind = 'start') {
+    if (!ps) return '';
+    const lang = this._lang || 'it';
+    const ec = ps.entityConf || {};
+    const entityName = this._hass?.states?.[ec.entity]?.attributes?.friendly_name || ec.name || ec.entity || '';
+    const startTime = this._minutesToTime(ps.startMin);
+    const endTime = this._minutesToTime(ps.endMin === 1440 ? 0 : ps.endMin);
+    const onLbl = lang === 'en' ? 'on' : lang === 'fr' ? 'allumé' : 'acceso';
+    const offLbl = lang === 'en' ? 'off' : lang === 'fr' ? 'éteint' : 'spento';
+    const fromTo = lang === 'en' ? `From ${startTime} to ${endTime}` : lang === 'fr' ? `De ${startTime} à ${endTime}` : `Dalle ${startTime} alle ${endTime}`;
+    // weekdays
+    const ds = [...(ps.days || [])].sort((a,b)=>a-b);
+    let daysText;
+    if (ds.length === 7) daysText = this.t('days.all') || (lang==='en'?'every day':lang==='fr'?'tous les jours':'tutti i giorni');
+    else if (ds.length === 5 && ds.every((v,i)=>v===i)) daysText = this.t('days.workdays') || (lang==='en'?'workdays':lang==='fr'?'jours ouvrés':'feriali');
+    else if (ds.length === 2 && ds[0]===5 && ds[1]===6) daysText = this.t('days.weekend') || (lang==='en'?'weekend':'weekend');
+    else daysText = ds.map(i => this.t(`days.${this._getDayKey(i)}`) || this._getDayKey(i)).join(', ');
+    // end action
+    let endAction;
+    if (ps.stopAction === 'turn_off') endAction = lang==='en'?'auto turn off':lang==='fr'?'extinction automatique':'spegnimento automatico';
+    else if (ps.stopAction === 'turn_on') endAction = lang==='en'?'auto turn on':lang==='fr'?'allumage automatique':'accensione automatica';
+    else if (ps.stopAction === 'set_temperature') endAction = lang==='en'?`set ${ps.stopTemp}°C`:lang==='fr'?`régler ${ps.stopTemp}°C`:`imposta ${ps.stopTemp}°C`;
+    else endAction = lang==='en'?'no action':lang==='fr'?'aucune action':'nessuna azione';
+    // condition line
+    let condLine = '';
+    const validConds = (ps.conditions || []).filter(c => c.entity && c.value);
+    if (validConds.length) {
+      const condTxt = validConds.map(c => `${c.entity} ${c.operator} ${c.value}`).join(ps.condCombinator === 'or' ? ' OR ' : ' AND ');
+      const condLbl = lang==='en'?'Conditions':lang==='fr'?'Conditions':'Condizioni';
+      const recheckLbl = lang==='en'?`Recheck every ${ps.condInterval} min`:lang==='fr'?`Revérification chaque ${ps.condInterval} min`:`Controllo ogni ${ps.condInterval} min`;
+      condLine = `\n🔍 ${condLbl}: ${condTxt}\n🔄 ${recheckLbl}`;
+    }
+    const daysLbl = `📅 ${daysText}`;
+    const endLbl = lang==='en'?`🔚 At end: ${endAction}`:lang==='fr'?`🔚 À la fin: ${endAction}`:`🔚 Alla fine: ${endAction}`;
+    let firstLine;
+    if (kind === 'end') {
+      // End-of-slot message: schedule completed, optionally mentions auto-action
+      const endedLbl = lang==='en'?'schedule completed':lang==='fr'?'planification terminée':'schedule completato';
+      firstLine = `⏹️ ${entityName} — ${endedLbl}`;
+      const wasFromTo = lang==='en'?`Was active ${startTime}–${endTime}`:lang==='fr'?`Était actif ${startTime}–${endTime}`:`Era attivo ${startTime}–${endTime}`;
+      return `${firstLine}\n⏰ ${wasFromTo}\n${daysLbl}\n${endLbl}`;
+    }
+    // Start message (default)
+    if (ps.domain === 'climate') {
+      if (ps.enableTemp) {
+        const setLbl = lang==='en'?'set to':lang==='fr'?'réglé à':'impostato a';
+        firstLine = `🌡️ ${entityName} ${setLbl} ${ps.temp}°C`;
+      } else if (ps.enableHvac && ps.hvacMode) {
+        firstLine = `❄️ ${entityName}: ${ps.hvacMode}`;
+      } else {
+        firstLine = `🌡️ ${entityName}`;
+      }
+    } else if (ps.domain === 'light') {
+      const stateLbl = ps.turnOn ? onLbl : offLbl;
+      let bLine = '';
+      if (ps.turnOn && ps.enableBrightness) {
+        const brLbl = lang==='en'?'brightness':lang==='fr'?'luminosité':'luminosità';
+        bLine = ` (${brLbl} ${ps.brightness}%)`;
+      }
+      firstLine = `💡 ${entityName} ${stateLbl}${bLine}`;
+    } else {
+      firstLine = `🔌 ${entityName} ${ps.turnOn ? onLbl : offLbl}`;
+    }
+    return `${firstLine}\n⏰ ${fromTo}\n${daysLbl}${condLine}\n${endLbl}`;
+  }
+
+  _refreshNotifyDefault(dlg) {
+    const ps = this._popupState;
+    if (!ps) return;
+    // Start message
+    const newDefStart = this._buildDefaultNotifyMessage(ps, 'start');
+    const wasAutoStart = !ps.notifyMessage || ps.notifyMessage === ps._defaultNotifyMsg;
+    if (wasAutoStart) ps.notifyMessage = newDefStart;
+    ps._defaultNotifyMsg = newDefStart;
+    const inpStart = dlg?.querySelector('.notif-msg');
+    if (inpStart && wasAutoStart) inpStart.value = newDefStart;
+    const restoreStart = dlg?.querySelector('.notif-restore');
+    if (restoreStart) restoreStart.style.display = (ps.notifyMessage !== newDefStart && ps.notifyMessage !== '') ? '' : 'none';
+    // End message
+    const newDefEnd = this._buildDefaultNotifyMessage(ps, 'end');
+    const wasAutoEnd = !ps.notifyMessageEnd || ps.notifyMessageEnd === ps._defaultNotifyMsgEnd;
+    if (wasAutoEnd) ps.notifyMessageEnd = newDefEnd;
+    ps._defaultNotifyMsgEnd = newDefEnd;
+    const inpEnd = dlg?.querySelector('.notif-msg-end');
+    if (inpEnd && wasAutoEnd) inpEnd.value = newDefEnd;
+    const restoreEnd = dlg?.querySelector('.notif-restore-end');
+    if (restoreEnd) restoreEnd.style.display = (ps.notifyMessageEnd !== newDefEnd && ps.notifyMessageEnd !== '') ? '' : 'none';
+  }
+
+  // ── Condition automation ──────────────────────────────────────────────────
+
+  _getCondFieldSpec(entityId, attribute) {
+    const NUMERIC_OPS = ['>', '<', '>=', '<=', '==', '!='];
+    const EQ_OPS = ['==', '!='];
+    const TEXT_OPS = ['==', '!='];
+    const fallback = { kind: 'text', operators: NUMERIC_OPS };
+    if (!entityId) return fallback;
+    const s = this._hass?.states?.[entityId];
+    if (!s) return fallback;
+    const domain = entityId.split('.')[0];
+    const attrs = s.attributes || {};
+    const unit = attrs.unit_of_measurement || '';
+    // climate with attribute picker
+    if (domain === 'climate') {
+      // Default to a list of common climate attributes that make sense in conditions
+      const climateAttrs = ['temperature', 'current_temperature', 'target_temp_low', 'target_temp_high', 'hvac_action', 'hvac_mode', 'preset_mode', 'fan_mode'];
+      if (!attribute) {
+        return { kind: 'climate-picker', climateAttrs, operators: NUMERIC_OPS };
+      }
+      // numeric attributes
+      if (['temperature','current_temperature','target_temp_low','target_temp_high'].includes(attribute)) {
+        return { kind: 'numeric', operators: NUMERIC_OPS, unit: '°C', step: 0.5, climateAttrs, attribute };
+      }
+      // categorical attributes
+      if (attribute === 'hvac_mode') return { kind: 'select', operators: EQ_OPS, options: attrs.hvac_modes || ['heat','cool','heat_cool','auto','dry','fan_only','off'], climateAttrs, attribute };
+      if (attribute === 'hvac_action') return { kind: 'select', operators: EQ_OPS, options: ['heating','cooling','idle','off','drying','fan'], climateAttrs, attribute };
+      if (attribute === 'preset_mode') return { kind: 'select', operators: EQ_OPS, options: attrs.preset_modes || [], climateAttrs, attribute };
+      if (attribute === 'fan_mode') return { kind: 'select', operators: EQ_OPS, options: attrs.fan_modes || [], climateAttrs, attribute };
+      return { kind: 'text', operators: TEXT_OPS, climateAttrs, attribute };
+    }
+    // boolean-like
+    if (domain === 'input_boolean' || domain === 'binary_sensor') {
+      return { kind: 'boolean', operators: EQ_OPS, options: ['on', 'off'] };
+    }
+    // dropdown
+    if (domain === 'input_select') {
+      return { kind: 'select', operators: EQ_OPS, options: attrs.options || [] };
+    }
+    // numeric input
+    if (domain === 'input_number' || domain === 'number' || domain === 'counter') {
+      return {
+        kind: 'numeric', operators: NUMERIC_OPS,
+        unit, step: attrs.step || 1, min: attrs.min, max: attrs.max,
+      };
+    }
+    // sensor: check if numeric by device_class or unit
+    if (domain === 'sensor') {
+      const numericClasses = ['temperature','humidity','illuminance','battery','power','energy','pressure','voltage','current','frequency','signal_strength','co2','carbon_monoxide','carbon_dioxide','pm1','pm10','pm25','speed','distance','aqi','volume'];
+      if (numericClasses.includes(attrs.device_class) || unit || !isNaN(parseFloat(s.state))) {
+        return { kind: 'numeric', operators: NUMERIC_OPS, unit, step: 0.1 };
+      }
+      return { kind: 'text', operators: TEXT_OPS };
+    }
+    // weather: state is descriptive text (sunny, cloudy...)
+    if (domain === 'weather') {
+      return { kind: 'select', operators: EQ_OPS, options: ['clear-night','cloudy','exceptional','fog','hail','lightning','lightning-rainy','partlycloudy','pouring','rainy','snowy','snowy-rainy','sunny','windy','windy-variant'] };
+    }
+    return fallback;
+  }
+
+  _buildHACondition(c) {
+    const numOps = ['>', '<', '>=', '<='];
+    if (numOps.includes(c.operator)) {
+      const cond = { condition: 'numeric_state', entity_id: c.entity };
+      if (c.attribute) cond.attribute = c.attribute;
+      const v = parseFloat(c.value);
+      if (c.operator === '>')  cond.above = v;
+      if (c.operator === '<')  cond.below = v;
+      if (c.operator === '>=') cond.above = v - 0.001;
+      if (c.operator === '<=') cond.below = v + 0.001;
+      return cond;
+    } else {
+      const cond = { condition: 'state', entity_id: c.entity, state: c.value };
+      if (c.attribute) cond.attribute = c.attribute;
+      if (c.operator === '!=') return { condition: 'not', conditions: [cond] };
+      return cond;
+    }
+  }
+
+  async _syncConditionAutomation(scheduleEntityId, conditions, condCombinator, condInterval=15) {
+    const existingId = this._getCondAutoId(scheduleEntityId);
+    const validConds = (conditions || []).filter(c => c.entity);
+    if (!validConds.length) {
+      if (existingId) {
+        try {
+          await this._hass.connection.sendMessagePromise({ type: 'config/automation/delete', automation_id: existingId });
+        } catch (e) { console.error('WSC condAuto delete failed', e); }
+      }
+      await this._clearCondData(scheduleEntityId);
+      return;
+    }
+    // Persist conditions to storage FIRST — survives even if HA automation fails
+    await this._saveCondData(scheduleEntityId, null, validConds, condCombinator, condInterval);
+    // Deterministic automation ID: HA refuses automation_id: null on create
+    const targetId = existingId || `wsc_cond_${scheduleEntityId.replace('switch.', '')}`;
+    const haConds = validConds.map(c => this._buildHACondition(c));
+    const condBlock = haConds.length === 1 ? haConds[0] : { condition: condCombinator === 'or' ? 'or' : 'and', conditions: haConds };
+    const automationConfig = {
+      alias: `WSC Conditions - ${scheduleEntityId}`,
+      description: 'Auto-generated by Weekly Schedule Card',
+      trigger: [
+        { platform: 'state', entity_id: scheduleEntityId, to: 'on' },
+        { platform: 'time_pattern', minutes: `/${condInterval}` },
+      ],
+      condition: [
+        { condition: 'template', value_template: `{{ state_attr('${scheduleEntityId}', 'current_slot') != None }}` },
+      ],
+      action: [{
+        choose: [{
+          conditions: [{ condition: 'not', conditions: [condBlock] }],
+          sequence: [{ service: 'switch.turn_off', target: { entity_id: scheduleEntityId } }],
+        }],
+        default: [{ service: 'switch.turn_on', target: { entity_id: scheduleEntityId } }],
+      }],
+      mode: 'single',
+    };
+    try {
+      const resp = await this._hass.connection.sendMessagePromise({
+        type: 'config/automation/config',
+        automation_id: targetId,
+        config: automationConfig,
+      });
+      const newId = resp?.automation_id || targetId;
+      // Persist the actual automation ID
+      await this._saveCondData(scheduleEntityId, newId, validConds, condCombinator, condInterval);
+    } catch (e) {
+      console.error('WSC condAuto save failed', e);
+      // Conditions are already saved above — only the HA automation is missing
+    }
+  }
+
+  // ── Profile create / duplicate / cancel ───────────────────────────────────
+
+  _showNewProfileDialog() {
+    const existing = this.shadowRoot.querySelector('dialog.new-profile-dlg');
+    if (existing) existing.remove();
+    const dlg = document.createElement('dialog');
+    dlg.className = 'new-profile-dlg';
+    dlg.innerHTML = `
+      <style>
+        dialog.new-profile-dlg{border:none;padding:0;margin:0;background:rgba(0,0,0,.55);width:100vw;height:100vh;max-width:100vw;max-height:100vh;display:flex;align-items:center;justify-content:center}
+        dialog.new-profile-dlg::backdrop{display:none}
+        .np-box{background:var(--card-background-color,#fff);border-radius:14px;padding:20px;width:min(360px,90vw);display:flex;flex-direction:column;gap:14px;box-shadow:0 8px 32px rgba(0,0,0,.3)}
+        .np-title{font-size:1em;font-weight:600;color:var(--primary-text-color)}
+        .np-inp{width:100%;padding:8px 10px;border-radius:8px;border:1px solid var(--divider-color,#ccc);background:var(--card-background-color,#fff);color:var(--primary-text-color);font-size:.9em;box-sizing:border-box;font-family:inherit}
+        .np-inp:focus{outline:none;border-color:var(--primary-color,#03a9f4)}
+        .np-excl-row{display:flex;align-items:center;gap:10px;font-size:.83em;color:var(--primary-text-color)}
+        .toggle-switch{position:relative;width:38px;height:22px;cursor:pointer;display:inline-block;flex-shrink:0}
+        .toggle-switch input{opacity:0;width:0;height:0;position:absolute}
+        .toggle-track{position:absolute;inset:0;border-radius:11px;background:var(--disabled-color,#ccc);transition:background .2s}
+        .toggle-switch input:checked + .toggle-track{background:var(--primary-color,#03a9f4)}
+        .toggle-thumb{position:absolute;top:2px;left:2px;width:18px;height:18px;border-radius:50%;background:white;box-shadow:0 1px 4px rgba(0,0,0,.3);transition:transform .2s;pointer-events:none}
+        .toggle-switch input:checked ~ .toggle-thumb{transform:translateX(16px)}
+        .np-excl-lbl{flex:1}
+        .np-footer{display:flex;gap:8px;justify-content:flex-end}
+        .np-btn{padding:8px 18px;border-radius:9px;border:none;cursor:pointer;font-size:.84em;font-weight:600}
+        .np-btn-cancel{background:var(--divider-color,#e0e0e0);color:var(--primary-text-color)}
+        .np-btn-create{background:var(--primary-color,#03a9f4);color:white}
+        .np-btn-create:disabled{opacity:.5;pointer-events:none}
+      </style>
+      <div class="np-box">
+        <div class="np-title">${this.t('profile.new_profile')}</div>
+        <input class="np-inp" placeholder="${this.t('profile.name_placeholder')}" maxlength="48" autofocus>
+        <div class="np-excl-row">
+          <label class="toggle-switch">
+            <input type="checkbox" class="np-excl-chk" checked>
+            <span class="toggle-track"></span><span class="toggle-thumb"></span>
+          </label>
+          <span class="np-excl-lbl">${this.t('profile.exclusive_label')}</span>
+        </div>
+        <div class="np-footer">
+          <button class="np-btn np-btn-cancel">${this.t('popup.cancel')}</button>
+          <button class="np-btn np-btn-create" disabled>${this.t('profile.create')}</button>
+        </div>
+      </div>`;
+    this._dialogOpen = true;
+    this.shadowRoot.appendChild(dlg);
+    dlg.showModal();
+    const inp = dlg.querySelector('.np-inp');
+    const createBtn = dlg.querySelector('.np-btn-create');
+    const exclChk = dlg.querySelector('.np-excl-chk');
+    const exclLbl = dlg.querySelector('.np-excl-lbl');
+    inp.addEventListener('input', () => { createBtn.disabled = !inp.value.trim(); });
+    exclChk.addEventListener('change', () => {
+      exclLbl.textContent = exclChk.checked ? this.t('profile.exclusive_label') : this.t('profile.shared_label');
+    });
+    dlg.querySelector('.np-btn-cancel').addEventListener('click', () => { this._dialogOpen = false; dlg.close(); dlg.remove(); });
+    dlg.addEventListener('click', e => { if (e.target === dlg) { this._dialogOpen = false; dlg.close(); dlg.remove(); } });
+    createBtn.addEventListener('click', () => {
+      const name = inp.value.trim();
+      if (!name) return;
+      this._dialogOpen = false; dlg.close(); dlg.remove();
+      this._startNewProfile(name, exclChk.checked);
+    });
+    inp.addEventListener('keydown', e => { if (e.key === 'Enter' && inp.value.trim()) { createBtn.click(); } });
+  }
+
+  async _startNewProfile(name, exclusive) {
+    const prevId = this._selectedProfileId;
+    const newId = `prf_${Date.now()}`;
+    const newProfile = { id: newId, name, exclusive, groups: [], schedules: [], scheduleLinks: [] };
+    const profiles = [...(this._storageData.profiles || []), newProfile];
+    await this._wsSet({ ...this._storageData, profiles });
+    this._selectedProfileId = newId;
+    this._activeTab = 0;
+    this._profileEditMode = { profileId: newId, previousSelectedId: prevId };
+    this.render();
+  }
+
+  async _cancelNewProfile() {
+    const pe = this._profileEditMode;
+    if (!pe) return;
+    this._profileEditMode = null;
+    this._selectedProfileId = pe.previousSelectedId;
+    const data = this._storageData;
+    const p = (data.profiles || []).find(x => x.id === pe.profileId);
+    if (p) {
+      for (const eid of p.schedules || [])
+        try { await this._hass.callService('scheduler', 'remove', { entity_id: eid }); } catch {}
+    }
+    const profiles = (data.profiles || []).filter(x => x.id !== pe.profileId);
+    const activeProfiles = (data.activeProfiles || []).filter(x => x !== pe.profileId);
+    await this._wsSet({ ...data, profiles, activeProfiles });
+    this._activeTab = 0;
+    this.render();
+  }
+
+  // ── Tab management ────────────────────────────────────────────────────────
+
+  _getAllTabs() {
+    const entityTabs = this._entities.map(e => ({ type: 'entity', ...e }));
+    const profile = this._getSelectedProfile();
+    const groupTabs = (profile?.groups || []).map(g => ({ type: 'group', ...g }));
+    return [...entityTabs, ...groupTabs];
+  }
+
+  _currentTab() {
+    const tabs = this._getAllTabs();
+    return tabs[Math.min(this._activeTab, tabs.length - 1)] || tabs[0] || { type: 'entity', ...this._entities[0] };
+  }
+
+  // ── Helpers ───────────────────────────────────────────────────────────────
+
+  _getSchedules(entityId) {
+    if (!this._hass || !entityId) return [];
+    return Object.values(this._hass.states).filter(s =>
+      s.entity_id.startsWith('switch.schedule_') &&
+      s.attributes.entities?.includes(entityId)
+    );
+  }
+
+  _detectDomain(entityId) {
+    return entityId?.split('.')[0] || 'unknown';
+  }
+
+  _domainIconMdi(entityId) {
+    const map = {
+      climate:      ['mdi:thermometer',      '#F44336'],
+      switch:       ['mdi:toggle-switch',    '#2196F3'],
+      light:        ['mdi:lightbulb',        '#FFC107'],
+      fan:          ['mdi:fan',              '#00BCD4'],
+      cover:        ['mdi:window-shutter',   '#9C27B0'],
+      input_boolean:['mdi:checkbox-marked',  '#4CAF50'],
+      media_player: ['mdi:television-play',  '#FF5722'],
+    };
+    const d = (entityId||'').split('.')[0];
+    return map[d] || ['mdi:calendar-clock','#607D8B'];
+  }
+
+  _tempToColor(temp) {
+    if (temp == null) return '#9E9E9E';
+    const ratio = Math.min(1, Math.max(0, (temp - 10) / 15));
+    return `rgb(${Math.round(33 + ratio * 211)},${Math.round(150 - ratio * 83)},${Math.round(243 - ratio * 189)})`;
+  }
+
+  _parseTime(t) { const [h, m] = t.split(':').map(Number); return h * 60 + (m || 0); }
+  _minutesToPercent(m) { return (m / 1440) * 100; }
+  _minutesToTime(m) { return `${String(Math.floor(m / 60) % 24).padStart(2, '0')}:${String(m % 60).padStart(2, '0')}`; }
+  _snapToGrid(m) { return Math.round(m / this._snap) * this._snap; }
+
+  _getDayIndex(day) {
+    return { mon:0,tue:1,wed:2,thu:3,fri:4,sat:5,sun:6,monday:0,tuesday:1,wednesday:2,thursday:3,friday:4,saturday:5,sunday:6,daily:-1,workday:-2,weekend:-3 }[day.toLowerCase()] ?? -1;
+  }
+  _getDayKey(i) { return ['mon','tue','wed','thu','fri','sat','sun'][i]; }
+
+  _appliesToDay(weekdays, dayIndex) {
+    return weekdays.some(wd => {
+      const idx = this._getDayIndex(wd);
+      if (idx === -1) return true;
+      if (idx === -2) return dayIndex < 5;
+      if (idx === -3) return dayIndex >= 5;
+      return idx === dayIndex;
+    });
+  }
+
+  _magneticSnap(minutes, pts) {
+    const thr = this._snap * 2;
+    let closest = null, dist = thr;
+    for (const pt of pts) { const d = Math.abs(minutes - pt); if (d < dist) { dist = d; closest = pt; } }
+    return closest !== null ? closest : this._snapToGrid(minutes);
+  }
+
+  _blockColor(schedule, entityConf) {
+    if (this._detectDomain(entityConf?.entity) === 'climate')
+      return this._tempToColor(schedule.attributes.actions?.[0]?.data?.temperature ?? null);
+    return entityConf?.color || '#9E9E9E';
+  }
+
+  _getBlocksForDay(dayIndex, schedules, entityConf) {
+    const blocks = [];
+    for (const s of schedules) {
+      if (!this._appliesToDay(s.attributes.weekdays || [], dayIndex)) continue;
+      const color = this._blockColor(s, entityConf);
+      const isOff = s.state === 'off';
+      const hasStop = this._hasAutoChild(s.entity_id);
+      const hasCond = this._getStoredConditions(s.entity_id).conditions.length > 0;
+      const isActive = s.attributes.current_slot !== null && s.attributes.current_slot !== undefined;
+      const temp = s.attributes.actions?.[0]?.data?.temperature ?? null;
+      const label = this._detectDomain(entityConf?.entity) === 'climate' && temp != null
+        ? `${temp}°` : s.attributes.friendly_name;
+      for (const slot of s.attributes.timeslots || []) {
+        const [a, b] = slot.split(' - ');
+        const sMin = this._parseTime(a);
+        let eMin = this._parseTime(b); if (eMin === 0) eMin = 1440;
+        blocks.push({ startPct: this._minutesToPercent(sMin), heightPct: this._minutesToPercent(eMin - sMin), color, isOff, hasStop, hasCond, isActive, label, entityId: s.entity_id });
+      }
+    }
+    return blocks.sort((a, b) => a.startPct - b.startPct);
+  }
+
+  _autoColor(extraUsed=[]) {
+    const profile = this._getSelectedProfile();
+    const used=new Set([
+      ...this._entities.map(e=>e.color),
+      ...(profile?.groups||[]).flatMap(g=>[g.color,...(g.entities||[]).map(e=>e.color)]),
+      ...extraUsed,
+    ].filter(Boolean).map(c=>c.toLowerCase()));
+    return PALETTE.find(c=>!used.has(c.toLowerCase()))||PALETTE[0];
+  }
+
+  _colorPickerHTML(current,cls='') {
+    const cur=(current||'').toLowerCase();
+    return `<div class="color-palette${cls?' '+cls:''}">
+      ${PALETTE.map(c=>`<div class="pal-swatch${c.toLowerCase()===cur?' sel':''}" data-color="${c}" style="background:${c}" title="${c}"></div>`).join('')}
+      <input type="hidden" class="pal-value" value="${current||PALETTE[0]}">
+    </div>`;
+  }
+
+  _bindColorPalettes(root) {
+    root.querySelectorAll('.color-palette').forEach(pal=>{
+      pal.querySelectorAll('.pal-swatch').forEach(sw=>sw.addEventListener('click',()=>{
+        pal.querySelectorAll('.pal-swatch').forEach(s=>s.classList.remove('sel'));
+        sw.classList.add('sel');
+        pal.querySelector('.pal-value').value=sw.dataset.color;
+      }));
+    });
+  }
+
+  connectedCallback() {
+    if (!this._storageListener) {
+      this._storageListener = e => {
+        if (e.detail?.source === this) return;
+        if (!e.detail?.data) return;
+        this._storageData = e.detail.data;
+        if (!this._popupState && !this._profilesMode && !this._groupsMode && !this._dialogOpen) this.render();
+      };
+      window.addEventListener('wsc-storage-changed', this._storageListener);
+    }
+  }
+
+  disconnectedCallback() {
+    if (this._timeInterval) { clearInterval(this._timeInterval); this._timeInterval = null; }
+    if (this._renderTimer) { clearTimeout(this._renderTimer); this._renderTimer = null; }
+    if (this._storageListener) {
+      window.removeEventListener('wsc-storage-changed', this._storageListener);
+      this._storageListener = null;
+    }
+    this._hideTooltip();
+  }
+
+  _startTimeInterval() {
+    if (this._timeInterval) return;
+    this._timeInterval = setInterval(() => this._updateTimeLine(), 60000);
+  }
+
+  _updateTimeLine() {
+    const now = new Date();
+    const todayIdx = (now.getDay() + 6) % 7;
+    const pct = (now.getHours() * 60 + now.getMinutes()) / 1440 * 100;
+    this.shadowRoot.querySelectorAll('.time-now-line').forEach(el => el.remove());
+    this.shadowRoot.querySelectorAll(`.day-column[data-day="${todayIdx}"], .sub-col[data-day="${todayIdx}"]`).forEach(col => {
+      const line = document.createElement('div');
+      line.className = 'time-now-line';
+      line.style.cssText = `position:absolute;left:0;right:0;top:${pct}%;height:2px;background:linear-gradient(to right,var(--primary-color,#03a9f4),transparent);opacity:.85;z-index:10;pointer-events:none`;
+      const dot = document.createElement('div');
+      dot.style.cssText = `position:absolute;left:-3px;top:-3px;width:8px;height:8px;border-radius:50%;background:var(--primary-color,#03a9f4)`;
+      line.appendChild(dot);
+      col.appendChild(line);
+    });
+    this.shadowRoot.querySelectorAll(`.gantt-day[data-day="${todayIdx}"] .gantt-area`).forEach(area => {
+      const line = document.createElement('div');
+      line.className = 'time-now-line';
+      line.style.cssText = `position:absolute;top:0;bottom:0;left:${pct}%;width:2px;background:linear-gradient(to bottom,var(--primary-color,#03a9f4),transparent);opacity:.85;z-index:10;pointer-events:none`;
+      area.appendChild(line);
+    });
+    this.shadowRoot.querySelectorAll(`.compact-bar[data-day="${todayIdx}"]`).forEach(bar => {
+      const line = document.createElement('div');
+      line.className = 'time-now-line';
+      line.style.cssText = `position:absolute;top:0;bottom:0;left:${pct}%;width:2px;background:var(--primary-color,#03a9f4);opacity:.8;z-index:10;pointer-events:none`;
+      const dot = document.createElement('div');
+      dot.style.cssText = `position:absolute;top:50%;left:-2px;width:6px;height:6px;border-radius:50%;background:var(--primary-color,#03a9f4);transform:translateY(-50%)`;
+      line.appendChild(dot);
+      bar.appendChild(line);
+    });
+    const focusBody = this.shadowRoot.querySelector(`.focus-col-body[data-day="${todayIdx}"]`);
+    if (focusBody) {
+      const line = document.createElement('div');
+      line.className = 'time-now-line';
+      line.style.cssText = `position:absolute;left:0;right:0;top:${pct}%;height:2px;background:var(--primary-color,#03a9f4);opacity:.7;z-index:10;pointer-events:none`;
+      focusBody.appendChild(line);
+    }
+  }
+
+  // ── Tooltip ───────────────────────────────────────────────────────────────
+
+  _showTooltip(entityId, rect) {
+    const s = this._hass?.states?.[entityId]; if (!s) return;
+    this._hideTooltip();
+    const DAY_MAP = {mon:'Lun',tue:'Mar',wed:'Mer',thu:'Gio',fri:'Ven',sat:'Sab',sun:'Dom'};
+    const days = (s.attributes.weekdays||[]).map(d=>DAY_MAP[d]||d).join(', ');
+    const slots = (s.attributes.timeslots||[]).join(', ');
+    const act = s.attributes.actions?.[0];
+    let actionText = '';
+    if (act) {
+      const svc = act.service||'', d2 = act.data||{};
+      if (svc.includes('climate')) actionText = d2.temperature!=null?`🌡 ${d2.temperature}°C`:'';
+      else if (svc.includes('light')) actionText = `💡 ${d2.brightness_pct!=null?d2.brightness_pct+'%':(svc.includes('turn_on')?'On':'Off')}`;
+      else actionText = svc.split('.')[1]||'';
+    }
+    const state = s.state==='off'?' (disattivo)':'';
+    const el = document.createElement('div');
+    el.className = 'sched-tooltip';
+    el.innerHTML = `<div class="tt-name">${(s.attributes.friendly_name||entityId).replace(/</g,'&lt;')}${state}</div><div class="tt-row">🕐 ${slots}</div>${actionText?`<div class="tt-row">${actionText}</div>`:''}${days?`<div class="tt-row">📅 ${days}</div>`:''}`;
+    this.shadowRoot.appendChild(el); this._ttEl = el;
+    const W=el.offsetWidth, H2=el.offsetHeight;
+    let left=rect.left+rect.width/2-W/2, top=rect.top-H2-12;
+    if(left<8)left=8; if(left+W>window.innerWidth-8)left=window.innerWidth-W-8;
+    if(top<8)top=rect.bottom+12;
+    el.style.left=left+'px'; el.style.top=top+'px';
+  }
+
+  _hideTooltip() {
+    if(this._ttTimer){clearTimeout(this._ttTimer);this._ttTimer=null;}
+    if(this._ttEl){this._ttEl.remove();this._ttEl=null;}
+  }
+
+  // ── Toggle ────────────────────────────────────────────────────────────────
+
+  async _toggleSchedule(entityId, on) {
+    try { await this._hass.callService('switch', on ? 'turn_on' : 'turn_off', { entity_id: entityId }); }
+    catch (e) { console.error('toggle failed', e); }
+  }
+
+  // ── Popup ─────────────────────────────────────────────────────────────────
+
+  _openCreatePopup(dayIndex, clickPct, entityConf) {
+    const tab = this._currentTab();
+    const ec = entityConf || (tab.type === 'entity' ? tab : tab.entities?.[0] || this._entities[0]);
+    const domain = this._detectDomain(ec.entity);
+    const startMin = this._snapToGrid(Math.max(0, (clickPct / 100) * 1440 - 30));
+    this._popupState = {
+      mode: 'create', entityId: null, entityConf: ec, domain,
+      startMin, endMin: Math.min(startMin + 60, 1440),
+      days: [dayIndex], name: '', isOff: false,
+      temp: this._config.default_temp ?? 21,
+      hvacMode: '', presetMode: '', fanMode: '', swingMode: '',
+      enableTemp: domain === 'climate', enableHvac: false, enablePreset: false, enableFan: false, enableSwing: false,
+      turnOn: true, brightness: 100, enableBrightness: false,
+      stopAction: null, stopTemp: 18,
+      conditions: [], condCombinator: 'and', condInterval: 15, _condOpen: false,
+      notifyService: '', notifyMessage: '', notifyMessageEnd: '',
+      _defaultNotifyMsg: '', _defaultNotifyMsgEnd: '',
+      notifyTrigger: 'start', _notifOpen: false,
+      groupEntities: tab.type === 'group' ? tab.entities : null,
+    };
+    this._popupState._defaultNotifyMsg = this._buildDefaultNotifyMessage(this._popupState, 'start');
+    this._popupState._defaultNotifyMsgEnd = this._buildDefaultNotifyMessage(this._popupState, 'end');
+    this._popupState.notifyMessage = this._popupState._defaultNotifyMsg;
+    this._popupState.notifyMessageEnd = this._popupState._defaultNotifyMsgEnd;
+    this._renderPopup();
+  }
+
+  _openEditPopup(entityId) {
+    const s = this._hass.states[entityId];
+    if (!s) return;
+    const { weekdays, timeslots, actions } = s.attributes;
+    let ec = this._entities[0];
+    for (const e of this._entities) { if (s.attributes.entities?.includes(e.entity)) { ec = e; break; } }
+    for (const p of this._storageData?.profiles || [])
+      for (const g of p.groups || [])
+        for (const e of g.entities || []) { if (s.attributes.entities?.includes(e.entity)) { ec = e; break; } }
+
+    const slot = timeslots?.[0] || '08:00 - 22:00';
+    const [a, b] = slot.split(' - ');
+    const startMin = this._parseTime(a);
+    let endMin = this._parseTime(b); if (endMin === 0) endMin = 1440;
+    const days = [];
+    weekdays.forEach(wd => {
+      const idx = this._getDayIndex(wd);
+      if (idx >= 0) days.push(idx);
+      else if (idx === -1) days.push(0,1,2,3,4,5,6);
+      else if (idx === -2) days.push(0,1,2,3,4);
+      else if (idx === -3) days.push(5,6);
+    });
+    const ad = actions?.[0]?.data || {}, svc = actions?.[0]?.service || '';
+    const domain = this._detectDomain(ec.entity);
+    this._popupState = {
+      mode: 'edit', entityId, entityConf: ec, domain,
+      startMin, endMin, days: [...new Set(days)].sort(),
+      name: s.attributes.friendly_name || '', isOff: s.state === 'off',
+      temp: ad.temperature ?? 21, hvacMode: ad.hvac_mode ?? '',
+      presetMode: ad.preset_mode ?? '', fanMode: ad.fan_mode ?? '', swingMode: ad.swing_mode ?? '',
+      enableTemp: ad.temperature !== undefined, enableHvac: !!ad.hvac_mode,
+      enablePreset: !!ad.preset_mode, enableFan: !!ad.fan_mode, enableSwing: !!ad.swing_mode,
+      turnOn: !svc.endsWith('turn_off'),
+      brightness: ad.brightness_pct ?? ad.brightness ?? 100,
+      enableBrightness: ad.brightness_pct !== undefined || ad.brightness !== undefined,
+      stopAction: (() => {
+        const cid = this._getAutoChildId(entityId);
+        const cs  = cid ? this._hass.states[cid] : null;
+        const svc = cs?.attributes.actions?.[0]?.service || '';
+        if (svc.includes('set_temperature')) return 'set_temperature';
+        if (svc.includes('turn_on')) return 'turn_on';
+        if (svc.includes('turn_off')) return 'turn_off';
+        return null;
+      })(),
+      stopTemp: (() => {
+        const cid = this._getAutoChildId(entityId);
+        const cs  = cid ? this._hass.states[cid] : null;
+        return cs?.attributes.actions?.[0]?.data?.temperature ?? 18;
+      })(),
+      conditions: this._getStoredConditions(entityId).conditions,
+      condCombinator: this._getStoredConditions(entityId).condCombinator,
+      condInterval: this._getStoredConditions(entityId).condInterval,
+      _condOpen: false,
+      notifyService: (() => { for (const p of this._storageData?.profiles||[]) { const l=(p.scheduleLinks||[]).find(l=>l.id===entityId); if(l?.notifyService)return l.notifyService; } return ''; })(),
+      notifyMessage: (() => { for (const p of this._storageData?.profiles||[]) { const l=(p.scheduleLinks||[]).find(l=>l.id===entityId); if(l?.notifyMessage)return l.notifyMessage; } return ''; })(),
+      notifyMessageEnd: (() => { for (const p of this._storageData?.profiles||[]) { const l=(p.scheduleLinks||[]).find(l=>l.id===entityId); if(l?.notifyMessageEnd)return l.notifyMessageEnd; } return ''; })(),
+      notifyTrigger: (() => { for (const p of this._storageData?.profiles||[]) { const l=(p.scheduleLinks||[]).find(l=>l.id===entityId); if(l?.notifyTrigger)return l.notifyTrigger; } return 'start'; })(),
+      _defaultNotifyMsg: '',
+      _defaultNotifyMsgEnd: '',
+      _notifOpen: false,
+      groupEntities: null,
+    };
+    this._popupState._defaultNotifyMsg = this._buildDefaultNotifyMessage(this._popupState, 'start');
+    this._popupState._defaultNotifyMsgEnd = this._buildDefaultNotifyMessage(this._popupState, 'end');
+    if (!this._popupState.notifyMessage) this._popupState.notifyMessage = this._popupState._defaultNotifyMsg;
+    if (!this._popupState.notifyMessageEnd) this._popupState.notifyMessageEnd = this._popupState._defaultNotifyMsgEnd;
+    this._renderPopup();
+  }
+
+  _closePopup() {
+    this._popupState = null;
+    const dlg = this.shadowRoot.querySelector('dialog');
+    if (dlg) { dlg.close(); dlg.remove(); }
+    this.render();
+  }
+
+  _renderPopup() {
+    const existing = this.shadowRoot.querySelector('dialog');
+    if (existing) existing.remove();
+    const ps = this._popupState;
+    const DAY_NAMES = ['mon','tue','wed','thu','fri','sat','sun'].map(k=>this.t(`days.${k}`));
+    const SNAP_OPTIONS = [5,10,15,30];
+    const schedules = this._getSchedules(ps.entityConf.entity);
+
+    const bgBlocks = schedules
+      .filter(s => s.entity_id !== ps.entityId && ps.days.some(di => this._appliesToDay(s.attributes.weekdays || [], di)))
+      .flatMap(s => (s.attributes.timeslots || []).map(slot => {
+        const [a, b] = slot.split(' - ');
+        const sMin = this._parseTime(a); let eMin = this._parseTime(b); if (eMin === 0) eMin = 1440;
+        return { left: this._minutesToPercent(sMin), width: this._minutesToPercent(eMin - sMin), color: this._blockColor(s, ps.entityConf), startMin: sMin, endMin: eMin };
+      }));
+
+    const magnetPoints = [...new Set(bgBlocks.flatMap(b => [b.startMin, b.endMin]))];
+    const editLeft = this._minutesToPercent(ps.startMin);
+    const editWidth = this._minutesToPercent(ps.endMin - ps.startMin);
+    const editColor = ps.domain === 'climate' ? this._tempToColor(ps.temp) : (ps.entityConf.color || '#9E9E9E');
+    const timeLabel = `${this._minutesToTime(ps.startMin)} – ${this._minutesToTime(ps.endMin)}`;
+
+    const groupPicker = ps.groupEntities ? `
+      <div>
+        <div class="section-label">Entità</div>
+        <div class="entity-pills">
+          ${ps.groupEntities.map((ec, i) => {
+            const sel = ps.entityConf.entity === ec.entity;
+            const color = ec.color || '#9E9E9E';
+            const nm = ec.name || ec.entity;
+            const label = nm.length > 20 ? nm.slice(0,20) + '…' : nm;
+            const style = sel ? 'background:' + color + '1F;border-color:' + color + ';color:' + color + ';box-shadow:0 0 8px ' + color + '66' : '';
+            return '<div class="entity-pill ' + (sel ? 'sel' : '') + '" data-ei="' + i + '" style="' + style + '"><span class="ep-dot" style="background:' + color + '"></span><span class="ep-name">' + label + '</span></div>';
+          }).join('')}
+        </div>
+      </div>` : '';
+
+    const HVAC = ['heat','cool','heat_cool','auto','dry','fan_only','off'];
+    const climateAttrs = ps.domain === 'climate' ? (this._hass?.states?.[ps.entityConf.entity]?.attributes || {}) : {};
+    const modeField = (clsBase, modes, value, enabled, placeholder) => {
+      const list = Array.isArray(modes) ? modes : null;
+      const disAttr = enabled ? '' : 'disabled';
+      const disCls = enabled ? '' : ' disabled';
+      if (!list || list.length === 0) {
+        return `<input type="text" class="${clsBase}-input param-input${disCls}" value="${value}" placeholder="${placeholder}" ${disAttr}>`;
+      }
+      const inList = list.includes(value);
+      const outCls = (!inList && value) ? ' out-list' : '';
+      const extra = (!inList && value) ? `<option value="${value}" selected>${value} ⚠</option>` : '';
+      const opts = list.map(m => `<option value="${m}" ${value === m ? 'selected' : ''}>${m}</option>`).join('');
+      return `<select class="${clsBase}-select param-select${disCls}${outCls}" ${disAttr}><option value="">-- select --</option>${extra}${opts}</select>`;
+    };
+    const domainSection = ps.domain === 'climate' ? `
+      <div>
+        <div class="section-label">${this.t('popup.climate_actions')}</div>
+        <div class="action-row">
+          <label class="action-check"><input type="checkbox" class="chk-temp" ${ps.enableTemp?'checked':''}><span>${this.t('popup.temperature')}</span></label>
+          <div class="param-inline temp-ctrl ${ps.enableTemp?'':'disabled'} ${ps.temp<5||ps.temp>35?'out-range-wrap':''}">
+            <input type="number" class="temp-inp ${ps.temp<5||ps.temp>35?'out-range':''}" min="5" max="100" step="0.5" value="${ps.temp}" ${ps.enableTemp?'':'disabled'}>
+            <input type="range" class="temp-slider ${ps.temp<5||ps.temp>35?'out-range':''}" min="5" max="35" step="0.5" value="${Math.min(35,Math.max(5,ps.temp))}" ${ps.enableTemp?'':'disabled'}>
+          </div>
+        </div>
+        <div class="temp-msg-area" style="${ps.enableTemp?'':'display:none'}"></div>
+        <div class="action-row">
+          <label class="action-check"><input type="checkbox" class="chk-hvac" ${ps.enableHvac?'checked':''}><span>${this.t('popup.hvac_mode')}</span></label>
+          <select class="hvac-select param-select ${ps.enableHvac?'':'disabled'}" ${ps.enableHvac?'':'disabled'}>
+            <option value="">-- select --</option>${HVAC.map(m=>`<option value="${m}" ${ps.hvacMode===m?'selected':''}>${m}</option>`).join('')}
+          </select>
+        </div>
+        <div class="action-row">
+          <label class="action-check"><input type="checkbox" class="chk-preset" ${ps.enablePreset?'checked':''}><span>${this.t('popup.preset_mode')}</span></label>
+          ${modeField('preset', climateAttrs.preset_modes, ps.presetMode, ps.enablePreset, 'eco, comfort…')}
+        </div>
+        <div class="action-row">
+          <label class="action-check"><input type="checkbox" class="chk-fan" ${ps.enableFan?'checked':''}><span>${this.t('popup.fan_mode')}</span></label>
+          ${modeField('fan', climateAttrs.fan_modes, ps.fanMode, ps.enableFan, 'auto, high…')}
+        </div>
+        <div class="action-row">
+          <label class="action-check"><input type="checkbox" class="chk-swing" ${ps.enableSwing?'checked':''}><span>${this.t('popup.swing_mode')}</span></label>
+          ${modeField('swing', climateAttrs.swing_modes, ps.swingMode, ps.enableSwing, 'off, both…')}
+        </div>
+        <div class="action-row" style="border-bottom:none;margin-top:4px;flex-direction:column;align-items:flex-start;gap:6px">
+          <span class="section-label" style="margin:0">${this.t('popup.auto_off')}</span>
+          <div class="radio-row" style="flex-wrap:wrap;gap:10px">
+            <label><input type="radio" name="stop-act" value="" ${!ps.stopAction?'checked':''}> ${this.t('popup.none')}</label>
+            <label><input type="radio" name="stop-act" value="turn_off" ${ps.stopAction==='turn_off'?'checked':''}> ${this.t('popup.turn_off')}</label>
+            <label><input type="radio" name="stop-act" value="set_temperature" ${ps.stopAction==='set_temperature'?'checked':''}> ${this.t('popup.set_temp')}</label>
+          </div>
+          <div class="stop-temp-row param-inline" style="${ps.stopAction==='set_temperature'?'':'display:none'}">
+            <input type="number" class="stop-temp-inp temp-inp" min="5" max="35" step="0.5" value="${ps.stopTemp}">
+            <span style="font-size:.8em;color:var(--secondary-text-color)">°C</span>
+          </div>
+        </div>
+      </div>` :
+    ps.domain === 'light' ? `
+      <div>
+        <div class="section-label">${this.t('popup.light_action')}</div>
+        <div class="radio-row">
+          <label><input type="radio" name="light-action" value="on" ${ps.turnOn?'checked':''}> ${this.t('popup.turn_on')}</label>
+          <label><input type="radio" name="light-action" value="off" ${!ps.turnOn?'checked':''}> ${this.t('popup.turn_off')}</label>
+        </div>
+        <div class="action-row" style="margin-top:8px">
+          <label class="action-check"><input type="checkbox" class="chk-brightness" ${ps.enableBrightness?'checked':''}><span>${this.t('popup.brightness')}</span></label>
+          <div class="param-inline ${ps.enableBrightness?'':'disabled'}">
+            <span class="brightness-value">${ps.brightness}%</span>
+            <input type="range" class="brightness-slider" min="0" max="100" step="1" value="${ps.brightness}" ${ps.enableBrightness?'':'disabled'}>
+          </div>
+        </div>
+        <div class="action-row" style="border-bottom:none;margin-top:4px;flex-direction:column;align-items:flex-start;gap:6px">
+          <span class="section-label" style="margin:0">${this.t('popup.auto_off')}</span>
+          <div class="radio-row" style="flex-wrap:wrap;gap:10px">
+            <label><input type="radio" name="stop-act" value="" ${!ps.stopAction?'checked':''}> ${this.t('popup.none')}</label>
+            <label><input type="radio" name="stop-act" value="turn_off" ${ps.stopAction==='turn_off'?'checked':''}> ${this.t('popup.turn_off')}</label>
+            <label><input type="radio" name="stop-act" value="turn_on" ${ps.stopAction==='turn_on'?'checked':''}> ${this.t('popup.turn_on')}</label>
+          </div>
+        </div>
+      </div>` : `
+      <div>
+        <div class="section-label">${this.t('popup.action')}</div>
+        <div class="radio-row">
+          <label><input type="radio" name="switch-action" value="on" ${ps.turnOn?'checked':''}> ${this.t('popup.turn_on')}</label>
+          <label><input type="radio" name="switch-action" value="off" ${!ps.turnOn?'checked':''}> ${this.t('popup.turn_off')}</label>
+        </div>
+        <div class="action-row" style="border-bottom:none;margin-top:4px;flex-direction:column;align-items:flex-start;gap:6px">
+          <span class="section-label" style="margin:0">${this.t('popup.auto_off')}</span>
+          <div class="radio-row" style="flex-wrap:wrap;gap:10px">
+            <label><input type="radio" name="stop-act" value="" ${!ps.stopAction?'checked':''}> ${this.t('popup.none')}</label>
+            <label><input type="radio" name="stop-act" value="turn_off" ${ps.stopAction==='turn_off'?'checked':''}> ${this.t('popup.turn_off')}</label>
+            <label><input type="radio" name="stop-act" value="turn_on" ${ps.stopAction==='turn_on'?'checked':''}> ${this.t('popup.turn_on')}</label>
+          </div>
+        </div>
+      </div>`;
+
+    const COND_DOMAINS = ['sensor','binary_sensor','input_number','input_boolean','number','counter','climate','weather'];
+    const condEnts = Object.keys(this._hass?.states||{}).filter(eid=>COND_DOMAINS.includes(eid.split('.')[0])).sort();
+    const OP_LABEL = { '>':'&gt;','<':'&lt;','>=':'&gt;=','<=':'&lt;=','==':'=','!=':'&ne;' };
+    const condBodyHtml = ps._condOpen ? `
+      <div class="cond-body">
+        <div class="cond-comb" style="${ps.conditions.length<2?'display:none':''}">
+          <label><input type="radio" name="comb" value="and" ${ps.condCombinator==='and'?'checked':''}> ${this.t('cond.and_all')}</label>
+          <label><input type="radio" name="comb" value="or" ${ps.condCombinator==='or'?'checked':''}> ${this.t('cond.or_any')}</label>
+        </div>
+        ${ps.conditions.map((c,i)=>{
+          const spec = this._getCondFieldSpec(c.entity, c.attribute);
+          const validOp = spec.operators.includes(c.operator) ? c.operator : spec.operators[0];
+          const opHtml = `<select class="cond-op" data-ci="${i}">${spec.operators.map(op=>`<option value="${op}" ${validOp===op?'selected':''}>${OP_LABEL[op]||op}</option>`).join('')}</select>`;
+          // attribute picker (climate)
+          const attrHtml = spec.climateAttrs ? `<select class="cond-attribute" data-ci="${i}"><option value="">-- attr --</option>${spec.climateAttrs.map(a=>`<option value="${a}" ${c.attribute===a?'selected':''}>${a}</option>`).join('')}</select>` : '';
+          // value field
+          let valHtml;
+          if (spec.kind === 'numeric') {
+            const stepAttr = spec.step ? ` step="${spec.step}"` : '';
+            const minAttr = spec.min!=null ? ` min="${spec.min}"` : '';
+            const maxAttr = spec.max!=null ? ` max="${spec.max}"` : '';
+            const unitHtml = spec.unit ? `<span class="cond-unit">${spec.unit}</span>` : '';
+            valHtml = `<input class="cond-val" type="number"${stepAttr}${minAttr}${maxAttr} data-ci="${i}" placeholder="${this.t('cond.value')}" value="${(c.value||'').replace(/"/g,'&quot;')}">${unitHtml}`;
+          } else if (spec.kind === 'boolean' || spec.kind === 'select') {
+            const opts = spec.options || [];
+            valHtml = `<select class="cond-val" data-ci="${i}"><option value="">--</option>${opts.map(o=>`<option value="${o}" ${c.value===o?'selected':''}>${o}</option>`).join('')}</select>`;
+          } else {
+            valHtml = `<input class="cond-val" type="text" data-ci="${i}" placeholder="${this.t('cond.value')}" value="${(c.value||'').replace(/"/g,'&quot;')}">`;
+          }
+          return `
+          <div class="cond-row">
+            <input class="cond-entity" list="cond-ents-${i}" placeholder="${this.t('cond.entity')}" value="${(c.entity||'').replace(/"/g,'&quot;')}" data-ci="${i}">
+            <datalist id="cond-ents-${i}">${condEnts.map(eid=>`<option value="${eid}">`).join('')}</datalist>
+            ${attrHtml}
+            ${opHtml}
+            ${valHtml}
+            <button class="cond-del" data-ci="${i}">✕</button>
+          </div>`;
+        }).join('')}
+        <button class="cond-add">${this.t('cond.add')}</button>
+        <div class="cond-interval-row">
+          <span style="font-size:.75em;color:var(--secondary-text-color)">${this.t('cond.recheck')}</span>
+          <select class="cond-interval">
+            <option value="5"  ${ps.condInterval===5 ?'selected':''}>5 min</option>
+            <option value="10" ${ps.condInterval===10?'selected':''}>10 min</option>
+            <option value="15" ${ps.condInterval===15?'selected':''}>15 min</option>
+            <option value="30" ${ps.condInterval===30?'selected':''}>30 min</option>
+            <option value="60" ${ps.condInterval===60?'selected':''}>60 min</option>
+          </select>
+        </div>
+      </div>` : '';
+
+    const dlg = document.createElement('dialog');
+    dlg.innerHTML = `
+      <style>
+        dialog { border:none;padding:0;margin:0;background:rgba(0,0,0,0.45);width:100vw;height:100vh;max-width:100vw;max-height:100vh;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(4px); }
+        dialog::backdrop { display:none; }
+        .popup { background:var(--card-background-color,#fff);border-radius:16px;padding:20px;width:min(500px,92vw);max-height:90vh;overflow-y:auto;display:flex;flex-direction:column;gap:18px;box-shadow:0 8px 32px rgba(0,0,0,.25); }
+        .popup-header { display:flex;justify-content:space-between;align-items:center; }
+        .popup-title { font-size:1.1em;font-weight:600;color:var(--primary-text-color); }
+        .popup-close { background:none;border:none;font-size:1.3em;cursor:pointer;color:var(--secondary-text-color);padding:4px 8px;border-radius:6px;line-height:1; }
+        .popup-close:hover { background:var(--divider-color,#e0e0e0); }
+        .toggle-row { display:flex;align-items:center;gap:10px;padding:8px 12px;border-radius:10px;background:var(--divider-color,#f0f0f0); }
+        .toggle-label { font-size:0.85em;font-weight:600;color:var(--primary-text-color);flex:1; }
+        .toggle-switch { position:relative;width:42px;height:24px;cursor:pointer;display:inline-block; }
+        .toggle-switch input { opacity:0;width:0;height:0;position:absolute; }
+        .toggle-track { position:absolute;inset:0;border-radius:12px;background:var(--disabled-color,#ccc);transition:background .2s; }
+        .toggle-switch input:checked + .toggle-track { background:var(--primary-color,#03a9f4); }
+        .toggle-thumb { position:absolute;top:2px;left:2px;width:20px;height:20px;border-radius:50%;background:white;box-shadow:0 1px 4px rgba(0,0,0,.3);transition:transform .2s;pointer-events:none; }
+        .toggle-switch input:checked ~ .toggle-thumb { transform:translateX(18px); }
+        .section-label { font-size:0.72em;font-weight:600;letter-spacing:.03em;color:var(--secondary-text-color);margin-bottom:6px; }
+        .timebar { position:relative;height:48px;background:var(--secondary-background-color,#f5f5f5);border-radius:8px;overflow:hidden;touch-action:none;user-select:none; }
+        .tb-bg { position:absolute;top:6px;height:calc(100% - 12px);border-radius:6px;opacity:.6;pointer-events:none; }
+        .tb-edit { position:absolute;top:0;height:100%;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:.65em;font-weight:700;color:white;text-shadow:0 1px 3px rgba(0,0,0,.45);cursor:grab;box-sizing:border-box;touch-action:none;overflow:hidden;box-shadow:0 2px 8px rgba(var(--rgb-primary-color,3,169,244),.3); }
+        .tb-edit:active { cursor:grabbing; }
+        .tb-handle { position:absolute;top:0;height:100%;width:20px;cursor:ew-resize;display:flex;align-items:center;justify-content:center;flex-shrink:0; }
+        .tb-handle::after { content:'';display:block;width:20px;height:20px;border-radius:50%;background:white;box-shadow:0 1px 6px rgba(0,0,0,.25);border:2px solid var(--primary-color,#03a9f4);transition:background .15s; }
+        .tb-handle-l { left:0; } .tb-handle-r { right:0; }
+        .tb-magnet { position:absolute;top:0;width:2px;height:100%;background:rgba(255,255,255,.55);pointer-events:none;transform:translateX(-50%); }
+        .tb-magnet.near { background:rgba(255,255,255,.95);box-shadow:0 0 4px rgba(255,255,255,.8); }
+        .tb-ticks { display:flex;justify-content:space-between;margin-top:3px; }
+        .tb-tick { font-size:.6em;color:var(--secondary-text-color); }
+        .time-display { text-align:center;font-size:1em;font-weight:700;color:var(--primary-text-color);letter-spacing:.03em;margin-top:2px; }
+        .snap-row { display:flex;align-items:center;gap:6px;flex-wrap:wrap; }
+        .snap-lbl { font-size:.72em;color:var(--secondary-text-color);margin-right:2px; }
+        .snap-btn { padding:3px 10px;border-radius:12px;border:none;background:var(--secondary-background-color,#f5f5f5);cursor:pointer;font-size:.75em;color:var(--secondary-text-color);transition:all .12s; }
+        .snap-btn.active { background:var(--primary-color,#03a9f4);color:white;font-weight:600; }
+        .shortcuts { display:flex;gap:6px;margin-bottom:8px;flex-wrap:wrap; }
+        .shortcut-btn { padding:4px 10px;border-radius:12px;border:1px solid var(--divider-color,#ccc);background:none;cursor:pointer;font-size:.75em;color:var(--secondary-text-color);transition:all .12s; }
+        .shortcut-btn.active { background:color-mix(in srgb,var(--primary-color,#03a9f4) 15%,transparent);border-color:var(--primary-color,#03a9f4);color:var(--primary-color,#03a9f4); }
+        .day-chips { display:flex;gap:6px;flex-wrap:wrap; }
+        .day-chip { width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;border:1.5px solid var(--divider-color,#ccc);cursor:pointer;font-size:.72em;font-weight:600;color:var(--secondary-text-color);user-select:none;transition:all .12s;flex-shrink:0; }
+        .day-chip.on { background:var(--primary-color,#03a9f4);color:white;border-color:var(--primary-color,#03a9f4); }
+        .action-row { display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid var(--divider-color,#f0f0f0); }
+        .action-check { display:flex;align-items:center;gap:6px;font-size:.82em;color:var(--primary-text-color);white-space:nowrap;cursor:pointer;min-width:110px; }
+        .param-inline { display:flex;align-items:center;gap:8px;flex:1; }
+        .brightness-value { font-size:.9em;font-weight:700;color:var(--primary-text-color);min-width:40px;text-align:right; }
+        input[type=range] { flex:1;accent-color:var(--primary-color,#03a9f4);cursor:pointer; }
+        .temp-inp { width:70px;flex-shrink:0;padding:4px 6px;border-radius:6px;border:1px solid var(--divider-color,#ccc);background:var(--card-background-color,#fff);color:var(--primary-text-color);font-size:.88em;font-family:inherit;text-align:center;-moz-appearance:textfield; }
+        .temp-inp::-webkit-inner-spin-button,.temp-inp::-webkit-outer-spin-button{opacity:1}
+        .temp-inp:focus{outline:none;border-color:var(--primary-color,#03a9f4)}
+        .temp-inp.out-range{border-color:#FF9800 !important}
+        input[type=range].out-range{accent-color:#FF9800}
+        .temp-ctrl.out-range-wrap{background:repeating-linear-gradient(90deg,rgba(255,152,0,.07),rgba(255,152,0,.07) 5px,transparent 5px,transparent 10px);border-radius:4px;padding:2px 4px}
+        .temp-msg-area{font-size:.75em;display:flex;flex-direction:column;gap:2px;margin-top:-12px;padding-bottom:4px}
+        .temp-msg-warn{color:#FF9800}
+        .temp-msg-warn.red{color:var(--error-color,#f44336)}
+        .temp-msg-range{color:var(--secondary-text-color)}
+        .param-select,.param-input { flex:1;padding:5px 8px;border-radius:6px;border:1px solid var(--divider-color,#ccc);background:var(--card-background-color,#fff);color:var(--primary-text-color);font-size:.82em;font-family:inherit; }
+        .param-select:focus,.param-input:focus { outline:none;border-color:var(--primary-color,#03a9f4); }
+        .param-select.out-list { border-color:#FF9800; }
+        .disabled { opacity:.4;pointer-events:none; }
+        .radio-row { display:flex;gap:20px; }
+        .radio-row label { display:flex;align-items:center;gap:6px;font-size:.85em;cursor:pointer; }
+        .entity-pills { display:flex;flex-wrap:wrap;gap:8px; }
+        .entity-pill { display:flex;align-items:center;gap:6px;padding:6px 12px;border-radius:20px;border:1.5px solid var(--divider-color,#ccc);cursor:pointer;font-size:.8em;color:var(--secondary-text-color);transition:all .15s; }
+        .entity-pill.sel { font-weight:600; }
+        .ep-dot { width:8px;height:8px;border-radius:50%;flex-shrink:0; }
+        .ep-name { white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:140px; }
+        .name-input { width:100%;padding:8px 10px;border-radius:8px;border:1px solid var(--divider-color,#ccc);background:var(--card-background-color,#fff);color:var(--primary-text-color);font-size:.9em;box-sizing:border-box;font-family:inherit; }
+        .name-input:focus { outline:none;border-color:var(--primary-color,#03a9f4); }
+        .popup-footer { display:flex;gap:8px;padding-top:4px; }
+        .spacer { flex:1; }
+        .btn { padding:8px 20px;border-radius:20px;border:none;cursor:pointer;font-size:.85em;font-weight:600;transition:all .15s; }
+        .btn:hover { filter:brightness(.9);transform:translateY(-1px); }
+        .slot-note{font-size:.72em;color:var(--secondary-text-color);display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:2px}
+        .time-inputs-row{display:flex;gap:16px;margin-top:8px}
+        .time-inp-grp{display:flex;flex-direction:column;gap:2px}
+        .time-inp{padding:5px 8px;border-radius:6px;border:1px solid var(--divider-color,#ccc);background:var(--card-background-color,#fff);color:var(--primary-text-color);font-size:.85em;font-family:inherit;width:108px}
+        .time-inp:focus{outline:none;border-color:var(--primary-color,#03a9f4)}
+        .time-inp.error{border-color:var(--error-color,#f44336)}
+        .btn-next-slot{padding:3px 10px;border-radius:8px;border:1px solid var(--primary-color,#03a9f4);background:none;cursor:pointer;font-size:.9em;color:var(--primary-color,#03a9f4);white-space:nowrap}
+        .btn-next-slot:hover{background:color-mix(in srgb,var(--primary-color,#03a9f4) 10%,transparent)}
+        .btn-delete { background:rgba(244,67,54,.12);color:var(--error-color,#f44336);border:1px solid rgba(244,67,54,.3); }
+        .btn-cancel { background:transparent;color:var(--primary-text-color);border:1px solid var(--divider-color,#ccc); }
+        .btn-save { background:var(--primary-color,#03a9f4);color:white; }
+        .cond-section,.notif-section{border-top:1px solid var(--divider-color,#eee);padding-top:8px}
+        .cond-hdr,.notif-hdr{display:flex;justify-content:space-between;cursor:pointer;font-size:.82em;font-weight:600;color:var(--primary-text-color);padding:4px 0;user-select:none}
+        .cond-body,.notif-body{padding-top:8px;display:flex;flex-direction:column;gap:6px}
+        .cond-comb{display:flex;gap:14px;font-size:.8em}
+        .cond-row{display:flex;align-items:center;gap:4px;flex-wrap:wrap;margin-bottom:2px}
+        .cond-entity{flex:2;min-width:100px;padding:4px 6px;border-radius:6px;border:1px solid var(--divider-color,#ccc);background:var(--card-background-color,#fff);color:var(--primary-text-color);font-size:.78em}
+        .cond-op{flex:0 0 52px;padding:4px 3px;border-radius:6px;border:1px solid var(--divider-color,#ccc);background:var(--card-background-color,#fff);color:var(--primary-text-color);font-size:.78em}
+        .cond-val{flex:1;min-width:60px;padding:4px 6px;border-radius:6px;border:1px solid var(--divider-color,#ccc);background:var(--card-background-color,#fff);color:var(--primary-text-color);font-size:.78em}
+        .cond-attribute{flex:0 0 110px;padding:4px 4px;border-radius:6px;border:1px solid var(--divider-color,#ccc);background:var(--card-background-color,#fff);color:var(--primary-text-color);font-size:.74em}
+        .cond-unit{font-size:.75em;color:var(--secondary-text-color);padding:0 2px;flex-shrink:0}
+        .cond-del{background:none;border:none;cursor:pointer;color:var(--error-color,#f44336);font-size:.85em;padding:2px 6px;line-height:1}
+        .cond-add{padding:5px 12px;border-radius:7px;border:1px dashed var(--primary-color,#03a9f4);background:none;color:var(--primary-color,#03a9f4);cursor:pointer;font-size:.78em;align-self:flex-start}
+        .cond-interval-row{display:flex;align-items:center;gap:8px;padding-top:6px;border-top:1px solid var(--divider-color,#eee);margin-top:4px}
+        .cond-interval{padding:3px 6px;border-radius:6px;border:1px solid var(--divider-color,#ccc);background:var(--card-background-color,#fff);color:var(--primary-text-color);font-size:.78em}
+        .notif-row{display:flex;flex-direction:column;gap:3px}
+        .notif-svc,.notif-msg,.notif-msg-end{padding:6px 8px;border-radius:6px;border:1px solid var(--divider-color,#ccc);background:var(--card-background-color,#fff);color:var(--primary-text-color);font-size:.82em;font-family:inherit}
+        .notif-msg,.notif-msg-end{resize:vertical;min-height:80px;line-height:1.4;white-space:pre-wrap;width:100%;box-sizing:border-box}
+        .notif-restore,.notif-restore-end{align-self:flex-start;background:none;border:none;color:var(--primary-color,#03a9f4);font-size:.75em;cursor:pointer;padding:2px 0;text-decoration:underline}
+        .notif-restore:hover,.notif-restore-end:hover{opacity:.7}
+        .notif-trigger-row{display:flex;flex-wrap:wrap;gap:10px;font-size:.78em}
+        .notif-trigger-row label{display:flex;align-items:center;gap:4px;cursor:pointer}
+      </style>
+      <div class="popup" role="dialog" aria-modal="true">
+        <div class="popup-header">
+          <span class="popup-title">${ps.mode==='edit'?this.t('popup.edit_schedule'):this.t('popup.new_schedule')}</span>
+          <button class="popup-close">✕</button>
+        </div>
+        ${ps.mode==='edit'?`
+        <div class="toggle-row">
+          <span class="toggle-label">${this.t('popup.schedule_active')}</span>
+          <label class="toggle-switch">
+            <input type="checkbox" class="schedule-toggle" ${!ps.isOff?'checked':''}>
+            <span class="toggle-track"></span><span class="toggle-thumb"></span>
+          </label>
+        </div>`:''}
+        ${groupPicker}
+        <div>
+          <div class="section-label">${this.t('popup.time_slot')}</div>
+          <div class="timebar">
+            ${bgBlocks.map(b=>`<div class="tb-bg" style="left:${b.left}%;width:${b.width}%;background:${b.color};opacity:.45"></div>`).join('')}
+            ${magnetPoints.map(pt=>`<div class="tb-magnet" data-min="${pt}" style="left:${this._minutesToPercent(pt)}%"></div>`).join('')}
+            <div class="tb-edit" style="left:${editLeft}%;width:${editWidth}%;background:${editColor}">
+              <div class="tb-handle tb-handle-l"></div>
+              <span class="tb-label">${timeLabel}</span>
+              <div class="tb-handle tb-handle-r"></div>
+            </div>
+          </div>
+          <div class="tb-ticks">${[0,6,12,18,24].map(h=>`<span class="tb-tick">${String(h%24).padStart(2,'0')}:00</span>`).join('')}</div>
+          <div class="time-display">${timeLabel}</div>
+          <div class="slot-note">${this.t('popup.drag_hint')} <button class="btn-next-slot">${this.t('popup.next_slot')}</button></div>
+          <div class="time-inputs-row">
+            <div class="time-inp-grp">
+              <label class="section-label" style="margin:0 0 2px">${this.t('popup.start')}</label>
+              <input type="time" class="time-inp time-inp-start" value="${this._minutesToTime(ps.startMin)}">
+            </div>
+            <div class="time-inp-grp">
+              <label class="section-label" style="margin:0 0 2px">${this.t('popup.end')}</label>
+              <input type="time" class="time-inp time-inp-end" value="${this._minutesToTime(ps.endMin===1440?0:ps.endMin)}">
+            </div>
+          </div>
+        </div>
+        <div class="snap-row">
+          <span class="snap-lbl">${this.t('popup.snap')}</span>
+          ${SNAP_OPTIONS.map(s=>`<button class="snap-btn ${s===this._snap?'active':''}" data-snap="${s}">${s}m</button>`).join('')}
+        </div>
+        <div>
+          <div class="section-label">${this.t('popup.days')}</div>
+          <div class="shortcuts">
+            <button class="shortcut-btn" data-shortcut="all">${this.t('days.all')}</button>
+            <button class="shortcut-btn" data-shortcut="workdays">${this.t('days.workdays')}</button>
+            <button class="shortcut-btn" data-shortcut="weekend">${this.t('days.weekend')}</button>
+          </div>
+          <div class="day-chips">
+            ${DAY_NAMES.map((d,i)=>`<div class="day-chip ${ps.days.includes(i)?'on':''}" data-day="${i}">${d.slice(0,2)}</div>`).join('')}
+          </div>
+        </div>
+        ${domainSection}
+        <div>
+          <div class="section-label">${this.t('popup.name')}</div>
+          <input type="text" class="name-input" value="${ps.name||''}" placeholder="${this.t('popup.name_placeholder')}">
+        </div>
+        <div class="cond-section">
+          <div class="cond-hdr" id="condToggle">
+            <span>⚡ ${this.t('popup.conditions')}${ps.conditions.length?` (${ps.conditions.length})`:''}</span>
+            <span>${ps._condOpen?'▾':'▸'}</span>
+          </div>
+          ${condBodyHtml}
+        </div>
+        <div class="notif-section">
+          <div class="notif-hdr" id="notifToggle">
+            <span>🔔 ${this.t('popup.notifications')}${ps.notifyService?' ✓':''}</span>
+            <span>${ps._notifOpen?'▾':'▸'}</span>
+          </div>
+          ${ps._notifOpen?`
+          <div class="notif-body">
+            <div class="notif-row">
+              <label class="section-label" style="margin:0 0 3px">${this.t('popup.notify_service_label')}</label>
+              <input class="notif-svc" type="text" placeholder="notify.mobile_app_phone" value="${(ps.notifyService||'').replace(/"/g,'&quot;')}">
+            </div>
+            <div class="notif-row">
+              <label class="section-label" style="margin:0 0 3px">${this.t('notify.trigger_label') || 'Quando notificare'}</label>
+              <div class="notif-trigger-row">
+                <label><input type="radio" name="notif-trig" value="none" ${ps.notifyTrigger==='none'?'checked':''}> ${this.t('notify.trigger_none') || 'Mai'}</label>
+                <label><input type="radio" name="notif-trig" value="start" ${ps.notifyTrigger==='start'?'checked':''}> ${this.t('notify.trigger_start') || "All'inizio"}</label>
+                <label><input type="radio" name="notif-trig" value="end" ${ps.notifyTrigger==='end'?'checked':''}> ${this.t('notify.trigger_end') || 'Alla fine'}</label>
+                <label><input type="radio" name="notif-trig" value="both" ${ps.notifyTrigger==='both'?'checked':''}> ${this.t('notify.trigger_both') || 'Inizio + fine'}</label>
+              </div>
+            </div>
+            <div class="notif-row notif-msg-start-row" style="${(ps.notifyTrigger==='start' || ps.notifyTrigger==='both') ? '' : 'display:none'}">
+              <label class="section-label" style="margin:0 0 3px">${ps.notifyTrigger==='both' ? (this.t('notify.msg_start_label') || 'Messaggio inizio') : (this.t('popup.notify_message_label') || 'Messaggio')}</label>
+              <textarea class="notif-msg" rows="5" placeholder="${this.t('notify.default_start')}">${(ps.notifyMessage||'').replace(/</g,'&lt;')}</textarea>
+              <button class="notif-restore" style="${(ps.notifyMessage && ps.notifyMessage !== ps._defaultNotifyMsg) ? '' : 'display:none'}">↺ ${this.t('notify.restore_auto') || 'Ripristina testo automatico'}</button>
+            </div>
+            <div class="notif-row notif-msg-end-row" style="${(ps.notifyTrigger==='end' || ps.notifyTrigger==='both') ? '' : 'display:none'}">
+              <label class="section-label" style="margin:0 0 3px">${ps.notifyTrigger==='both' ? (this.t('notify.msg_end_label') || 'Messaggio fine') : (this.t('popup.notify_message_label') || 'Messaggio')}</label>
+              <textarea class="notif-msg-end" rows="5" placeholder="${this.t('notify.default_end')}">${(ps.notifyMessageEnd||'').replace(/</g,'&lt;')}</textarea>
+              <button class="notif-restore-end" style="${(ps.notifyMessageEnd && ps.notifyMessageEnd !== ps._defaultNotifyMsgEnd) ? '' : 'display:none'}">↺ ${this.t('notify.restore_auto') || 'Ripristina testo automatico'}</button>
+            </div>
+          </div>`:''}
+        </div>
+        <div class="popup-footer">
+          ${ps.mode==='edit'?`<button class="btn btn-delete">${this.t('popup.delete')}</button>`:''}
+          <div class="spacer"></div>
+          <button class="btn btn-cancel">${this.t('popup.cancel')}</button>
+          <button class="btn btn-save">${this.t('popup.save')}</button>
+        </div>
+      </div>`;
+
+    this.shadowRoot.appendChild(dlg);
+    dlg.showModal();
+    this._bindPopupEvents(dlg, ps, magnetPoints);
+  }
+
+  _bindPopupEvents(dlg, ps, magnetPoints) {
+    dlg.addEventListener('click', e => { if (e.target === dlg) this._closePopup(); });
+    dlg.querySelector('.popup-close').addEventListener('click', () => this._closePopup());
+    dlg.querySelector('.btn-cancel').addEventListener('click', () => this._closePopup());
+    dlg.querySelector('.btn-save').addEventListener('click', () => this._saveSchedule());
+    dlg.querySelector('.btn-delete')?.addEventListener('click', () => this._deleteSchedule());
+
+    dlg.querySelector('.btn-next-slot')?.addEventListener('click', () => {
+      const newStart=ps.endMin, newEnd=Math.min(ps.endMin+60,1440);
+      this._popupState={...ps,mode:'create',entityId:null,startMin:newStart,endMin:newEnd};
+      const dlgEl=this.shadowRoot.querySelector('dialog');
+      if(dlgEl){dlgEl.close();dlgEl.remove();}
+      this._renderPopup();
+    });
+
+    dlg.querySelector('.schedule-toggle')?.addEventListener('change', async e => {
+      ps.isOff = !e.target.checked;
+      await this._toggleSchedule(ps.entityId, e.target.checked);
+    });
+
+    dlg.querySelectorAll('.entity-pill').forEach(pill =>
+      pill.addEventListener('click', () => {
+        const i = parseInt(pill.dataset.ei);
+        ps.entityConf = ps.groupEntities[i];
+        ps.domain = this._detectDomain(ps.entityConf.entity);
+        dlg.querySelectorAll('.entity-pill').forEach((p, pi) => {
+          const ec = ps.groupEntities[pi];
+          const sel = ec.entity === ps.entityConf.entity;
+          const color = ec.color || '#9E9E9E';
+          p.classList.toggle('sel', sel);
+          p.style.background = sel ? color + '1F' : '';
+          p.style.borderColor = sel ? color : '';
+          p.style.color = sel ? color : '';
+          p.style.boxShadow = sel ? '0 0 8px ' + color + '66' : '';
+        });
+      })
+    );
+
+    dlg.querySelectorAll('.snap-btn').forEach(btn =>
+      btn.addEventListener('click', () => {
+        this._snap = parseInt(btn.dataset.snap);
+        dlg.querySelectorAll('.snap-btn').forEach(b => b.classList.toggle('active', b === btn));
+      })
+    );
+
+    dlg.querySelectorAll('.day-chip').forEach(chip =>
+      chip.addEventListener('click', () => {
+        const d = parseInt(chip.dataset.day);
+        ps.days = ps.days.includes(d) ? ps.days.filter(x => x !== d) : [...ps.days, d].sort((a,b)=>a-b);
+        chip.classList.toggle('on', ps.days.includes(d));
+      })
+    );
+
+    dlg.querySelectorAll('.shortcut-btn').forEach(btn =>
+      btn.addEventListener('click', () => {
+        const s = btn.dataset.shortcut;
+        ps.days = s==='all'?[0,1,2,3,4,5,6]:s==='workdays'?[0,1,2,3,4]:[5,6];
+        dlg.querySelectorAll('.day-chip').forEach(c => c.classList.toggle('on', ps.days.includes(parseInt(c.dataset.day))));
+        dlg.querySelectorAll('.shortcut-btn').forEach(b => b.classList.toggle('active', b === btn));
+      })
+    );
+
+    dlg.querySelector('.name-input').addEventListener('input', e => { ps.name = e.target.value; });
+
+    if (ps.domain === 'climate') {
+      const eb = dlg.querySelector('.tb-edit');
+      const bindChk = (chkSel, fieldSel, key, enableKey, isSelect) => {
+        const chk = dlg.querySelector(chkSel);
+        const field = dlg.querySelector(fieldSel) || dlg.querySelector(fieldSel.replace('-input','-select')) || dlg.querySelector(fieldSel.replace('-select','-input'));
+        if (!chk || !field) return;
+        chk.addEventListener('change', () => {
+          ps[enableKey] = chk.checked; field.disabled = !chk.checked;
+          field.classList.toggle('disabled', !chk.checked);
+          field.closest('.param-inline')?.classList.toggle('disabled', !chk.checked);
+        });
+        const isSel = field.tagName === 'SELECT';
+        field.addEventListener(isSel ? 'change' : 'input', () => { ps[key] = field.value; });
+      };
+      const ts = dlg.querySelector('.temp-slider'), ti = dlg.querySelector('.temp-inp'), ct = dlg.querySelector('.chk-temp');
+      const updateTempUI = () => {
+        const v = ps.temp;
+        const outSlider = v < 5 || v > 35;
+        ts.classList.toggle('out-range', outSlider);
+        ti.classList.toggle('out-range', outSlider);
+        ti.closest('.param-inline')?.classList.toggle('out-range-wrap', outSlider);
+        ts.value = String(Math.min(35, Math.max(5, v)));
+        ti.value = String(v);
+        const eState = this._hass.states[ps.entityConf.entity];
+        const haMin = eState?.attributes.min_temp;
+        const haMax = eState?.attributes.max_temp;
+        let warn = '';
+        if (v > 80) {
+          warn = `<span class="temp-msg-warn red">${this.t('warnings.temp_very_high')}</span>`;
+        } else if (outSlider) {
+          if (haMin != null && haMax != null && v >= haMin && v <= haMax) {
+            warn = `<span class="temp-msg-warn">${this.t('warnings.out_of_slider_range')} (${haMin}° – ${haMax}°)</span>`;
+          } else {
+            warn = `<span class="temp-msg-warn">${this.t('warnings.temp_unusual')}</span>`;
+          }
+        }
+        const deviceRange = (haMin != null && haMax != null)
+          ? `<span class="temp-msg-range">Range dispositivo: ${haMin}° → ${haMax}°</span>` : '';
+        const msgArea = dlg.querySelector('.temp-msg-area');
+        if (msgArea) msgArea.innerHTML = warn + deviceRange;
+        if (eb) eb.style.backgroundColor = this._tempToColor(v);
+      };
+      if (ct && ts && ti) {
+        ct.addEventListener('change', () => {
+          ps.enableTemp = ct.checked;
+          ts.disabled = !ct.checked; ti.disabled = !ct.checked;
+          ts.closest('.param-inline')?.classList.toggle('disabled', !ct.checked);
+          const ma = dlg.querySelector('.temp-msg-area');
+          if (ma) ma.style.display = ct.checked ? '' : 'none';
+        });
+        ts.addEventListener('input', () => { ps.temp = parseFloat(ts.value); updateTempUI(); });
+        ti.addEventListener('input', () => {
+          const raw = parseFloat(ti.value);
+          if (isNaN(raw)) return;
+          ps.temp = Math.min(100, raw);
+          updateTempUI();
+        });
+        if (ps.enableTemp) updateTempUI();
+      }
+      bindChk('.chk-hvac','.hvac-select','hvacMode','enableHvac',true);
+      bindChk('.chk-preset','.preset-input','presetMode','enablePreset',false);
+      bindChk('.chk-fan','.fan-input','fanMode','enableFan',false);
+      bindChk('.chk-swing','.swing-input','swingMode','enableSwing',false);
+    } else if (ps.domain === 'light') {
+      dlg.querySelectorAll('input[name="light-action"]').forEach(r => r.addEventListener('change', () => { ps.turnOn = r.value === 'on'; }));
+      const cb = dlg.querySelector('.chk-brightness'), sb = dlg.querySelector('.brightness-slider'), vb = dlg.querySelector('.brightness-value');
+      if (cb && sb) {
+        cb.addEventListener('change', () => { ps.enableBrightness=cb.checked; sb.disabled=!cb.checked; sb.closest('.param-inline')?.classList.toggle('disabled',!cb.checked); });
+        sb.addEventListener('input', () => { ps.brightness=parseInt(sb.value); if(vb)vb.textContent=`${ps.brightness}%`; });
+      }
+    } else {
+      dlg.querySelectorAll('input[name="switch-action"]').forEach(r => r.addEventListener('change', () => { ps.turnOn = r.value === 'on'; }));
+    }
+    dlg.querySelectorAll('input[name="stop-act"]').forEach(r => r.addEventListener('change', () => {
+      ps.stopAction = r.value || null;
+      const row = dlg.querySelector('.stop-temp-row');
+      if (row) row.style.display = ps.stopAction === 'set_temperature' ? '' : 'none';
+    }));
+    dlg.querySelector('.stop-temp-inp')?.addEventListener('input', e => { ps.stopTemp = parseFloat(e.target.value) || 18; });
+
+    // Conditions
+    dlg.querySelector('#condToggle')?.addEventListener('click', () => { ps._condOpen=!ps._condOpen; this._renderPopup(); });
+    dlg.querySelector('.cond-add')?.addEventListener('click', () => { ps.conditions.push({entity:'',operator:'>',value:'',attribute:''}); ps._condOpen=true; this._renderPopup(); });
+    dlg.querySelectorAll('.cond-del').forEach(btn=>btn.addEventListener('click',()=>{ ps.conditions.splice(parseInt(btn.dataset.ci),1); this._renderPopup(); }));
+    dlg.querySelectorAll('.cond-entity').forEach(inp=>inp.addEventListener('change',()=>{
+      const i = parseInt(inp.dataset.ci);
+      const oldEntity = ps.conditions[i].entity;
+      ps.conditions[i].entity = inp.value;
+      // Reset attribute/value when entity changes — schema is different
+      if (oldEntity !== inp.value) { ps.conditions[i].attribute = ''; ps.conditions[i].value = ''; }
+      this._renderPopup();
+    }));
+    dlg.querySelectorAll('.cond-attribute').forEach(sel=>sel.addEventListener('change',()=>{
+      const i = parseInt(sel.dataset.ci);
+      ps.conditions[i].attribute = sel.value;
+      ps.conditions[i].value = '';
+      this._renderPopup();
+    }));
+    dlg.querySelectorAll('.cond-op').forEach(sel=>sel.addEventListener('change',()=>{ ps.conditions[parseInt(sel.dataset.ci)].operator=sel.value; }));
+    dlg.querySelectorAll('.cond-val').forEach(inp=>inp.addEventListener(inp.tagName==='SELECT'?'change':'input',()=>{ ps.conditions[parseInt(inp.dataset.ci)].value=inp.value; }));
+    dlg.querySelectorAll('input[name="comb"]').forEach(r=>r.addEventListener('change',()=>{ ps.condCombinator=r.value; }));
+    dlg.querySelector('.cond-interval')?.addEventListener('change', e=>{ ps.condInterval=parseInt(e.target.value); });
+    // Notifications
+    dlg.querySelector('#notifToggle')?.addEventListener('click', () => { ps._notifOpen=!ps._notifOpen; this._renderPopup(); });
+    dlg.querySelector('.notif-svc')?.addEventListener('input', e=>{ ps.notifyService=e.target.value; });
+    dlg.querySelectorAll('input[name="notif-trig"]').forEach(r => r.addEventListener('change', () => {
+      ps.notifyTrigger = r.value;
+      this._renderPopup();
+    }));
+    dlg.querySelector('.notif-restore')?.addEventListener('click', () => {
+      ps.notifyMessage = ps._defaultNotifyMsg;
+      const inp = dlg.querySelector('.notif-msg');
+      if (inp) inp.value = ps.notifyMessage;
+      const btn = dlg.querySelector('.notif-restore');
+      if (btn) btn.style.display = 'none';
+    });
+    dlg.querySelector('.notif-restore-end')?.addEventListener('click', () => {
+      ps.notifyMessageEnd = ps._defaultNotifyMsgEnd;
+      const inp = dlg.querySelector('.notif-msg-end');
+      if (inp) inp.value = ps.notifyMessageEnd;
+      const btn = dlg.querySelector('.notif-restore-end');
+      if (btn) btn.style.display = 'none';
+    });
+    dlg.querySelector('.notif-msg')?.addEventListener('input', e=>{
+      ps.notifyMessage = e.target.value;
+      const btn = dlg.querySelector('.notif-restore');
+      if (btn) btn.style.display = (ps.notifyMessage !== ps._defaultNotifyMsg && ps.notifyMessage !== '') ? '' : 'none';
+    });
+    dlg.querySelector('.notif-msg-end')?.addEventListener('input', e=>{
+      ps.notifyMessageEnd = e.target.value;
+      const btn = dlg.querySelector('.notif-restore-end');
+      if (btn) btn.style.display = (ps.notifyMessageEnd !== ps._defaultNotifyMsgEnd && ps.notifyMessageEnd !== '') ? '' : 'none';
+    });
+    // Time inputs (no snap, exact value)
+    const tiStart = dlg.querySelector('.time-inp-start'), tiEnd = dlg.querySelector('.time-inp-end');
+    const eb2 = dlg.querySelector('.tb-edit'), td2 = dlg.querySelector('.time-display');
+    const syncBar = () => {
+      if (!eb2) return;
+      eb2.style.left = this._minutesToPercent(ps.startMin) + '%';
+      eb2.style.width = this._minutesToPercent(ps.endMin - ps.startMin) + '%';
+      const lbl = `${this._minutesToTime(ps.startMin)} – ${this._minutesToTime(ps.endMin)}`;
+      const span = eb2.querySelector('.tb-label'); if (span) span.textContent = lbl;
+      if (td2) td2.textContent = lbl;
+    };
+    if (tiStart) tiStart.addEventListener('change', e => {
+      const m = this._parseTime(e.target.value);
+      if (m >= ps.endMin) { e.target.classList.add('error'); return; }
+      e.target.classList.remove('error'); ps.startMin = m; syncBar();
+      if (tiEnd) tiEnd.value = this._minutesToTime(ps.endMin === 1440 ? 0 : ps.endMin);
+    });
+    if (tiEnd) tiEnd.addEventListener('change', e => {
+      let m = this._parseTime(e.target.value); if (m === 0) m = 1440;
+      if (m <= ps.startMin) { e.target.classList.add('error'); return; }
+      e.target.classList.remove('error'); ps.endMin = m; syncBar();
+      if (tiStart) tiStart.value = this._minutesToTime(ps.startMin);
+    });
+
+    this._setupTimebarDrag(dlg, ps, magnetPoints);
+
+    // Auto-refresh default notify message when popup state changes
+    const refreshNotif = () => this._refreshNotifyDefault(dlg);
+    dlg.addEventListener('input', refreshNotif);
+    dlg.addEventListener('change', refreshNotif);
+    dlg.querySelectorAll('.day-chip,.shortcut-btn').forEach(el => el.addEventListener('click', () => setTimeout(refreshNotif, 0)));
+  }
+
+  _setupTimebarDrag(dlg, ps, magnetPoints) {
+    const bar = dlg.querySelector('.timebar'), eb = dlg.querySelector('.tb-edit'), td = dlg.querySelector('.time-display');
+    if (!bar || !eb) return;
+    let dragType = null, startX, s0, e0;
+    const mms = [...dlg.querySelectorAll('.tb-magnet')];
+    const hl = eb.querySelector('.tb-handle-l'), hr = eb.querySelector('.tb-handle-r');
+
+    const getThreshMin = () => { const w=bar.getBoundingClientRect().width; return w>0?10/w*1440:20; };
+    const hilite = (...vs) => {
+      const thr = getThreshMin();
+      mms.forEach(m => m.classList.toggle('near', vs.some(v=>Math.abs(v-parseFloat(m.dataset.min))<thr)));
+    };
+    const setHandleColor = (handle, min) => {
+      if (!handle) return;
+      const thr = getThreshMin();
+      const mag = magnetPoints.some(p => Math.abs(min - p) < thr);
+      handle.style.setProperty('--handle-color', mag ? 'var(--primary-color,#03a9f4)' : 'rgba(255,255,255,.75)');
+    };
+    const upd = () => {
+      const lbl = `${this._minutesToTime(ps.startMin)} – ${this._minutesToTime(ps.endMin)}`;
+      eb.style.left = this._minutesToPercent(ps.startMin)+'%';
+      eb.style.width = this._minutesToPercent(ps.endMin-ps.startMin)+'%';
+      const span = eb.querySelector('.tb-label'); if (span) span.textContent = lbl;
+      if (td) td.textContent = lbl;
+      // sync time inputs
+      const tiS = dlg.querySelector('.time-inp-start'), tiE = dlg.querySelector('.time-inp-end');
+      if (tiS) tiS.value = this._minutesToTime(ps.startMin);
+      if (tiE) tiE.value = this._minutesToTime(ps.endMin === 1440 ? 0 : ps.endMin);
+    };
+
+    const magSnap = (m, pts) => {
+      const thr = getThreshMin();
+      let closest = null, dist = thr;
+      for (const pt of pts) { const d = Math.abs(m - pt); if (d < dist) { dist = d; closest = pt; } }
+      return closest !== null ? closest : this._snapToGrid(m);
+    };
+
+    eb.addEventListener('pointerdown', e => {
+      e.preventDefault();
+      const path = e.composedPath();
+      dragType = path.includes(hl)?'rs':path.includes(hr)?'re':'mv';
+      startX=e.clientX; s0=ps.startMin; e0=ps.endMin;
+      eb.setPointerCapture(e.pointerId);
+    });
+    eb.addEventListener('pointermove', e => {
+      if (!dragType) return;
+      const w = bar.getBoundingClientRect().width; if (!w) return;
+      const dx = ((e.clientX-startX)/w)*1440, mn = this._snap;
+      if (dragType==='mv') {
+        const dur=e0-s0, raw=s0+dx;
+        const ss=magSnap(raw,magnetPoints), se=magSnap(raw+dur,magnetPoints)-dur;
+        let ns = Math.abs(ss-raw)<=Math.abs(se-raw)?ss:se;
+        ns=Math.max(0,Math.min(1440-dur,ns)); ps.startMin=ns; ps.endMin=ns+dur;
+        hilite(ps.startMin,ps.endMin); setHandleColor(hl,ps.startMin); setHandleColor(hr,ps.endMin);
+      } else if (dragType==='rs') {
+        ps.startMin=Math.max(0,Math.min(ps.endMin-mn,magSnap(s0+dx,magnetPoints)));
+        hilite(ps.startMin); setHandleColor(hl,ps.startMin);
+      } else {
+        ps.endMin=Math.max(ps.startMin+mn,Math.min(1440,magSnap(e0+dx,magnetPoints)));
+        hilite(ps.endMin); setHandleColor(hr,ps.endMin);
+      }
+      upd();
+    });
+    const stop = () => {
+      dragType=null; mms.forEach(m=>m.classList.remove('near'));
+      if (hl) hl.style.removeProperty('--handle-color');
+      if (hr) hr.style.removeProperty('--handle-color');
+      this._refreshNotifyDefault(dlg);
+    };
+    eb.addEventListener('pointerup', stop);
+    eb.addEventListener('pointercancel', stop);
+  }
+
+  // ── Save / Delete ─────────────────────────────────────────────────────────
+
+  _checkOverlap(ps) {
+    const profile = this._getSelectedProfile();
+    const profileIds = new Set(profile?.schedules || []);
+    for (const s of this._getSchedules(ps.entityConf.entity)) {
+      if (ps.mode==='edit' && s.entity_id===ps.entityId) continue;
+      if (profileIds.size && !profileIds.has(s.entity_id)) continue;
+      const shared = ps.days.filter(di => this._appliesToDay(s.attributes.weekdays||[], di));
+      if (!shared.length) continue;
+      for (const slot of s.attributes.timeslots||[]) {
+        const [a,b]=slot.split(' - '); const sMin=this._parseTime(a); let eMin=this._parseTime(b); if(eMin===0)eMin=1440;
+        if (ps.startMin<eMin && ps.endMin>sMin) {
+          const ename = ps.entityConf.name || ps.entityConf.entity;
+          return `⚠️ ${this.t('errors.overlap')} (${a} - ${b} → ${ename}).`;
+        }
+      }
+    }
+    return null;
+  }
+
+  async _saveSchedule() {
+    const ps = this._popupState;
+    if (!ps?.days.length) { alert(this.t('errors.no_days')); return; }
+    const overlap = this._checkOverlap(ps);
+    if (overlap) { alert(overlap); return; }
+
+    const weekdays = ps.days.map(d => this._getDayKey(d));
+    const eid = ps.entityConf.entity;
+    const dom = ps.domain;
+    let actions = [];
+    if (dom === 'climate') {
+      const sd = {};
+      if (ps.enableTemp) sd.temperature = ps.temp;
+      if (ps.enableHvac && ps.hvacMode) sd.hvac_mode = ps.hvacMode;
+      if (ps.enablePreset && ps.presetMode) sd.preset_mode = ps.presetMode;
+      if (ps.enableFan && ps.fanMode) sd.fan_mode = ps.fanMode;
+      if (ps.enableSwing && ps.swingMode) sd.swing_mode = ps.swingMode;
+      actions = [{ entity_id: eid, service: (ps.enableHvac && !ps.enableTemp) ? 'climate.set_hvac_mode' : 'climate.set_temperature', service_data: sd }];
+    } else if (dom === 'light') {
+      const sd = ps.enableBrightness && ps.turnOn ? { brightness_pct: ps.brightness } : {};
+      actions = [{ entity_id: eid, service: ps.turnOn ? 'light.turn_on' : 'light.turn_off', service_data: sd }];
+    } else {
+      actions = [{ entity_id: eid, service: ps.turnOn ? `${dom}.turn_on` : `${dom}.turn_off`, service_data: {} }];
+    }
+    const timeslots = [{ start: this._minutesToTime(ps.startMin), stop: this._minutesToTime(ps.endMin === 1440 ? 0 : ps.endMin), actions }];
+
+    const saveNotify = (scheduleId) => {
+      const profile = this._getSelectedProfile(); if (!profile) return;
+      if (!profile.scheduleLinks) profile.scheduleLinks = [];
+      let link = profile.scheduleLinks.find(l => l.id === scheduleId);
+      if (!link) { link = { id: scheduleId }; profile.scheduleLinks.push(link); }
+      link.notifyService = ps.notifyService;
+      link.notifyMessage = ps.notifyMessage;
+      link.notifyMessageEnd = ps.notifyMessageEnd;
+      link.notifyTrigger = ps.notifyTrigger || 'start';
+    };
+
+    try {
+      if (ps.mode === 'create') {
+        const beforeIds = new Set(Object.keys(this._hass.states).filter(k => k.startsWith('switch.schedule_')));
+        const p = { weekdays, timeslots, repeat_type: 'repeat' };
+        if (ps.name) p.name = ps.name;
+        await this._hass.callService('scheduler', 'add', p);
+        const newId = await this._waitForNewSchedule(beforeIds);
+        if (newId) {
+          await this._addScheduleToProfile(newId);
+          saveNotify(newId);
+          await this._syncAutoChild(newId, ps);
+          await this._syncConditionAutomation(newId, ps.conditions, ps.condCombinator, ps.condInterval);
+          const prof = this._getSelectedProfile();
+          if (prof && !this._isProfileActive(prof)) {
+            try { await this._hass.callService('switch', 'turn_off', { entity_id: newId }); } catch {}
+          }
+        }
+      } else {
+        const p = { entity_id: ps.entityId, weekdays, timeslots };
+        if (ps.name) p.name = ps.name;
+        await this._hass.callService('scheduler', 'edit', p);
+        saveNotify(ps.entityId);
+        await this._syncAutoChild(ps.entityId, ps);
+        await this._syncConditionAutomation(ps.entityId, ps.conditions, ps.condCombinator, ps.condInterval);
+      }
+    } catch (e) { alert(`Failed to save: ${e.message || e}`); return; }
+    await this._wsSet(this._storageData).catch(() => {});
+    this._closePopup();
+  }
+
+  async _deleteSchedule() {
+    const ps = this._popupState;
+    if (!ps || ps.mode !== 'edit') return;
+    if (!confirm(this.t('errors.delete_confirm'))) return;
+    const eid = ps.entityId;
+    const childId = this._getAutoChildId(eid);
+    const condAutoId = this._getCondAutoId(eid);
+    const data = this._storageData;
+    for (const p of data.profiles || []) {
+      p.schedules = (p.schedules || []).filter(x => x !== eid);
+      p.scheduleLinks = (p.scheduleLinks || []).filter(l => l.id !== eid);
+    }
+    if (condAutoId) {
+      try { await this._hass.connection.sendMessagePromise({ type: 'config/automation/delete', automation_id: condAutoId }); } catch (e) { console.error('WSC condAuto delete failed', e); }
+    }
+    if (childId) {
+      try { await this._hass.callService('scheduler', 'remove', { entity_id: childId }); } catch {}
+    }
+    try { await this._hass.callService('scheduler', 'remove', { entity_id: eid }); } catch (e) { console.error(e); }
+    await this._wsSet(data);
+    this._closePopup();
+  }
+
+  // ── Profiles view ─────────────────────────────────────────────────────────
+
+  _isProfileActive(p) {
+    return (this._storageData?.activeProfiles || []).includes(p.id);
+  }
+
+  _getProfileColor(p) {
+    return p.groups?.[0]?.color || '#03a9f4';
+  }
+
+  async _activateProfile(id) {
+    const data = this._storageData;
+    const profiles = data.profiles || [];
+    const p = profiles.find(x => x.id === id);
+    if (!p) return;
+    let activeProfiles = [...(data.activeProfiles || [])];
+    if (p.exclusive !== false) {
+      for (const cp of profiles.filter(x => x.id !== id && x.exclusive !== false && activeProfiles.includes(x.id))) {
+        for (const eid of cp.schedules || [])
+          try { await this._hass.callService('switch', 'turn_off', { entity_id: eid }); } catch {}
+        activeProfiles = activeProfiles.filter(x => x !== cp.id);
+      }
+      const profSched = new Set(profiles.flatMap(pr => pr.schedules || []));
+      for (const s of Object.values(this._hass.states))
+        if (s.entity_id.startsWith('switch.schedule_') && !profSched.has(s.entity_id) && s.state === 'on')
+          try { await this._hass.callService('switch', 'turn_off', { entity_id: s.entity_id }); } catch {}
+    }
+    for (const eid of p.schedules || [])
+      try { await this._hass.callService('switch', 'turn_on', { entity_id: eid }); } catch {}
+    if (!activeProfiles.includes(id)) activeProfiles.push(id);
+    await this._wsSet({ ...data, activeProfiles });
+    this.render();
+  }
+
+  async _deactivateProfile(id) {
+    const data = this._storageData;
+    const p = (data.profiles || []).find(x => x.id === id);
+    if (!p) return;
+    for (const eid of p.schedules || [])
+      try { await this._hass.callService('switch', 'turn_off', { entity_id: eid }); } catch {}
+    const activeProfiles = (data.activeProfiles || []).filter(x => x !== id);
+    await this._wsSet({ ...data, activeProfiles });
+    this.render();
+  }
+
+  async _deleteProfile(id) {
+    if (id === 'default') return;
+    if (!confirm(this.t('errors.delete_profile_confirm'))) return;
+    const data = this._storageData;
+    const p = (data.profiles || []).find(x => x.id === id);
+    if (p) {
+      for (const eid of p.schedules || [])
+        try { await this._hass.callService('scheduler', 'remove', { entity_id: eid }); } catch {}
+    }
+    const profiles = (data.profiles || []).filter(x => x.id !== id);
+    const activeProfiles = (data.activeProfiles || []).filter(x => x !== id);
+    if (this._selectedProfileId === id)
+      this._selectedProfileId = activeProfiles[0] || profiles[0]?.id || null;
+    await this._wsSet({ ...data, profiles, activeProfiles });
+    this.render();
+  }
+
+  async _renameProfile(id) {
+    const profiles=this._storageData.profiles||[];
+    const p=profiles.find(x=>x.id===id); if(!p) return;
+    const name=prompt('New name:',p.name);
+    if(!name?.trim()) return;
+    await this._wsSet({...this._storageData,profiles:profiles.map(x=>x.id===id?{...x,name:name.trim()}:x)});
+    this.render();
+  }
+  async _duplicateProfile(id) {
+    const profiles = this._storageData.profiles || [];
+    const src = profiles.find(x => x.id === id);
+    if (!src) return;
+    const name = prompt('Name for the copy:', `${src.name} (copy)`);
+    if (!name?.trim()) return;
+    const newId = `prf_${Date.now()}`;
+    const newProfile = {
+      id: newId, name: name.trim(), exclusive: src.exclusive,
+      groups: JSON.parse(JSON.stringify(src.groups || [])),
+      schedules: [], scheduleLinks: [],
+    };
+    await this._wsSet({ ...this._storageData, profiles: [...profiles, newProfile] });
+    const prevSelectedId = this._selectedProfileId;
+    this._selectedProfileId = newId;
+    // Recreate schedules on Scheduler Component
+    for (const schedId of src.schedules || []) {
+      const s = this._hass.states[schedId];
+      if (!s?.attributes.weekdays || !s.attributes.timeslots?.length) continue;
+      if (s.attributes.tags?.includes('weekly_schedule_auto')) continue; // skip auto-children
+      try {
+        const beforeIds = new Set(Object.keys(this._hass.states).filter(k => k.startsWith('switch.schedule_')));
+        const params = { weekdays: s.attributes.weekdays, timeslots: s.attributes.timeslots, repeat_type: 'repeat' };
+        if (s.attributes.friendly_name) params.name = s.attributes.friendly_name;
+        await this._hass.callService('scheduler', 'add', params);
+        const newSchedId = await this._waitForNewSchedule(beforeIds);
+        if (newSchedId) await this._addScheduleToProfile(newSchedId);
+      } catch (e) { console.error('Duplicate schedule failed', schedId, e); }
+    }
+    this._selectedProfileId = prevSelectedId;
+    this.render();
+  }
+
+  // ── Compact view ──────────────────────────────────────────────────────────
+
+  _buildCompactView(tab, DAYS) {
+    const todayIdx = (new Date().getDay() + 6) % 7;
+    if (!this._compactExpanded) this._compactExpanded = new Set([todayIdx]);
+    const ents = tab.entities || (tab.entity ? [tab] : []);
+
+    const daysHtml = DAYS.map((dayName, di) => {
+      const isToday = di === todayIdx;
+      const expanded = this._compactExpanded.has(di);
+
+      // Entities with at least one schedule on this day (preserving original index)
+      const entsWithSched = ents.reduce((acc, ec, ei) => {
+        if (this._getProfileSchedules(ec.entity).some(s => this._appliesToDay(s.attributes.weekdays||[], di)))
+          acc.push({ ec, ei });
+        return acc;
+      }, []);
+
+      // Mini timeline (replaces dots in collapsed day header)
+      const visibleEnts = entsWithSched.slice(0, 4);
+      const laneCount = Math.max(1, visibleEnts.length);
+      const miniBars = visibleEnts.map(({ ec }, li) => {
+        const [, defColor] = this._domainIconMdi(ec.entity);
+        const color = ec.color || defColor;
+        const blocks = this._getBlocksForDay(di, this._getProfileSchedules(ec.entity), ec);
+        const top = (100 / laneCount) * li;
+        const h = 100 / laneCount;
+        return blocks.map(b =>
+          `<div class="compact-mini-bar" style="left:${b.startPct}%;width:${b.heightPct}%;top:${top}%;height:${h}%;background:${color};opacity:${b.isOff?.35:.75}"></div>`
+        ).join('');
+      }).join('');
+
+      const barColor = isToday ? 'var(--primary-color,#03a9f4)' : 'var(--divider-color,#e0e0e0)';
+      const nameColor = isToday ? 'var(--primary-text-color)' : 'var(--secondary-text-color)';
+
+      const hdr = `<div class="compact-day-hdr" data-day="${di}">
+        <div class="compact-day-bar" style="background:${barColor}"></div>
+        <span class="compact-day-name" style="color:${nameColor}">${dayName.toUpperCase().slice(0,3)}</span>
+        <div class="compact-mini-timeline">${miniBars}</div>
+        <ha-icon icon="${expanded?'mdi:chevron-up':'mdi:chevron-down'}" style="--mdi-icon-size:16px;color:var(--secondary-text-color)"></ha-icon>
+      </div>`;
+
+      if (!expanded) {
+        return `<div class="compact-day-wrap${isToday?' compact-today-wrap':''}" data-day="${di}">${hdr}</div>`;
+      }
+
+      // Entity rows
+      const entRowsHtml = entsWithSched.map(({ ec, ei }, rowIdx) => {
+        const [icon, defColor] = this._domainIconMdi(ec.entity);
+        const color = ec.color || defColor;
+        const blocks = this._getBlocksForDay(di, this._getProfileSchedules(ec.entity), ec);
+
+        const blocksHtml = blocks.map(b => {
+          const glowStyle = b.isActive ? `;--cblk-glow:${b.color};--cblk-glow-soft:${b.color}80` : '';
+          const showContent = b.heightPct > 4;
+          return `<div class="compact-blk${b.isOff?' off':''}${b.isActive?' active':''}" data-entity="${b.entityId}" data-day="${di}" style="left:${b.startPct}%;width:${b.heightPct}%;background-color:${b.color}${glowStyle}">` +
+            (showContent ? `<ha-icon icon="${icon}" style="--mdi-icon-size:10px;color:white;opacity:.9;flex-shrink:0"></ha-icon><span class="compact-blk-val">${b.label||''}</span>` : '') +
+            `</div>`;
+        }).join('');
+
+        return `<div class="compact-ent-row${rowIdx>0?' compact-ent-sep':''}" data-day="${di}" data-ei="${ei}">
+          <div class="compact-ent-icon" style="background:${color}26">
+            <ha-icon icon="${icon}" style="--mdi-icon-size:18px;color:${color}E6"></ha-icon>
+          </div>
+          <span class="compact-ent-name">${(ec.name||ec.entity).replace(/</g,'&lt;')}</span>
+          <div class="compact-bar" data-day="${di}" data-ei="${ei}" style="position:relative;flex:1;height:32px;background:var(--divider-color,#e0e0e0);border-radius:6px;overflow:hidden;cursor:pointer">
+            ${blocksHtml}
+          </div>
+        </div>`;
+      }).join('');
+
+      // Ticks (only if there are entity rows)
+      const ticksHtml = entsWithSched.length > 0 ? `<div class="compact-ticks">
+        ${[0,6,12,18].map(h=>`<div class="compact-tick" style="left:${(h/24)*100}%">${String(h).padStart(2,'0')}</div>`).join('')}
+      </div>` : '';
+
+      const emptyHtml = entsWithSched.length === 0 ? `<div style="padding:6px 0;font-size:.75em;color:var(--secondary-text-color);opacity:.6">${this.t('card.empty_schedule')}</div>` : '';
+
+      return `<div class="compact-day-wrap${isToday?' compact-today-wrap':''}" data-day="${di}">
+        ${hdr}
+        <div class="compact-day-content">
+          ${entRowsHtml}${emptyHtml}${ticksHtml}
+        </div>
+      </div>`;
+    }).join('');
+
+    return `<div class="compact-days">
+      ${daysHtml}
+    </div>`;
+  }
+
+  // ── Focus view ────────────────────────────────────────────────────────────
+
+  _buildFocusView(tab, DAYS, H) {
+    const todayIdx = (new Date().getDay() + 6) % 7;
+    if (this._focusDay === null) this._focusDay = todayIdx;
+    const focusDay = this._focusDay;
+    const ents = tab.entities || (tab.entity ? [tab] : []);
+
+    // Axis labels every 2h (00, 02 ... 22)
+    const axisLabels = [];
+    for (let h = 0; h < 24; h += 2)
+      axisLabels.push({ label: String(h).padStart(2,'0'), pct: (h/24)*100 });
+
+    // Threshold percentages for block content (based on px at height H)
+    const minForFull    = (48 / H) * 100;
+    const minForContent = (32 / H) * 100;
+    const minForValue   = (20 / H) * 100;
+
+    // Per-entity blocks for today → lane calculation
+    const entBlocksForDay = ents.map(ec =>
+      this._getBlocksForDay(focusDay, this._getProfileSchedules(ec.entity), ec)
+    );
+    // Build lane map: only entities with blocks get a lane (consecutive, max 4)
+    const laneMap = new Map();
+    ents.forEach((_, ei) => {
+      if (entBlocksForDay[ei].length > 0 && laneMap.size < 4) laneMap.set(ei, laneMap.size);
+    });
+    const numLanes = Math.max(1, laneMap.size);
+
+    // Focus column: blocks with entity index for lane positioning
+    const allFocusBlocks = ents.flatMap((ec, ei) => {
+      const [icon, defColor] = this._domainIconMdi(ec.entity);
+      const entColor = ec.color || defColor;
+      return entBlocksForDay[ei].map(b => ({ ...b, icon, entityName: ec.name || ec.entity, entIdx: ei, entColor }));
+    });
+
+    // Lane headers (shown when numLanes > 1)
+    const laneHeadersHtml = numLanes > 1
+      ? `<div class="focus-lane-hdrs">${[...laneMap.entries()].map(([ei, li]) => {
+          const ec = ents[ei];
+          const [, defColor] = this._domainIconMdi(ec.entity);
+          const color = ec.color || defColor;
+          const name = (ec.name || ec.entity).replace(/</g,'&lt;');
+          const label = name.length > 8 ? name.slice(0,7) + '…' : name;
+          return `<div class="focus-lane-hdr" style="left:${li * 100 / numLanes}%;width:${100 / numLanes}%">` +
+            `<div class="focus-lane-dot" style="background:${color}"></div><span>${label}</span></div>`;
+        }).join('')}</div>`
+      : '';
+
+    const focusBlocksHtml = allFocusBlocks.map(b => {
+      const laneIdx = laneMap.get(b.entIdx) ?? 0;
+      const lanePct = 100 / numLanes;
+      const posStyle = numLanes > 1
+        ? `left:calc(${laneIdx * lanePct}% + 2px);width:calc(${lanePct}% - 4px);right:auto`
+        : `left:4px;right:4px`;
+      const glowStyle = b.isActive ? `;--fblk-glow:${b.color};--fblk-glow-soft:${b.color}80` : '';
+      const content = b.heightPct >= minForFull
+        ? `<ha-icon icon="${b.icon}" style="--mdi-icon-size:14px;color:white;opacity:.9;flex-shrink:0"></ha-icon>` +
+          `<div class="focus-blk-info">` +
+            `<span class="focus-blk-name">${(b.entityName).replace(/</g,'&lt;')}</span>` +
+            `<span class="focus-blk-val">${(b.label||'').replace(/</g,'&lt;')}</span>` +
+          `</div>`
+        : b.heightPct >= minForContent
+          ? `<ha-icon icon="${b.icon}" style="--mdi-icon-size:14px;color:white;opacity:.9;flex-shrink:0"></ha-icon>` +
+            `<span class="focus-blk-val">${(b.label||'').replace(/</g,'&lt;')}</span>`
+          : b.heightPct >= minForValue
+            ? `<span class="focus-blk-val">${(b.label||'').replace(/</g,'&lt;')}</span>`
+            : '';
+      return `<div class="focus-blk${b.isOff?' off':''}${b.isActive?' active':''}" data-entity="${b.entityId}" style="top:${b.startPct}%;height:${b.heightPct}%;background-color:${b.color}${glowStyle};min-height:20px;${posStyle}">${content}</div>`;
+    }).join('');
+
+    // CSS grid column template: axis fixed, focus day gets max 45%, slims share rest equally
+    const cardWidth = this.offsetWidth || 400;
+    const isMobile = cardWidth < 400;
+    const focusMax = isMobile ? '50%' : '45%';
+    const slimMin = isMobile ? '24px' : '28px';
+    const gridCols = ['36px'];
+    for (let i = 0; i < 7; i++)
+      gridCols.push(i === focusDay ? `minmax(50px,${focusMax})` : `minmax(${slimMin},1fr)`);
+    const gridTemplate = gridCols.join(' ');
+
+    // Build all 7 columns
+    const colsHtml = DAYS.map((dayName, di) => {
+      const isToday = di === todayIdx;
+      const isFocus = di === focusDay;
+
+      if (isFocus) {
+        const hdrColor = isToday ? 'var(--primary-color,#03a9f4)' : 'var(--primary-text-color)';
+        return `<div class="focus-col focus-col--active" data-day="${di}">
+          <div class="focus-col-hdr" style="color:${hdrColor}">${dayName}</div>
+          ${laneHeadersHtml}
+          <div class="focus-col-body" data-day="${di}">${focusBlocksHtml}</div>
+        </div>`;
+      }
+
+      // Slim column — entity bars
+      const N = Math.min(ents.length, 4);
+      const barW = N <= 1 ? 8 : 6;
+      const totalW = N * barW + Math.max(0, N - 1) * 2;
+      const slimPx = isMobile ? 24 : 28;
+      const leftStart = Math.max(0, (slimPx - totalW) / 2);
+
+      const barsHtml = ents.slice(0, 4).map((ec, ei) => {
+        const [, defColor] = this._domainIconMdi(ec.entity);
+        const color = ec.color || defColor;
+        const blocks = this._getBlocksForDay(di, this._getProfileSchedules(ec.entity), ec);
+        const left = leftStart + ei * (barW + 2);
+        return blocks.map(b =>
+          `<div class="focus-slim-bar${b.isOff?' off':''}" style="left:${left}px;width:${barW}px;top:${b.startPct}%;height:${b.heightPct}%;background:${color};opacity:${b.isOff?'.35':'.75'}"></div>`
+        ).join('');
+      }).join('');
+
+      const nameColor = isToday ? 'var(--primary-color,#03a9f4)' : 'var(--secondary-text-color)';
+      const shortName = dayName.slice(0,2);
+      return `<div class="focus-slim" data-day="${di}">
+        <div class="focus-slim-hdr" style="color:${nameColor}">${shortName}</div>
+        <div class="focus-slim-body">${barsHtml}</div>
+      </div>`;
+    }).join('');
+
+    const axisHtml = axisLabels.map(({label, pct}) =>
+      `<div class="focus-axis-tick" style="top:${pct}%">${label}</div>`
+    ).join('');
+
+    return `<div class="focus-wrap">
+      <div class="focus-container" style="height:${H}px;grid-template-columns:${gridTemplate}">
+        <div class="focus-axis">
+          <div class="focus-axis-spacer"></div>
+          <div class="focus-axis-body">${axisHtml}</div>
+        </div>
+        ${colsHtml}
+      </div>
+    </div>`;
+  }
+
+  // ── Groups view ───────────────────────────────────────────────────────────
+
+  _renderGroupEditView(group) {
+    this._groupsMode=true; this._profilesMode=false;
+    const availableEnts=this._getAvailableEntities();
+    const domains=[...new Set(availableEnts.map(e=>e.domain))];
+    const S=`
+      :host{display:block;font-family:var(--primary-font-family,sans-serif)}
+      ha-card{padding:16px}
+      .card-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px}
+      .card-title{font-size:1.1em;font-weight:500;color:var(--primary-text-color)}
+      .btn-back{padding:6px 14px;border-radius:10px;border:1px solid var(--divider-color,#ccc);background:none;cursor:pointer;font-size:.8em;color:var(--primary-text-color)}
+      .btn-back:hover{background:var(--divider-color,#e0e0e0)}
+      .form{border:1px dashed var(--divider-color,#ccc);border-radius:10px;padding:14px}
+      .form-row{margin-bottom:12px}
+      .form-label{font-size:.78em;font-weight:600;color:var(--secondary-text-color);margin-bottom:6px}
+      .form-input{width:100%;padding:7px 10px;border-radius:8px;border:1px solid var(--divider-color,#ccc);background:var(--card-background-color,#fff);color:var(--primary-text-color);font-size:.85em;box-sizing:border-box;font-family:inherit}
+      .form-input:focus{outline:none;border-color:var(--primary-color,#03a9f4)}
+      .color-lbl{font-size:.78em;color:var(--secondary-text-color);margin-bottom:4px;display:block}
+      .color-palette{display:flex;flex-wrap:wrap;gap:5px;padding:4px 0}
+      .pal-swatch{width:22px;height:22px;border-radius:50%;cursor:pointer;border:2px solid transparent;box-sizing:border-box;outline:1px solid rgba(0,0,0,.1);transition:transform .1s}
+      .pal-swatch:hover{transform:scale(1.15)}
+      .pal-swatch.sel{border-color:var(--primary-text-color,#333);box-shadow:0 0 0 2px var(--card-background-color,white),0 0 0 4px var(--primary-text-color,#333)}
+      .domain-filter{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px}
+      .dom-btn{padding:3px 10px;border-radius:10px;border:1px solid var(--divider-color,#ccc);background:none;cursor:pointer;font-size:.72em;color:var(--primary-text-color)}
+      .dom-btn.active{background:var(--primary-color,#03a9f4);color:white;border-color:var(--primary-color,#03a9f4)}
+      .ent-search{width:100%;padding:6px 10px;border-radius:8px;border:1px solid var(--divider-color,#ccc);background:var(--card-background-color,#fff);color:var(--primary-text-color);font-size:.82em;box-sizing:border-box;font-family:inherit;margin-bottom:8px}
+      .ent-search:focus{outline:none;border-color:var(--primary-color,#03a9f4)}
+      .ent-list{display:flex;flex-direction:column;gap:4px;max-height:320px;overflow-y:auto}
+      .ent-item{display:flex;flex-direction:column;gap:4px;padding:8px 10px;border-radius:8px;border:1px solid var(--divider-color,#ccc);cursor:default;user-select:none}
+      .ent-item.sel{border-color:var(--primary-color,#03a9f4);background:color-mix(in srgb,var(--primary-color,#03a9f4) 10%,transparent)}
+      .ent-row-top{display:flex;align-items:center;gap:8px;width:100%;cursor:pointer}
+      .ent-item .color-palette{display:none;padding:2px 0}
+      .ent-item.sel .color-palette{display:flex}
+      .dom-badge{font-size:.62em;font-weight:700;padding:1px 6px;border-radius:6px;color:white;flex-shrink:0;min-width:44px;text-align:center}
+      .dom-climate{background:#FF7043}.dom-switch{background:#42A5F5}.dom-light{background:#F9A825}.dom-fan{background:#26C6DA}.dom-cover{background:#AB47BC}
+      .ent-name{flex:1;font-size:.83em;color:var(--primary-text-color);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+      .ent-label-inp{padding:4px 8px;border-radius:6px;border:1px solid var(--divider-color,#ccc);font-size:.78em;color:var(--primary-text-color);background:var(--card-background-color,#fff);font-family:inherit;width:80px;flex-shrink:0}
+      .ge-actions{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap}
+      .btn-save-ge{background:var(--primary-color,#03a9f4);color:white;padding:8px 18px;border-radius:10px;border:none;cursor:pointer;font-size:.85em;font-weight:600}
+      .btn-cancel-ge{background:var(--divider-color,#e0e0e0);color:var(--primary-text-color);padding:8px 18px;border-radius:10px;border:none;cursor:pointer;font-size:.85em;font-weight:600}
+      .btn-del-ge{background:none;border:1px solid var(--error-color,#f44336);color:var(--error-color,#f44336);padding:7px 16px;border-radius:10px;cursor:pointer;font-size:.85em;font-weight:600;margin-left:auto}`;
+
+    this.shadowRoot.innerHTML=`<style>${S}</style><ha-card>
+      <div class="card-header"><span class="card-title">Edit: ${group.name.replace(/</g,'&lt;')}</span><button class="btn-back">← Back</button></div>
+      <div class="form">
+        <div class="form-row"><div class="form-label">${this.t('group.name')}</div><input type="text" class="form-input grp-name-inp" value="${group.name.replace(/"/g,'&quot;')}"></div>
+        <div class="form-row">
+          <span class="color-lbl">Tab color</span>
+          ${this._colorPickerHTML(group.color||'#9C27B0','group-pal')}
+        </div>
+        <div class="form-row">
+          <div class="form-label">Select entities</div>
+          <div class="domain-filter">
+            <button class="dom-btn active" data-domain="">All</button>
+            ${domains.map(d=>`<button class="dom-btn" data-domain="${d}">${d.charAt(0).toUpperCase()+d.slice(1)}</button>`).join('')}
+          </div>
+          <input type="text" class="ent-search" placeholder="Search entity…">
+          <div class="ent-list">
+            ${availableEnts.map(e=>{
+              const pre=(group.entities||[]).find(x=>x.entity===e.entity_id);
+              return `<div class="ent-item${pre?' sel':''}" data-entity="${e.entity_id}" data-domain="${e.domain}" data-name="${e.friendly_name.toLowerCase().replace(/"/g,'')}">
+                <div class="ent-row-top">
+                  <input type="checkbox" class="ent-chk" data-entity="${e.entity_id}"${pre?' checked':''}>
+                  <span class="dom-badge dom-${e.domain}">${e.domain}</span>
+                  <span class="ent-name">${e.friendly_name}</span>
+                  <input type="text" class="ent-label-inp" data-entity="${e.entity_id}" placeholder="Label" value="${pre?.name||e.friendly_name}">
+                </div>
+                ${this._colorPickerHTML(pre?.color||'#9E9E9E')}
+              </div>`;
+            }).join('')}
+          </div>
+        </div>
+        <div class="ge-actions">
+          <button class="btn-save-ge">Save</button>
+          <button class="btn-cancel-ge">Cancel</button>
+          <button class="btn-del-ge">Delete group</button>
+        </div>
+      </div>
+    </ha-card>`;
+
+    const sr=this.shadowRoot;
+    sr.querySelector('.btn-back').addEventListener('click',()=>this._renderGroupsView());
+    sr.querySelector('.btn-cancel-ge').addEventListener('click',()=>this._renderGroupsView());
+    sr.querySelector('.btn-del-ge').addEventListener('click',async()=>{
+      if(!confirm(this.t('group.delete_confirm'))) return;
+      const profile=this._getSelectedProfile();
+      const newGroups=(profile?.groups||[]).filter(g=>g.id!==group.id);
+      const profiles=(this._storageData.profiles||[]).map(p=>p.id===profile?.id?{...p,groups:newGroups}:p);
+      await this._wsSet({...this._storageData,profiles});
+      this._renderGroupsView();
+    });
+    this._bindColorPalettes(sr);
+    sr.querySelectorAll('.ent-row-top').forEach(top=>{
+      top.addEventListener('click',e=>{
+        if(e.target.tagName==='INPUT') return;
+        const chk=top.querySelector('.ent-chk'); chk.checked=!chk.checked;
+        top.closest('.ent-item').classList.toggle('sel',chk.checked);
+      });
+    });
+    sr.querySelectorAll('.ent-chk').forEach(chk=>chk.addEventListener('change',()=>chk.closest('.ent-item').classList.toggle('sel',chk.checked)));
+    let activeDomain='';
+    const filterEnts=()=>{
+      const search=sr.querySelector('.ent-search')?.value.toLowerCase()||'';
+      sr.querySelectorAll('.ent-item').forEach(item=>{
+        const ok=(!activeDomain||item.dataset.domain===activeDomain)&&(!search||item.dataset.name.includes(search));
+        item.style.display=ok?'':'none';
+      });
+    };
+    sr.querySelectorAll('.dom-btn').forEach(btn=>btn.addEventListener('click',()=>{
+      activeDomain=btn.dataset.domain;
+      sr.querySelectorAll('.dom-btn').forEach(b=>b.classList.toggle('active',b===btn));
+      filterEnts();
+    }));
+    sr.querySelector('.ent-search').addEventListener('input',filterEnts);
+
+    sr.querySelector('.btn-save-ge').addEventListener('click',async()=>{
+      const name=sr.querySelector('.grp-name-inp').value.trim();
+      if(!name){alert(this.t('group.enter_name'));return;}
+      const color=sr.querySelector('.group-pal .pal-value')?.value||group.color||PALETTE[2];
+      const selected=[...sr.querySelectorAll('.ent-chk:checked')];
+      if(!selected.length){alert(this.t('group.select_entity'));return;}
+      const oldEntityIds=(group.entities||[]).map(e=>e.entity);
+      const newEntityIds=selected.map(chk=>chk.dataset.entity);
+      const removed=oldEntityIds.filter(eid=>!newEntityIds.includes(eid));
+      if(removed.length){
+        const activeScheds=removed.flatMap(eid=>this._getSchedules(eid).filter(s=>s.state==='on'));
+        if(activeScheds.length){
+          const n=activeScheds.length;
+          const yes=confirm(`${n} ${this.t('group.removed_active')}`);
+          if(yes) for(const s of activeScheds) try{await this._hass.callService('switch','turn_off',{entity_id:s.entity_id})}catch{}
+        }
+      }
+      const usedColors=[];
+      const entities=selected.map(chk=>{
+        const eid=chk.dataset.entity;
+        const oldEnt=(group.entities||[]).find(x=>x.entity===eid);
+        const palVal=sr.querySelector(`.ent-item[data-entity="${eid}"] .pal-value`)?.value;
+        const entColor=palVal||oldEnt?.color||this._autoColor(usedColors);
+        usedColors.push(entColor);
+        return {entity:eid,name:sr.querySelector(`.ent-label-inp[data-entity="${eid}"]`)?.value.trim()||this._hass.states[eid]?.attributes.friendly_name||eid,color:entColor};
+      });
+      const profile=this._getSelectedProfile();
+      const newGroups=(profile?.groups||[]).map(g=>g.id===group.id?{...g,name,color,entities}:g);
+      const profiles=(this._storageData.profiles||[]).map(p=>p.id===profile?.id?{...p,groups:newGroups}:p);
+      try{await this._wsSet({...this._storageData,profiles});this._renderGroupsView();}
+      catch(e){alert(`${this.t('errors.save_failed')}: ${e.message||e}`);}
+    });
+  }
+
+  _getAvailableEntities() {
+    const DOMAINS = ['climate', 'switch', 'light', 'fan', 'cover'];
+    return Object.values(this._hass?.states || {})
+      .filter(s => {
+        const d = s.entity_id.split('.')[0];
+        return DOMAINS.includes(d) && !s.entity_id.startsWith('switch.schedule_');
+      })
+      .map(s => ({ entity_id: s.entity_id, domain: s.entity_id.split('.')[0], friendly_name: s.attributes.friendly_name || s.entity_id }))
+      .sort((a, b) => a.domain.localeCompare(b.domain) || a.friendly_name.localeCompare(b.friendly_name));
+  }
+
+  _renderGroupsView() {
+    this._groupsMode=true; this._profilesMode=false;
+    const profile=this._getSelectedProfile();
+    const groups=profile?.groups||[];
+    const availableEnts=this._getAvailableEntities();
+    const domains=[...new Set(availableEnts.map(e=>e.domain))];
+    const yamlMap=Object.fromEntries(this._entities.map(e=>[e.entity,e]));
+    const S=`
+      :host{display:block;font-family:var(--primary-font-family,sans-serif)}
+      ha-card{padding:16px}
+      .card-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px}
+      .card-title{font-size:1.1em;font-weight:500;color:var(--primary-text-color)}
+      .btn-back{padding:6px 14px;border-radius:10px;border:1px solid var(--divider-color,#ccc);background:none;cursor:pointer;font-size:.8em;color:var(--primary-text-color)}
+      .btn-back:hover{background:var(--divider-color,#e0e0e0)}
+      .group-list{display:flex;flex-direction:column;gap:10px;margin-bottom:20px}
+      .group-card{border:1px solid var(--divider-color,#e0e0e0);border-radius:10px;padding:12px 14px}
+      .group-hd{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+      .dot{width:12px;height:12px;border-radius:50%;flex-shrink:0}
+      .group-name{font-size:.95em;font-weight:600;color:var(--primary-text-color);flex:1}
+      .tags{display:flex;flex-wrap:wrap;gap:6px}
+      .tag{display:flex;align-items:center;gap:4px;padding:3px 8px;border-radius:8px;font-size:.75em;background:var(--divider-color,#f0f0f0);color:var(--primary-text-color)}
+      .tag-dot{width:7px;height:7px;border-radius:50%}
+      .group-footer{display:flex;justify-content:flex-end;margin-top:10px}
+      .btn-del{background:none;border:1px solid var(--error-color,#f44336);color:var(--error-color,#f44336);padding:5px 12px;border-radius:8px;cursor:pointer;font-size:.78em;font-weight:600}
+      .btn-edit-grp{background:none;border:1px solid var(--primary-color,#03a9f4);color:var(--primary-color,#03a9f4);padding:5px 12px;border-radius:8px;cursor:pointer;font-size:.78em;font-weight:600}
+      .sec{font-size:.75em;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--secondary-text-color);margin-bottom:10px}
+      .form{border:1px dashed var(--divider-color,#ccc);border-radius:10px;padding:14px}
+      .form-row{margin-bottom:12px}
+      .form-label{font-size:.78em;font-weight:600;color:var(--secondary-text-color);margin-bottom:6px}
+      .form-input{width:100%;padding:7px 10px;border-radius:8px;border:1px solid var(--divider-color,#ccc);background:var(--card-background-color,#fff);color:var(--primary-text-color);font-size:.85em;box-sizing:border-box;font-family:inherit}
+      .form-input:focus{outline:none;border-color:var(--primary-color,#03a9f4)}
+      .color-row{display:flex;align-items:center;gap:8px}
+      .color-lbl{font-size:.78em;color:var(--secondary-text-color);margin-bottom:4px;display:block}
+      .color-palette{display:flex;flex-wrap:wrap;gap:5px;padding:4px 0}
+      .pal-swatch{width:22px;height:22px;border-radius:50%;cursor:pointer;border:2px solid transparent;box-sizing:border-box;outline:1px solid rgba(0,0,0,.1);transition:transform .1s}
+      .pal-swatch:hover{transform:scale(1.15)}
+      .pal-swatch.sel{border-color:var(--primary-text-color,#333);box-shadow:0 0 0 2px var(--card-background-color,white),0 0 0 4px var(--primary-text-color,#333)}
+      .ent-list{display:flex;flex-direction:column;gap:4px;max-height:320px;overflow-y:auto}
+      .ent-item{display:flex;flex-direction:column;gap:4px;padding:8px 10px;border-radius:8px;border:1px solid var(--divider-color,#ccc);cursor:default;user-select:none}
+      .ent-item.sel{border-color:var(--primary-color,#03a9f4);background:color-mix(in srgb,var(--primary-color,#03a9f4) 10%,transparent)}
+      .ent-row-top{display:flex;align-items:center;gap:8px;width:100%;cursor:pointer}
+      .ent-item .color-palette{display:none;padding:2px 0}
+      .ent-item.sel .color-palette{display:flex}
+      .domain-filter{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px}
+      .dom-btn{padding:3px 10px;border-radius:10px;border:1px solid var(--divider-color,#ccc);background:none;cursor:pointer;font-size:.72em;color:var(--primary-text-color)}
+      .dom-btn.active{background:var(--primary-color,#03a9f4);color:white;border-color:var(--primary-color,#03a9f4)}
+      .ent-search{width:100%;padding:6px 10px;border-radius:8px;border:1px solid var(--divider-color,#ccc);background:var(--card-background-color,#fff);color:var(--primary-text-color);font-size:.82em;box-sizing:border-box;font-family:inherit;margin-bottom:8px}
+      .ent-search:focus{outline:none;border-color:var(--primary-color,#03a9f4)}
+      .dom-badge{font-size:.62em;font-weight:700;padding:1px 6px;border-radius:6px;color:white;flex-shrink:0;min-width:44px;text-align:center}
+      .dom-climate{background:#FF7043}.dom-switch{background:#42A5F5}.dom-light{background:#F9A825}.dom-fan{background:#26C6DA}.dom-cover{background:#AB47BC}
+      .ent-name{flex:1;font-size:.83em;color:var(--primary-text-color);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+      .ent-label-inp{padding:4px 8px;border-radius:6px;border:1px solid var(--divider-color,#ccc);font-size:.78em;color:var(--primary-text-color);background:var(--card-background-color,#fff);font-family:inherit;width:80px;flex-shrink:0}
+      .btn-create{background:var(--primary-color,#03a9f4);color:white;padding:8px 18px;border-radius:10px;border:none;cursor:pointer;font-size:.85em;font-weight:600;margin-top:4px}
+      .btn-create:hover{filter:brightness(.9)}
+      .empty{font-size:.85em;color:var(--secondary-text-color)}`;
+
+    this.shadowRoot.innerHTML=`<style>${S}</style><ha-card>
+      <div class="card-header"><span class="card-title">Groups</span><button class="btn-back">← Back</button></div>
+      <div class="group-list">
+        ${groups.length?groups.map(g=>`
+          <div class="group-card">
+            <div class="group-hd"><span class="dot" style="background:${g.color||'#9E9E9E'}"></span><span class="group-name">${g.name}</span></div>
+            <div class="tags">${(g.entities||[]).map(ec=>`<div class="tag"><span class="tag-dot" style="background:${ec.color||'#9E9E9E'}"></span>${ec.name||ec.entity}</div>`).join('')}</div>
+            <div class="group-footer"><button class="btn-edit-grp" data-id="${g.id}">Edit</button><button class="btn-del" data-id="${g.id}">Delete</button></div>
+          </div>`).join(''):'<div class="empty">No groups yet.</div>'}
+      </div>
+      <div class="sec">Create new group</div>
+      <div class="form">
+        <div class="form-row"><div class="form-label">${this.t('group.name')}</div><input type="text" class="form-input new-group-name" placeholder="${this.t('group.create_placeholder')}"></div>
+        <div class="form-row">
+          <span class="color-lbl">Tab color</span>
+          ${this._colorPickerHTML('#9C27B0','group-pal')}
+        </div>
+        <div class="form-row">
+          <div class="form-label">Select entities</div>
+          <div class="domain-filter">
+            <button class="dom-btn active" data-domain="">All</button>
+            ${domains.map(d=>`<button class="dom-btn" data-domain="${d}">${d.charAt(0).toUpperCase()+d.slice(1)}</button>`).join('')}
+          </div>
+          <input type="text" class="ent-search" placeholder="Search entity…">
+          <div class="ent-list">
+            ${availableEnts.map(e=>{
+              const pre=yamlMap[e.entity_id];
+              return `<div class="ent-item${pre?' sel':''}" data-entity="${e.entity_id}" data-domain="${e.domain}" data-name="${e.friendly_name.toLowerCase().replace(/"/g,'')}">
+                <div class="ent-row-top">
+                  <input type="checkbox" class="ent-chk" data-entity="${e.entity_id}"${pre?' checked':''}>
+                  <span class="dom-badge dom-${e.domain}">${e.domain}</span>
+                  <span class="ent-name">${e.friendly_name}</span>
+                  <input type="text" class="ent-label-inp" data-entity="${e.entity_id}" placeholder="Label" value="${pre?.name||e.friendly_name}">
+                </div>
+                ${this._colorPickerHTML(pre?.color||'#9E9E9E')}
+              </div>`;
+            }).join('')}
+          </div>
+        </div>
+        <button class="btn-create">Create Group</button>
+      </div>
+    </ha-card>`;
+
+    this.shadowRoot.querySelector('.btn-back').addEventListener('click',()=>{this._groupsMode=false;this.render();});
+    this.shadowRoot.querySelectorAll('.btn-del').forEach(btn=>btn.addEventListener('click',async()=>{
+      if(!confirm(this.t('group.delete_confirm'))) return;
+      const newGroups=groups.filter(g=>g.id!==btn.dataset.id);
+      const profiles=(this._storageData.profiles||[]).map(p=>p.id===profile?.id?{...p,groups:newGroups}:p);
+      await this._wsSet({...this._storageData,profiles});
+      this._renderGroupsView();
+    }));
+    this.shadowRoot.querySelectorAll('.btn-edit-grp').forEach(btn=>btn.addEventListener('click',()=>{
+      const g=groups.find(x=>x.id===btn.dataset.id);
+      if(g) this._renderGroupEditView(g);
+    }));
+    this._bindColorPalettes(this.shadowRoot);
+    this.shadowRoot.querySelectorAll('.ent-row-top').forEach(top=>{
+      top.addEventListener('click',e=>{
+        if(e.target.tagName==='INPUT') return;
+        const chk=top.querySelector('.ent-chk'); chk.checked=!chk.checked;
+        top.closest('.ent-item').classList.toggle('sel',chk.checked);
+      });
+    });
+    this.shadowRoot.querySelectorAll('.ent-chk').forEach(chk=>chk.addEventListener('change',()=>chk.closest('.ent-item').classList.toggle('sel',chk.checked)));
+
+    let activeDomain='';
+    const filterEnts=()=>{
+      const search=this.shadowRoot.querySelector('.ent-search')?.value.toLowerCase()||'';
+      this.shadowRoot.querySelectorAll('.ent-item').forEach(item=>{
+        const ok=(!activeDomain||item.dataset.domain===activeDomain)&&(!search||item.dataset.name.includes(search));
+        item.style.display=ok?'':'none';
+      });
+    };
+    this.shadowRoot.querySelectorAll('.dom-btn').forEach(btn=>btn.addEventListener('click',()=>{
+      activeDomain=btn.dataset.domain;
+      this.shadowRoot.querySelectorAll('.dom-btn').forEach(b=>b.classList.toggle('active',b===btn));
+      filterEnts();
+    }));
+    this.shadowRoot.querySelector('.ent-search').addEventListener('input',filterEnts);
+
+    this.shadowRoot.querySelector('.btn-create').addEventListener('click',async()=>{
+      const name=this.shadowRoot.querySelector('.new-group-name').value.trim();
+      if(!name){alert(this.t('group.enter_name'));return;}
+      const color=this.shadowRoot.querySelector('.group-pal .pal-value')?.value||PALETTE[2];
+      const selected=[...this.shadowRoot.querySelectorAll('.ent-chk:checked')];
+      if(!selected.length){alert(this.t('group.select_entity'));return;}
+      const usedColors=[];
+      const entities=selected.map(chk=>{
+        const eid=chk.dataset.entity;
+        const palVal=this.shadowRoot.querySelector(`.ent-item[data-entity="${eid}"] .pal-value`)?.value;
+        const entColor=palVal||this._autoColor(usedColors);
+        usedColors.push(entColor);
+        return {
+          entity:eid,
+          name:this.shadowRoot.querySelector(`.ent-label-inp[data-entity="${eid}"]`)?.value.trim()||this._hass.states[eid]?.attributes.friendly_name||eid,
+          color:entColor,
+        };
+      });
+      const id=`grp_${name.toLowerCase().replace(/\s+/g,'_')}_${Date.now()}`;
+      const newGroups=[...groups,{id,name,color,entities}];
+      const profiles=(this._storageData.profiles||[]).map(p=>p.id===profile?.id?{...p,groups:newGroups}:p);
+      try{await this._wsSet({...this._storageData,profiles});this._renderGroupsView();}
+      catch(e){alert(`${this.t('errors.save_failed')}: ${e.message||e}`);}
+    });
+  }
+
+  // ── Abstract render (must be overridden by subclass) ──────────────────────
+
+  render() {}
+}
