@@ -101,10 +101,11 @@ right now, grouped by parent entity, with live attribute values.
 ### Via HACS (recommended)
 
 1. Add this repository as a **Custom Repository** in HACS → Frontend.
-2. Install. HACS will deploy the editing bundle automatically.
-3. The view card is shipped in the same repo but as a **second bundle**.
-   HACS currently exposes only one resource per repo, so add the view card
-   as an extra Lovelace resource (see below).
+2. Install. HACS deploys and registers the main bundle automatically.
+3. Since **v1.0.1** the main bundle bundles **all three** custom elements
+   (`weekly-schedule-card`, `weekly-schedule-view-card`,
+   `weekly-schedule-mini-card`), so the single resource HACS registers exposes
+   every card — no extra Lovelace resource needed. Just hard-refresh after install.
 
 ### Manual
 
@@ -115,19 +116,30 @@ dist/weekly-schedule-card.js       →  /config/www/weekly-schedule-card.js
 dist/weekly-schedule-view-card.js  →  /config/www/weekly-schedule-view-card.js
 ```
 
-### Register both resources
+### Register resources
 
-Go to **Settings → Dashboards → Resources** (or your `lovelace.yaml`):
+For **HACS installs** the main bundle already registers all three cards — you
+don't need to add anything. For **manual `/config/www/` installs**, register at
+least the main bundle in **Settings → Dashboards → Resources** (or your
+`lovelace.yaml`):
 
 ```yaml
 resources:
-  - url: /hacsfiles/weekly-schedule-card/weekly-schedule-card.js
-    type: module
-  - url: /hacsfiles/weekly-schedule-card/weekly-schedule-view-card.js
+  - url: /local/weekly-schedule-card.js
     type: module
 ```
 
-For local `/config/www/` deployments use `/local/...` instead of `/hacsfiles/...`.
+The main bundle inlines the view and mini cards, so this single resource is
+enough. If you prefer the lighter **standalone view bundle** (read-only, no
+editor code), register it instead/in addition:
+
+```yaml
+  - url: /local/weekly-schedule-view-card.js
+    type: module
+```
+
+For `/hacsfiles/...` paths, replace `/local/` with
+`/hacsfiles/weekly-schedule-card/`.
 
 Hard-refresh the browser (Ctrl/Cmd + Shift + R) after registering.
 

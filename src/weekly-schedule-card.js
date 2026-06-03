@@ -1,6 +1,7 @@
 // Last modified: 2026-05-28 14:30 CEST
 
 import WeeklyScheduleBase from './base-card.js';
+import './weekly-schedule-view-card.js';
 
 class WeeklyScheduleCard extends WeeklyScheduleBase {
   setConfig(config) {
@@ -398,9 +399,11 @@ class WeeklyScheduleCard extends WeeklyScheduleBase {
   }
 }
 
-customElements.define('weekly-schedule-card', WeeklyScheduleCard);
-window.customCards = window.customCards || [];
-window.customCards.push({ type:'weekly-schedule-card', name:'Weekly Schedule Card', description:'Visual weekly schedule card' });
+if (!customElements.get('weekly-schedule-card')) {
+  customElements.define('weekly-schedule-card', WeeklyScheduleCard);
+  window.customCards = window.customCards || [];
+  window.customCards.push({ type:'weekly-schedule-card', name:'Weekly Schedule Card', description:'Visual weekly schedule card' });
+}
 
 // ── Mini Card ─────────────────────────────────────────────────────────────
 

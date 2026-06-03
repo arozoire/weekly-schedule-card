@@ -3383,12 +3383,14 @@
     }
   }
 
-  customElements.define('weekly-schedule-view-card', WeeklyScheduleViewCard);
-  window.customCards = window.customCards || [];
-  window.customCards.push({
-    type: 'weekly-schedule-view-card',
-    name: 'Weekly Schedule View Card',
-    description: 'Read-only weekly schedule view'
-  });
+  if (!customElements.get('weekly-schedule-view-card')) {
+    customElements.define('weekly-schedule-view-card', WeeklyScheduleViewCard);
+    window.customCards = window.customCards || [];
+    window.customCards.push({
+      type: 'weekly-schedule-view-card',
+      name: 'Weekly Schedule View Card',
+      description: 'Read-only weekly schedule view'
+    });
+  }
 
 })();
