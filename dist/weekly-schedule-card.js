@@ -3474,16 +3474,18 @@
         .legend-item{display:flex;align-items:center;gap:4px;font-size:.75em;color:var(--primary-text-color);cursor:pointer}
         .legend-dot{width:12px;height:12px;border-radius:50%;flex-shrink:0}
         .chip-wrap{position:relative;flex-shrink:0}
-        .profile-chip{display:flex;align-items:center;gap:5px;padding:4px 10px 4px 8px;height:28px;border-radius:20px;border:1.5px solid var(--divider-color,#ccc);cursor:pointer;font-size:.78em;background:transparent;color:var(--secondary-text-color);user-select:none;transition:all .15s;box-sizing:border-box;flex-shrink:0}
+        .profile-chip{display:flex;align-items:center;gap:6px;padding:3px 7px 3px 11px;height:30px;border-radius:18px;border:1.5px solid var(--divider-color,#ccc);cursor:pointer;font-size:.78em;background:transparent;color:var(--secondary-text-color);user-select:none;transition:all .15s;box-sizing:border-box;flex-shrink:0}
+        .profile-chip:hover{border-color:color-mix(in srgb,var(--primary-color,#03a9f4) 55%,var(--divider-color,#ccc))}
         .profile-chip.viewed{background:color-mix(in srgb,var(--primary-color,#03a9f4) 8%,transparent);border-color:color-mix(in srgb,var(--primary-color,#03a9f4) 40%,transparent);color:var(--primary-color,#03a9f4);font-weight:500}
         .profile-chip.active-op{border-color:var(--pchip-color,#03a9f4)}
-        .profile-chip.viewed.active-op{background:color-mix(in srgb,var(--pchip-color,#03a9f4) 10%,transparent);border:2px solid var(--pchip-color,#03a9f4);color:var(--pchip-color,#03a9f4);font-weight:600;box-shadow:0 0 6px color-mix(in srgb,var(--pchip-color,#03a9f4) 25%,transparent)}
-        .chip-act-dot{width:6px;height:6px;border-radius:50%;background:#4CAF50;flex-shrink:0}
-        .chip-lock{font-size:.7em;opacity:.6}
-        .chip-activate{background:none;border:none;cursor:pointer;font-size:.72em;padding:0 1px;line-height:1;transition:color .12s}
-        .chip-activate:hover{opacity:.8}
-        .chip-menu{background:none;border:none;cursor:pointer;font-size:.9em;padding:0 2px;line-height:1;color:inherit;opacity:.5;margin-left:1px}
-        .chip-menu:hover{opacity:1}
+        .profile-chip.viewed.active-op{background:color-mix(in srgb,var(--pchip-color,#03a9f4) 12%,transparent);border:2px solid var(--pchip-color,#03a9f4);color:var(--pchip-color,#03a9f4);font-weight:600;box-shadow:0 1px 7px color-mix(in srgb,var(--pchip-color,#03a9f4) 28%,transparent)}
+        .chip-act-dot{width:7px;height:7px;border-radius:50%;background:#4CAF50;flex-shrink:0;box-shadow:0 0 4px color-mix(in srgb,#4CAF50 60%,transparent)}
+        .chip-lock{opacity:.55;flex-shrink:0;color:currentColor}
+        .chip-activate{display:flex;align-items:center;justify-content:center;width:20px;height:20px;border-radius:50%;background:none;border:none;cursor:pointer;padding:0;margin-left:2px;color:#4CAF50;transition:background .12s,color .12s}
+        .chip-activate.on{color:var(--secondary-text-color)}
+        .chip-activate:hover{background:color-mix(in srgb,currentColor 16%,transparent)}
+        .chip-menu{display:flex;align-items:center;justify-content:center;width:18px;height:18px;border-radius:50%;background:none;border:none;cursor:pointer;padding:0;color:inherit;opacity:.45;transition:background .12s,opacity .12s}
+        .chip-menu:hover{opacity:1;background:color-mix(in srgb,currentColor 14%,transparent)}
         .chip-dropdown{display:none;position:absolute;top:calc(100% + 4px);left:0;z-index:100;background:var(--card-background-color,#fff);border:1px solid var(--divider-color,#ccc);border-radius:8px;box-shadow:0 4px 16px rgba(0,0,0,.15);min-width:130px;overflow:hidden}
         .chip-dropdown.open{display:block}
         .chip-dd-item{padding:8px 14px;font-size:.8em;cursor:pointer;color:var(--primary-text-color);white-space:nowrap}
@@ -3641,11 +3643,11 @@
               const pcolor=this._getProfileColor(p);
               return '<div class="chip-wrap">'
                 + '<div class="profile-chip' + (viewed?' viewed':'') + (active?' active-op':'') + '" data-pid="' + p.id + '" style="--pchip-color:' + pcolor + '">'
-                + '<span class="chip-lock">' + (excl?'🔒':'🔓') + '</span>'
+                + '<ha-icon class="chip-lock" icon="' + (excl?'mdi:lock':'mdi:lock-open-variant') + '" style="--mdi-icon-size:13px"></ha-icon>'
                 + (active?'<span class="chip-act-dot"></span>':'')
                 + '<span class="chip-name">' + p.name + '</span>'
-                + '<button class="chip-activate" data-pid="' + p.id + '" title="' + (active?this.t('profile.deactivate'):this.t('profile.activate')) + '" style="color:' + (active?'var(--secondary-text-color)':'#4CAF50') + '">▶</button>'
-                + '<button class="chip-menu" data-pid="' + p.id + '">⋯</button>'
+                + '<button class="chip-activate' + (active?' on':'') + '" data-pid="' + p.id + '" title="' + (active?this.t('profile.deactivate'):this.t('profile.activate')) + '"><ha-icon icon="' + (active?'mdi:pause':'mdi:play') + '" style="--mdi-icon-size:16px"></ha-icon></button>'
+                + '<button class="chip-menu" data-pid="' + p.id + '"><ha-icon icon="mdi:dots-vertical" style="--mdi-icon-size:16px"></ha-icon></button>'
                 + '</div>'
                 + '<div class="chip-dropdown" data-pid="' + p.id + '">'
                 + '<div class="chip-dd-item" data-action="rename" data-pid="' + p.id + '">' + this.t('profile.rename') + '</div>'
