@@ -482,9 +482,13 @@
       await this._wsSet(data);
     }
 
-    // Cleanup: if a scheduleLink references a switch.schedule_ entity that no longer exists in HA,
-    // delete its associated condAutoId/extrasAutoId automations and prune the link. Runs once at boot.
-    // Guard: only run if we have at least one entity to confirm HA states are loaded.
+    // Cleanup (runs once at boot). Two passes:
+    //  1. Storage-tracked: scheduleLinks whose parent entity is gone → delete their
+    //     condAutoId/extrasAutoId automations + autoChildId schedule, then prune the link.
+    //  2. Tag sweep: any switch.schedule_ tagged weekly_schedule_auto whose `parent:<eid>`
+    //     no longer exists → remove it. Catches children orphaned by whole-profile deletions
+    //     (their links are gone from storage, so pass 1 can't see them).
+    // Guard: only run once HA states are loaded.
     async _cleanupOrphanAutomations() {
       if (this._orphanCleanupDone) return;
       const states = this._hass?.states;
@@ -494,27 +498,44 @@
       if (!data?.profiles) return;
       let dirty = false;
       const deletions = [];
+      const childRemovals = new Set();
       for (const p of data.profiles) {
         const links = p.scheduleLinks || [];
         const surviving = [];
         for (const link of links) {
           if (!link.id) { surviving.push(link); continue; }
           if (states[link.id]) { surviving.push(link); continue; }
-          // Orphan — collect automation IDs to delete
+          // Orphan — collect automation IDs + auto-off child to delete
           if (link.condAutoId) deletions.push(link.condAutoId);
           if (link.extrasAutoId) deletions.push(link.extrasAutoId);
+          if (link.autoChildId) childRemovals.add(link.autoChildId);
           // Also remove from p.schedules
           p.schedules = (p.schedules || []).filter(x => x !== link.id);
           dirty = true;
         }
         if (surviving.length !== links.length) { p.scheduleLinks = surviving; dirty = true; }
       }
+      // Tag sweep: auto-children whose parent entity is gone (e.g. profile deleted)
+      for (const s of Object.values(states)) {
+        if (!s.entity_id.startsWith('switch.schedule_')) continue;
+        const tags = s.attributes?.tags;
+        if (!Array.isArray(tags) || !tags.includes('weekly_schedule_auto')) continue;
+        const parentTag = tags.find(t => t.startsWith('parent:'));
+        if (!parentTag) continue;
+        const parentEid = parentTag.slice('parent:'.length);
+        if (parentEid && !states[parentEid]) childRemovals.add(s.entity_id);
+      }
       for (const autoId of deletions) {
         try { await this._hass.callApi('DELETE', `config/automation/config/${autoId}`); }
         catch (e) { console.warn('WSC orphan automation cleanup failed', autoId, e); }
       }
+      for (const childId of childRemovals) {
+        try { await this._hass.callService('scheduler', 'remove', { entity_id: childId }); }
+        catch (e) { console.warn('WSC orphan child cleanup failed', childId, e); }
+      }
       if (dirty) await this._wsSet(data).catch(() => {});
-      if (deletions.length) console.log(`[WSC] Cleaned up ${deletions.length} orphan automation(s)`);
+      if (deletions.length || childRemovals.size)
+        console.log(`[WSC] Cleaned up ${deletions.length} orphan automation(s), ${childRemovals.size} orphan child schedule(s)`);
     }
 
     // ── Auto-child sync ───────────────────────────────────────────────────────
@@ -2528,6 +2549,15 @@
       const data = this._storageData;
       const p = (data.profiles || []).find(x => x.id === id);
       if (p) {
+        // Remove linked auto-off children + condition/extras automations first (mirrors _deleteSchedule)
+        for (const link of p.scheduleLinks || []) {
+          if (link.condAutoId)
+            try { await this._hass.callApi('DELETE', `config/automation/config/${link.condAutoId}`); } catch (e) { console.error('WSC condAuto delete failed', e); }
+          if (link.extrasAutoId)
+            try { await this._hass.callApi('DELETE', `config/automation/config/${link.extrasAutoId}`); } catch (e) { console.error('WSC extrasAuto delete failed', e); }
+          if (link.autoChildId)
+            try { await this._hass.callService('scheduler', 'remove', { entity_id: link.autoChildId }); } catch {}
+        }
         for (const eid of p.schedules || [])
           try { await this._hass.callService('scheduler', 'remove', { entity_id: eid }); } catch {}
       }
