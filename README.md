@@ -494,8 +494,22 @@ dist/
 
 ## Credits
 
-- Built on top of [Scheduler Component](https://github.com/nielsfaber/scheduler-component) by [@nielsfaber](https://github.com/nielsfaber).
+This project stands on the shoulders of [@nielsfaber](https://github.com/nielsfaber)'s
+excellent work, and is heavily **inspired by it**:
+
+- **Backend (required)** — all schedules are stored and executed by the
+  [Scheduler Component](https://github.com/nielsfaber/scheduler-component)
+  (GPL-3.0), which you install separately. This card is only a frontend for it.
+- **Inspiration** — the official [Scheduler Card](https://github.com/nielsfaber/scheduler-card)
+  inspired this project. Weekly Schedule Card is an **independent
+  re-implementation** (hand-written vanilla JS, MIT) with a different focus —
+  a visual weekly-grid view, profiles, groups and color-coding. It does **not**
+  reuse any source code from the Scheduler Component or Scheduler Card; it only
+  talks to the backend through its public Home Assistant services.
 - UI conventions and CSS variables follow Home Assistant's design tokens.
+
+Huge thanks to nielsfaber for building and maintaining the Scheduler Component
+that makes all of this possible. 🙏
 
 ## License
 
