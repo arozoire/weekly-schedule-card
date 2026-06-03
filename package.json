@@ -1,11 +1,12 @@
 {
   "name": "weekly-schedule-card",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "description": "Visual weekly schedule card for Home Assistant",
   "main": "dist/weekly-schedule-card.js",
   "scripts": {
     "build": "npx rollup -c",
     "watch": "npx rollup -c --watch",
+    "check": "npm run build && node -e \"const fs=require('fs');for(const f of ['dist/weekly-schedule-card.js','dist/weekly-schedule-view-card.js']){const c=fs.readFileSync(f,'utf8');if(!c.startsWith('(function ()')){console.error('FAIL '+f+' is not IIFE');process.exit(1)}console.log('OK '+f+' '+c.length+'b')}\"",
     "deploy": "npm run build && cp dist/*.js /config/www/"
   },
   "devDependencies": {

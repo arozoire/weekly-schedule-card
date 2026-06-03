@@ -4,25 +4,28 @@ Ecco il CLAUDE.md riscritto per minimizzare i token e massimizzare l'efficienza:
 # Weekly Schedule Card — Project Context
 
 ## Stack
-Vanilla JS custom element, no build step.
-`src/weekly-schedule-card.js` → `cp src/ dist/` dopo ogni modifica.
-Deploy: copiare `dist/` in HA `/config/www/`.
+Vanilla JS custom element, **build con Rollup** (IIFE bundle).
+`src/*.js` → `npm run build` → `dist/*.js` (2 file IIFE auto-contenuti).
+Deploy: copiare `dist/weekly-schedule-card.js` + `dist/weekly-schedule-view-card.js` in HA `/config/www/`.
+**NON** copiare `base-card.js` in dist: viene inglobato nel bundle dal rollup.
 
 ## Workflow obbligatorio
 1. Analizza modifiche necessarie → scrivi piano in `CHANGES.md`
 2. Aspetta approvazione
 3. Applica SOLO con `str_replace` (mai riscrivere file intero)
 4. Elimina `CHANGES.md`
-5. `cp src/weekly-schedule-card.js dist/weekly-schedule-card.js`
+5. `npm run build` (genera IIFE bundle in dist/). MAI `cp src/ dist/` — i sorgenti hanno `import` ES module che HA non risolve senza bundle.
 
 ## File struttura
 ```
 src/
-  weekly-schedule-card.js        # card principale con editing
-  weekly-schedule-view-card.js   # card solo visualizzazione (WIP)
+  base-card.js                   # classe condivisa, import-ata da entrambe le card
+  weekly-schedule-card.js        # card principale con editing (extends base)
+  weekly-schedule-view-card.js   # card solo visualizzazione (extends base)
+rollup.config.js                 # 2 entry IIFE
 dist/
-  weekly-schedule-card.js        # copia di src/
-  weekly-schedule-view-card.js   # copia di src/
+  weekly-schedule-card.js        # IIFE bundle (base + card)
+  weekly-schedule-view-card.js   # IIFE bundle (base + view-card)
 ```
 
 ## Architettura core
@@ -164,8 +167,38 @@ notifications:
 6. README documentazione completa (parziale, sezione Two cards aggiunta)
 7. ~~UI condizioni adattiva all'entità selezionata~~ ✅ FATTO (helper `_getCondFieldSpec` + dispatcher condBodyHtml + listener re-render su entity/attribute change)
 
+8. ~~Logica automazione condizioni → entità target~~ ✅ FATTO (activeActions/inactiveActions tramite `_buildScheduleActions`/`_buildStopActions`, trigger state change su entità condizione, schedule switch resta on)
+
+
+## Storico ottimizzazioni (sessione 2026-05-28)
+
+### Alta priorità — FATTO
+1. **Eliminato `src/core/`** — refactor abbandonato mai importato (5 file, ~140 linee dead code).
+2. **Rimosso `LOCALES` + `PALETTE` duplicati** da `src/weekly-schedule-card.js` (~30 linee). Erano già fuori-sync con quelli di `base-card.js` e tree-shaked dal bundle. Eliminato il rischio di drift.
+3. **Rimossi 2 `console.log` di debug** in `base-card.js` (`notify check` riga 539, `_syncConditionAutomation` riga 873). Mantenuti `console.error`/`warn` e il log informativo di boot del cleanup orfani.
+
+### Media priorità — FATTO
+4. **Estratto `_groupSharedStyles()`** in `base-card.js`: ~30 regole CSS condivise tra `_renderGroupsView` e `_renderGroupEditView`. Bundle -3.3KB per file dopo deduplica.
+5. **Sostituiti `alert/confirm/prompt`** con dialog `<dialog>` in shadow DOM (15 occorrenze). Nuovi helper async in `base-card.js`: `_alert`, `_confirm`, `_prompt`, `_openModal`, `_modalStyles`. Aggiunta chiave locale `popup.ok` (en/it/fr). Gestione `Esc`/`Enter`/focus/click-out.
+6. **Style persistente fuori da `innerHTML`**: introdotti `_setStyles(key, css)` e `_ensureRoot()` in `WeeklyScheduleBase`. I `render()` ora scrivono in un `<div class="wsc-root">` mentre lo `<style>` resta fratello persistente nello shadowRoot. CSS estratti in getter (`_mainStyles()`, `_tooltipStyles()`, `_groupSharedStyles()`). Niente più re-parse CSS ad ogni render. Tutti i `this.shadowRoot.querySelector*` nei 4 render sono ora `root.querySelector*` (i tooltip e popup `<dialog>` restano sullo shadowRoot e sopravvivono al render).
+
+### Bassa priorità — SKIP (rischio/beneficio non vale)
+
+**Piano valutato ma non implementato.** Decisione: rivalutare in futuro se emerge un caso d'uso che lo giustifica.
+
+- **(7) Spezzare `base-card.js` (2983 linee) in moduli** — estraendo `LOCALES` → `locales.js`, `PALETTE` → `palette.js`, funzioni utility pure (`parseTime`, `minutesToTime`, `getDayIndex`, ecc.) → `time-utils.js`. **Skip**: -150 linee in `base-card.js` non giustificano il rischio di rompere import/binding `this`. Bundle non cambia (Rollup li ribundla comunque). I metodi sono già navigabili tramite i commenti `// ── Sezione ──`.
+
+- **(8) ESLint minimale** (`eslint.config.js` flat config, regole conservative `no-unused-vars`, `no-undef`, `prefer-const`, `no-var`, `eqeqeq` smart, script `npm run lint`). **Skip**: niente bug attivi che un linter avrebbe colto; aggiungere dipendenza + lavoro di triage warning senza un payoff concreto.
+
+- **(9) Render granulare del popup** — invece di buttare via `<dialog>` e ricrearlo ad ogni click di chip/giorno/condizione, aggiornare solo le sezioni interessate (cond-section, notif-section, domain-section). **Skip**: popup ha 800+ linee di interazioni concatenate, rischio medio-alto di regressioni. Il flusso attuale funziona; `_refreshNotifyDefault` e `_refreshNameDefault` già coprono i casi visibili (focus su `.name-input`). Da rivalutare solo se emerge un bug reale di UX (es. focus perso su `cond-val` al cambio entity).
+
+**Quando riconsiderare**: se il file `base-card.js` supera ~4000 linee, o se viene segnalato un bug di focus/scroll nel popup, o se si vuole introdurre testing automatico (a quel punto ESLint diventa utile).
 
 
 ## Last modified
 always update last modified date with day an hour Rome utc
-2026-05-27 14:03 Rome
+2026-06-02 12:00 Rome
+
+## Fix auto-off (2026-06-02)
+- **Root cause sintomo B** ("non si spegne quando dovrebbe"): `_activateProfile` (esclusivo) faceva `switch.turn_off` su tutti gli `switch.schedule_*` non in `pr.schedules`. I child auto-off vivono in `pr.scheduleLinks[].autoChildId` → venivano spenti dallo switch profilo e mai riaccesi. Fix: includere `autoChildId` nel set `profSched` e fare `switch.turn_on` su `link.autoChildId` di questo profilo dopo i parent.
+- **Fix #6 collaterale**: `_syncAutoChild` create branch usava `_waitForNewSchedule` by-diff (3s) → race con HA lento o create concorrenti → child orfani non tracciati → duplicati al successivo edit. Sostituito con nuovo helper `_findChildByParentTag(parentEid)` che cerca per tag univoco `parent:<eid>` (12 tentativi × 500ms = 6s).

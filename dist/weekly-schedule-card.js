@@ -9,7 +9,7 @@
   const LOCALES = {
     en: {
       card:{ title:'Weekly Schedule',new_profile:'New profile',groups:'Groups',no_entities:'No entities configured',no_entities_sub:'Add entities via YAML config, or create a Group to get started.',manage_groups:'Manage Groups',layout_rows_view:'Rows view',layout_cols_view:'Columns view',no_schedule_now:'No schedule active now',empty_schedule:'No schedule' },
-      popup:{ new_schedule:'New Schedule',edit_schedule:'Edit Schedule',schedule_active:'Schedule Active',time_slot:'Time slot',snap:'Snap',days:'Days',start:'Start',end:'End',drag_hint:'Drag handles to resize.',next_slot:'＋ Next slot',temperature:'Temperature',hvac_mode:'HVAC Mode',preset_mode:'Preset Mode',fan_mode:'Fan Mode',swing_mode:'Swing Mode',climate_actions:'Climate Actions',light_action:'Light Action',action:'Action',brightness:'Brightness',auto_off:'Auto at slot end',none:'None',turn_off:'Turn Off',turn_on:'Turn On',set_temp:'Set temp',conditions:'Conditions',add_condition:'+ Condition',notifications:'Notifications',notify_service_label:'Service (e.g. notify.mobile_app_phone)',notify_message_label:'Message',name:'Name',name_placeholder:'Schedule name (optional)',save:'Save',delete:'Delete',cancel:'Cancel' },
+      popup:{ new_schedule:'New Schedule',edit_schedule:'Edit Schedule',schedule_active:'Schedule Active',time_slot:'Time slot',snap:'Snap',days:'Days',start:'Start',end:'End',drag_hint:'Drag handles to resize.',next_slot:'＋ Next slot',temperature:'Temperature',hvac_mode:'HVAC Mode',preset_mode:'Preset Mode',fan_mode:'Fan Mode',swing_mode:'Swing Mode',climate_actions:'Climate Actions',light_action:'Light Action',action:'Action',brightness:'Brightness',auto_off:'Auto at slot end',none:'None',turn_off:'Turn Off',turn_on:'Turn On',set_temp:'Set temp',conditions:'Conditions',add_condition:'+ Condition',notifications:'Notifications',notify_service_label:'Service (e.g. notify.mobile_app_phone)',notify_message_label:'Message',name:'Name',name_placeholder:'Schedule name (optional)',save:'Save',delete:'Delete',cancel:'Cancel',ok:'OK' },
       days:{ mon:'Mon',tue:'Tue',wed:'Wed',thu:'Thu',fri:'Fri',sat:'Sat',sun:'Sun',all:'All',workdays:'Workdays',weekend:'Weekend' },
       profile:{ exclusive_label:'🔒 Exclusive (deactivates other exclusive profiles)',shared_label:'🔓 Shared (coexists with other profiles)',new_profile:'New Profile',create:'Create',name_placeholder:'Profile name',new_profile_mode:'new profile',rename:'Rename',duplicate:'Duplicate',delete:'Delete',viewing:'Viewing',active:'Active',activate:'Activate',deactivate:'Deactivate' },
       group:{ title:'Groups',back:'← Back',edit:'Edit',create:'Create Group',tab_color:'Tab color',select_entities:'Select entities',no_groups:'No groups yet.',create_new:'Create new group',delete_confirm:'Delete this group?',name:'Group name',enter_name:'Enter a group name.',select_entity:'Please select at least one entity.',create_placeholder:'e.g. Home Climate',removed_active:'active schedule(s) found on removed entit(ies). Deactivate?' },
@@ -20,7 +20,7 @@
     },
     it: {
       card:{ title:'Pianificazione Settimanale',new_profile:'Nuovo profilo',groups:'Gruppi',no_entities:'Nessuna entità configurata',no_entities_sub:'Aggiungi entità via YAML o crea un Gruppo per iniziare.',manage_groups:'Gestisci Gruppi',layout_rows_view:'Vista righe',layout_cols_view:'Vista colonne',no_schedule_now:'Nessuno schedule attivo ora',empty_schedule:'Nessuno schedule' },
-      popup:{ new_schedule:'Nuovo Schedule',edit_schedule:'Modifica Schedule',schedule_active:'Schedule Attivo',time_slot:'Fascia oraria',snap:'Snap',days:'Giorni',start:'Inizio',end:'Fine',drag_hint:'Trascina le maniglie per ridimensionare.',next_slot:'＋ Slot successivo',temperature:'Temperatura',hvac_mode:'Modalità HVAC',preset_mode:'Modalità preset',fan_mode:'Modalità ventola',swing_mode:'Modalità oscillazione',climate_actions:'Azioni clima',light_action:'Azione luce',action:'Azione',brightness:'Luminosità',auto_off:'Azione al termine slot',none:'Nessuna',turn_off:'Spegni',turn_on:'Accendi',set_temp:'Imposta temp',conditions:'Condizioni',add_condition:'+ Condizione',notifications:'Notifiche',notify_service_label:'Servizio (es. notify.mobile_app_phone)',notify_message_label:'Messaggio',name:'Nome',name_placeholder:'Nome schedule (opzionale)',save:'Salva',delete:'Elimina',cancel:'Annulla' },
+      popup:{ new_schedule:'Nuovo Schedule',edit_schedule:'Modifica Schedule',schedule_active:'Schedule Attivo',time_slot:'Fascia oraria',snap:'Snap',days:'Giorni',start:'Inizio',end:'Fine',drag_hint:'Trascina le maniglie per ridimensionare.',next_slot:'＋ Slot successivo',temperature:'Temperatura',hvac_mode:'Modalità HVAC',preset_mode:'Modalità preset',fan_mode:'Modalità ventola',swing_mode:'Modalità oscillazione',climate_actions:'Azioni clima',light_action:'Azione luce',action:'Azione',brightness:'Luminosità',auto_off:'Azione al termine slot',none:'Nessuna',turn_off:'Spegni',turn_on:'Accendi',set_temp:'Imposta temp',conditions:'Condizioni',add_condition:'+ Condizione',notifications:'Notifiche',notify_service_label:'Servizio (es. notify.mobile_app_phone)',notify_message_label:'Messaggio',name:'Nome',name_placeholder:'Nome schedule (opzionale)',save:'Salva',delete:'Elimina',cancel:'Annulla',ok:'OK' },
       days:{ mon:'Lun',tue:'Mar',wed:'Mer',thu:'Gio',fri:'Ven',sat:'Sab',sun:'Dom',all:'Tutti',workdays:'Feriali',weekend:'Weekend' },
       profile:{ exclusive_label:'🔒 Esclusivo (disattiva altri profili esclusivi)',shared_label:'🔓 Condiviso (coesiste con altri profili)',new_profile:'Nuovo Profilo',create:'Crea',name_placeholder:'Nome profilo',new_profile_mode:'nuovo profilo',rename:'Rinomina',duplicate:'Duplica',delete:'Elimina',viewing:'Stai visualizzando',active:'Attivo',activate:'Attiva',deactivate:'Disattiva' },
       group:{ title:'Gruppi',back:'← Indietro',edit:'Modifica',create:'Crea Gruppo',tab_color:'Colore tab',select_entities:'Seleziona entità',no_groups:'Nessun gruppo.',create_new:'Crea nuovo gruppo',delete_confirm:'Eliminare questo gruppo?',name:'Nome gruppo',enter_name:'Inserisci un nome gruppo.',select_entity:"Seleziona almeno un'entità.",create_placeholder:'es. Clima Casa',removed_active:'schedule attivi su entità rimosse. Disattivarli?' },
@@ -31,7 +31,7 @@
     },
     fr: {
       card:{ title:'Planning Hebdomadaire',new_profile:'Nouveau profil',groups:'Groupes',no_entities:'Aucune entité configurée',no_entities_sub:'Ajoutez des entités via la config YAML, ou créez un Groupe pour commencer.',manage_groups:'Gérer les Groupes',layout_rows_view:'Vue lignes',layout_cols_view:'Vue colonnes',no_schedule_now:'Aucun planning actif',empty_schedule:'Aucun planning' },
-      popup:{ new_schedule:'Nouveau Schedule',edit_schedule:'Modifier Schedule',schedule_active:'Schedule Actif',time_slot:'Créneau horaire',snap:'Snap',days:'Jours',start:'Début',end:'Fin',drag_hint:'Glissez les poignées pour redimensionner.',next_slot:'＋ Créneau suivant',temperature:'Température',hvac_mode:'Mode HVAC',preset_mode:'Mode preset',fan_mode:'Mode ventilateur',swing_mode:'Mode oscillation',climate_actions:'Actions climatisation',light_action:'Action lumière',action:'Action',brightness:'Luminosité',auto_off:'Action en fin de créneau',none:'Aucune',turn_off:'Éteindre',turn_on:'Allumer',set_temp:'Définir temp',conditions:'Conditions',add_condition:'+ Condition',notifications:'Notifications',notify_service_label:'Service (ex. notify.mobile_app_phone)',notify_message_label:'Message',name:'Nom',name_placeholder:'Nom du schedule (optionnel)',save:'Sauvegarder',delete:'Supprimer',cancel:'Annuler' },
+      popup:{ new_schedule:'Nouveau Schedule',edit_schedule:'Modifier Schedule',schedule_active:'Schedule Actif',time_slot:'Créneau horaire',snap:'Snap',days:'Jours',start:'Début',end:'Fin',drag_hint:'Glissez les poignées pour redimensionner.',next_slot:'＋ Créneau suivant',temperature:'Température',hvac_mode:'Mode HVAC',preset_mode:'Mode preset',fan_mode:'Mode ventilateur',swing_mode:'Mode oscillation',climate_actions:'Actions climatisation',light_action:'Action lumière',action:'Action',brightness:'Luminosité',auto_off:'Action en fin de créneau',none:'Aucune',turn_off:'Éteindre',turn_on:'Allumer',set_temp:'Définir temp',conditions:'Conditions',add_condition:'+ Condition',notifications:'Notifications',notify_service_label:'Service (ex. notify.mobile_app_phone)',notify_message_label:'Message',name:'Nom',name_placeholder:'Nom du schedule (optionnel)',save:'Sauvegarder',delete:'Supprimer',cancel:'Annuler',ok:'OK' },
       days:{ mon:'Lun',tue:'Mar',wed:'Mer',thu:'Jeu',fri:'Ven',sat:'Sam',sun:'Dim',all:'Tous',workdays:'Jours ouvrés',weekend:'Week-end' },
       profile:{ exclusive_label:"🔒 Exclusif (désactive les autres profils exclusifs)",shared_label:"🔓 Partagé (coexiste avec d'autres profils)",new_profile:'Nouveau Profil',create:'Créer',name_placeholder:'Nom du profil',new_profile_mode:'nouveau profil',rename:'Renommer',duplicate:'Dupliquer',delete:'Supprimer',viewing:'En vue',active:'Actif',activate:'Activer',deactivate:'Désactiver' },
       group:{ title:'Groupes',back:'← Retour',edit:'Modifier',create:'Créer Groupe',tab_color:'Couleur onglet',select_entities:'Sélectionner entités',no_groups:'Aucun groupe.',create_new:'Créer nouveau groupe',delete_confirm:'Supprimer ce groupe ?',name:'Nom du groupe',enter_name:'Entrez un nom de groupe.',select_entity:'Sélectionnez au moins une entité.',create_placeholder:'ex. Climat Maison',removed_active:'planning(s) actif(s) sur entité(s) retirée(s). Désactiver ?' },
@@ -93,6 +93,7 @@
           this._storageData = data;
           this._ensureDefaultProfile();
           this._loadingStorage = false;
+          this._cleanupOrphanAutomations().catch(() => {});
           if (!this._popupState && !this._profilesMode && !this._groupsMode && !this._dialogOpen) this.render();
         }).catch(() => {
           this._storageData = { groups: [], profiles: [], activeProfiles: [] };
@@ -201,6 +202,33 @@
 
     getCardSize() { return 7; }
 
+    // ── Render helpers: persistent <style> + body container ──────────────────
+
+    // Persist a <style> element across renders. css is replaced in place if changed.
+    // Without this, every shadowRoot.innerHTML = ... would re-parse the CSS.
+    _setStyles(key, css) {
+      let el = this.shadowRoot.querySelector(`style[data-wsc="${key}"]`);
+      if (!el) {
+        el = document.createElement('style');
+        el.dataset.wsc = key;
+        this.shadowRoot.prepend(el);
+      }
+      if (el.textContent !== css) el.textContent = css;
+    }
+
+    // Lazily create a <div class="wsc-root"> as the body container.
+    // Render methods write into root.innerHTML instead of shadowRoot.innerHTML
+    // so that persistent <style> siblings (and live <dialog>/tooltips) survive.
+    _ensureRoot() {
+      let root = this.shadowRoot.querySelector('.wsc-root');
+      if (!root) {
+        root = document.createElement('div');
+        root.className = 'wsc-root';
+        this.shadowRoot.appendChild(root);
+      }
+      return root;
+    }
+
     // ── WebSocket storage ─────────────────────────────────────────────────────
 
     async _wsGet() {
@@ -280,6 +308,24 @@
         await new Promise(r => setTimeout(r, 500));
         const newId = Object.keys(this._hass.states).find(k => k.startsWith('switch.schedule_') && !beforeIds.has(k));
         if (newId) return newId;
+      }
+      return null;
+    }
+
+    // Locate the auto-child schedule by its unique `parent:<eid>` tag.
+    // Robust against slow state propagation and concurrent schedule creations
+    // (unlike by-diff polling which can miss the entity or pick a wrong one).
+    async _findChildByParentTag(parentEid) {
+      const tag = `parent:${parentEid}`;
+      for (let i = 0; i < 12; i++) {
+        await new Promise(r => setTimeout(r, 500));
+        for (const s of Object.values(this._hass.states)) {
+          if (!s.entity_id.startsWith('switch.schedule_')) continue;
+          const tags = s.attributes?.tags;
+          if (Array.isArray(tags) && tags.includes('weekly_schedule_auto') && tags.includes(tag)) {
+            return s.entity_id;
+          }
+        }
       }
       return null;
     }
@@ -391,6 +437,86 @@
       await this._wsSet(data);
     }
 
+    // ── Extras (preset/fan/swing/hvac) storage helpers ────────────────────────
+
+    _getExtras(scheduleEntityId) {
+      for (const p of this._storageData?.profiles || []) {
+        const link = (p.scheduleLinks || []).find(l => l.id === scheduleEntityId);
+        if (link?.extras) return link.extras;
+      }
+      return null;
+    }
+
+    _getExtrasAutoId(scheduleEntityId) {
+      for (const p of this._storageData?.profiles || []) {
+        const link = (p.scheduleLinks || []).find(l => l.id === scheduleEntityId);
+        if (link?.extrasAutoId) return link.extrasAutoId;
+      }
+      return null;
+    }
+
+    async _saveExtras(scheduleEntityId, extras, extrasAutoId) {
+      const data = this._storageData;
+      let found = false;
+      for (const p of data.profiles || []) {
+        if (!p.scheduleLinks) p.scheduleLinks = [];
+        const link = p.scheduleLinks.find(l => l.id === scheduleEntityId);
+        if (link) {
+          if (extras) link.extras = extras; else delete link.extras;
+          if (extrasAutoId !== undefined) {
+            if (extrasAutoId) link.extrasAutoId = extrasAutoId; else delete link.extrasAutoId;
+          }
+          found = true;
+        }
+      }
+      if (!found && extras) {
+        const profile = this._getSelectedProfile();
+        if (profile) {
+          if (!profile.scheduleLinks) profile.scheduleLinks = [];
+          let link = profile.scheduleLinks.find(l => l.id === scheduleEntityId);
+          if (!link) { link = { id: scheduleEntityId }; profile.scheduleLinks.push(link); }
+          link.extras = extras;
+          if (extrasAutoId) link.extrasAutoId = extrasAutoId;
+        }
+      }
+      await this._wsSet(data);
+    }
+
+    // Cleanup: if a scheduleLink references a switch.schedule_ entity that no longer exists in HA,
+    // delete its associated condAutoId/extrasAutoId automations and prune the link. Runs once at boot.
+    // Guard: only run if we have at least one entity to confirm HA states are loaded.
+    async _cleanupOrphanAutomations() {
+      if (this._orphanCleanupDone) return;
+      const states = this._hass?.states;
+      if (!states || Object.keys(states).length === 0) return;
+      this._orphanCleanupDone = true;
+      const data = this._storageData;
+      if (!data?.profiles) return;
+      let dirty = false;
+      const deletions = [];
+      for (const p of data.profiles) {
+        const links = p.scheduleLinks || [];
+        const surviving = [];
+        for (const link of links) {
+          if (!link.id) { surviving.push(link); continue; }
+          if (states[link.id]) { surviving.push(link); continue; }
+          // Orphan — collect automation IDs to delete
+          if (link.condAutoId) deletions.push(link.condAutoId);
+          if (link.extrasAutoId) deletions.push(link.extrasAutoId);
+          // Also remove from p.schedules
+          p.schedules = (p.schedules || []).filter(x => x !== link.id);
+          dirty = true;
+        }
+        if (surviving.length !== links.length) { p.scheduleLinks = surviving; dirty = true; }
+      }
+      for (const autoId of deletions) {
+        try { await this._hass.callApi('DELETE', `config/automation/config/${autoId}`); }
+        catch (e) { console.warn('WSC orphan automation cleanup failed', autoId, e); }
+      }
+      if (dirty) await this._wsSet(data).catch(() => {});
+      if (deletions.length) console.log(`[WSC] Cleaned up ${deletions.length} orphan automation(s)`);
+    }
+
     // ── Auto-child sync ───────────────────────────────────────────────────────
 
     async _syncAutoChild(parentEntityId, ps) {
@@ -429,12 +555,12 @@
         } catch (e) { console.error('WSC syncAutoChild edit failed', e); }
       } else {
         try {
-          const beforeIds = new Set(Object.keys(this._hass.states).filter(k => k.startsWith('switch.schedule_')));
           await this._hass.callService('scheduler', 'add', {
             weekdays, timeslots: childTimeslots, repeat_type: 'repeat', tags: childTags,
           });
-          const newChildId = await this._waitForNewSchedule(beforeIds);
+          const newChildId = await this._findChildByParentTag(parentEntityId);
           if (newChildId) await this._saveAutoChildId(parentEntityId, newChildId);
+          else console.warn('WSC syncAutoChild: child created but not found via tag lookup');
         } catch (e) { console.error('WSC syncAutoChild add failed', e); }
       }
     }
@@ -450,13 +576,13 @@
           const nst = newHass.states[link.id];
           const pst = prevHass.states[link.id];
           if (!nst || !pst) continue;
-          if (nst.state !== 'on') continue; // schedule disabilitato → nessuna notifica
           const wasInSlot = pst.attributes.current_slot !== null && pst.attributes.current_slot !== undefined;
           const isInSlot = nst.attributes.current_slot !== null && nst.attributes.current_slot !== undefined;
           const slotStarted = !wasInSlot && isInSlot;
           const slotEnded = wasInSlot && !isInSlot;
-          const fireStart = slotStarted && (trig === 'start' || trig === 'both');
-          const fireEnd = slotEnded && (trig === 'end' || trig === 'both');
+          // Start: schedule must be on now. End: schedule must have been on during the slot (prev).
+          const fireStart = slotStarted && nst.state === 'on' && (trig === 'start' || trig === 'both');
+          const fireEnd = slotEnded && pst.state === 'on' && (trig === 'end' || trig === 'both');
           if (!fireStart && !fireEnd) continue;
           const message = fireEnd
             ? (link.notifyMessageEnd || link.notifyMessage || this.t('notify.default_end'))
@@ -538,6 +664,68 @@
         firstLine = `🔌 ${entityName} ${ps.turnOn ? onLbl : offLbl}`;
       }
       return `${firstLine}\n⏰ ${fromTo}\n${daysLbl}${condLine}\n${endLbl}`;
+    }
+
+    // Compact, human-readable schedule name for the "name" field default.
+    // Pattern: "<Entity> <Action> <Time> [<Days>]" — max ~40 chars.
+    _buildDefaultScheduleName(ps) {
+      if (!ps) return '';
+      const lang = this._lang || 'en';
+      const ec = ps.entityConf || {};
+      let entName = ec.name || this._hass?.states?.[ec.entity]?.attributes?.friendly_name || ec.entity || '';
+      if (entName.length > 12) entName = entName.slice(0, 11) + '…';
+      // Action descriptor
+      let act = '';
+      if (ps.domain === 'climate') {
+        if (ps.enableTemp) act = `${ps.temp}°`;
+        else if (ps.enableHvac && ps.hvacMode) act = ps.hvacMode;
+        else if (ps.enablePreset && ps.presetMode) act = ps.presetMode;
+        else if (ps.enableFan && ps.fanMode) act = ps.fanMode;
+      } else if (ps.domain === 'light') {
+        if (ps.turnOn) act = ps.enableBrightness ? `${ps.brightness}%` : 'On';
+        else act = 'Off';
+      } else {
+        act = ps.turnOn ? 'On' : 'Off';
+      }
+      // Time
+      const allDay = ps.startMin === 0 && ps.endMin === 1440;
+      let timeStr;
+      if (allDay) {
+        timeStr = lang==='it'?'tutto-gg':lang==='fr'?'tt-jour':'all-day';
+      } else {
+        const sM = ps.startMin % 60, eM = ps.endMin % 60;
+        if (sM === 0 && eM === 0) {
+          const sH = ps.startMin / 60, eH = ps.endMin === 1440 ? 24 : ps.endMin / 60;
+          timeStr = `${String(sH).padStart(2,'0')}-${String(eH).padStart(2,'0')}`;
+        } else {
+          timeStr = `${this._minutesToTime(ps.startMin)}-${this._minutesToTime(ps.endMin===1440?0:ps.endMin)}`;
+        }
+      }
+      // Days
+      const ds = [...(ps.days || [])].sort((a,b)=>a-b);
+      let daysStr = '';
+      if (ds.length === 7 || ds.length === 0) daysStr = '';
+      else if (ds.length === 5 && ds.every((v,i)=>v===i)) daysStr = lang==='it'?'fer':lang==='fr'?'jo':'wd';
+      else if (ds.length === 2 && ds[0]===5 && ds[1]===6) daysStr = 'we';
+      else if (ds.length <= 3) daysStr = ds.map(i => (this.t(`days.${this._getDayKey(i)}`)||'').slice(0,3)).join(',');
+      return [entName, act, timeStr, daysStr].filter(Boolean).join(' ').slice(0, 40);
+    }
+
+    _refreshNameDefault(dlg) {
+      const ps = this._popupState;
+      if (!ps) return;
+      // Only auto-update in create mode and when user hasn't customized the name
+      if (ps.mode !== 'create') return;
+      const newDef = this._buildDefaultScheduleName(ps);
+      const wasAuto = !ps.name || ps.name === ps._defaultName;
+      if (wasAuto) ps.name = newDef;
+      ps._defaultName = newDef;
+      const inp = dlg?.querySelector('.name-input');
+      if (inp && wasAuto && document.activeElement !== inp && inp.shadowRoot?.activeElement !== inp) {
+        // Don't overwrite while user is typing
+        const ae = dlg.getRootNode()?.activeElement;
+        if (ae !== inp) inp.value = newDef;
+      }
     }
 
     _refreshNotifyDefault(dlg) {
@@ -624,6 +812,35 @@
       return fallback;
     }
 
+    // Runtime evaluation: check if a stored condition is satisfied against current hass.states
+    _evalCondition(c) {
+      if (!c?.entity) return false;
+      const s = this._hass?.states?.[c.entity]; if (!s) return false;
+      const raw = c.attribute ? s.attributes?.[c.attribute] : s.state;
+      if (raw === null || raw === undefined) return false;
+      const v = String(raw);
+      const tv = String(c.value);
+      switch (c.operator) {
+        case '==': return v === tv;
+        case '!=': return v !== tv;
+        case '>':  return parseFloat(v) >  parseFloat(tv);
+        case '<':  return parseFloat(v) <  parseFloat(tv);
+        case '>=': return parseFloat(v) >= parseFloat(tv);
+        case '<=': return parseFloat(v) <= parseFloat(tv);
+      }
+      return false;
+    }
+
+    _evalAllConditions(scheduleId) {
+      const { conditions, condCombinator } = this._getStoredConditions(scheduleId);
+      if (!conditions?.length) return { hasCond: false, satisfied: true };
+      const valid = conditions.filter(c => c.entity && c.value !== '' && c.value != null);
+      if (!valid.length) return { hasCond: false, satisfied: true };
+      const results = valid.map(c => this._evalCondition(c));
+      const satisfied = condCombinator === 'or' ? results.some(Boolean) : results.every(Boolean);
+      return { hasCond: true, satisfied };
+    }
+
     _buildHACondition(c) {
       const numOps = ['>', '<', '>=', '<='];
       if (numOps.includes(c.operator)) {
@@ -643,56 +860,303 @@
       }
     }
 
-    async _syncConditionAutomation(scheduleEntityId, conditions, condCombinator, condInterval=15) {
+    // Build HA service actions array for schedule's PRIMARY (active) action set.
+    // Used both by scheduler timeslot actions AND condition automation activeAction.
+    _buildScheduleActions(ps) {
+      const eid = ps.entityConf.entity;
+      const dom = ps.domain;
+      const out = [];
+      if (dom === 'climate') {
+        if (ps.enableTemp) out.push({ service: 'climate.set_temperature', target: { entity_id: eid }, data: { temperature: ps.temp } });
+        if (ps.enableHvac && ps.hvacMode) out.push({ service: 'climate.set_hvac_mode', target: { entity_id: eid }, data: { hvac_mode: ps.hvacMode } });
+        if (ps.enablePreset && ps.presetMode) out.push({ service: 'climate.set_preset_mode', target: { entity_id: eid }, data: { preset_mode: ps.presetMode } });
+        if (ps.enableFan && ps.fanMode) out.push({ service: 'climate.set_fan_mode', target: { entity_id: eid }, data: { fan_mode: ps.fanMode } });
+        if (ps.enableSwing && ps.swingMode) out.push({ service: 'climate.set_swing_mode', target: { entity_id: eid }, data: { swing_mode: ps.swingMode } });
+        if (!out.length) out.push({ service: 'climate.turn_on', target: { entity_id: eid } });
+      } else if (dom === 'light') {
+        if (ps.turnOn) {
+          const data = ps.enableBrightness ? { brightness_pct: ps.brightness } : {};
+          out.push({ service: 'light.turn_on', target: { entity_id: eid }, data });
+        } else {
+          out.push({ service: 'light.turn_off', target: { entity_id: eid } });
+        }
+      } else {
+        out.push({ service: ps.turnOn ? `${dom}.turn_on` : `${dom}.turn_off`, target: { entity_id: eid } });
+      }
+      return out;
+    }
+
+    // Build HA service actions array for the stop action (inactive state).
+    // Returns null if no stopAction is defined.
+    _buildStopActions(ps) {
+      if (!ps.stopAction) return null;
+      const eid = ps.entityConf.entity;
+      const dom = ps.domain;
+      if (ps.stopAction === 'set_temperature') {
+        return [{ service: 'climate.set_temperature', target: { entity_id: eid }, data: { temperature: ps.stopTemp } }];
+      }
+      if (ps.stopAction === 'turn_off') {
+        return [{ service: `${dom}.turn_off`, target: { entity_id: eid } }];
+      }
+      if (ps.stopAction === 'turn_on') {
+        return [{ service: `${dom}.turn_on`, target: { entity_id: eid } }];
+      }
+      return null;
+    }
+
+    async _syncConditionAutomation(scheduleEntityId, conditions, condCombinator, condInterval=15, ps=null) {
       const existingId = this._getCondAutoId(scheduleEntityId);
-      const validConds = (conditions || []).filter(c => c.entity);
-      if (!validConds.length) {
+      const numericOps = ['>', '<', '>=', '<='];
+      const allConds = conditions || [];
+      const validConds = allConds.filter(c => {
+        if (!c.entity || !c.operator) return false;
+        if (c.value === '' || c.value == null) return false;
+        // Numeric operators require a parseable number
+        if (numericOps.includes(c.operator) && isNaN(parseFloat(c.value))) return false;
+        return true;
+      });
+      // No conditions provided at all → cleanup (user removed them)
+      if (allConds.length === 0) {
         if (existingId) {
-          try {
-            await this._hass.connection.sendMessagePromise({ type: 'config/automation/delete', automation_id: existingId });
-          } catch (e) { console.error('WSC condAuto delete failed', e); }
+          try { await this._hass.callApi('DELETE', `config/automation/config/${existingId}`); } catch (e) { console.error('WSC condAuto delete failed', e); }
         }
         await this._clearCondData(scheduleEntityId);
         return;
       }
+      // Some conditions exist but ALL are invalid → keep them in storage so user can re-edit, but don't create automation
+      if (!validConds.length) {
+        console.warn('[WSC] All conditions are invalid (missing value or non-numeric). Storage preserved, no automation created.');
+        await this._saveCondData(scheduleEntityId, existingId, allConds, condCombinator, condInterval);
+        return;
+      }
       // Persist conditions to storage FIRST — survives even if HA automation fails
       await this._saveCondData(scheduleEntityId, null, validConds, condCombinator, condInterval);
-      // Deterministic automation ID: HA refuses automation_id: null on create
+      // Deterministic automation ID (REST endpoint requires a non-empty object_id)
       const targetId = existingId || `wsc_cond_${scheduleEntityId.replace('switch.', '')}`;
       const haConds = validConds.map(c => this._buildHACondition(c));
       const condBlock = haConds.length === 1 ? haConds[0] : { condition: condCombinator === 'or' ? 'or' : 'and', conditions: haConds };
-      const automationConfig = {
-        alias: `WSC Conditions - ${scheduleEntityId}`,
-        description: 'Auto-generated by Weekly Schedule Card',
-        trigger: [
-          { platform: 'state', entity_id: scheduleEntityId, to: 'on' },
-          { platform: 'time_pattern', minutes: `/${condInterval}` },
-        ],
-        condition: [
-          { condition: 'template', value_template: `{{ state_attr('${scheduleEntityId}', 'current_slot') != None }}` },
-        ],
-        action: [{
+      // Build active/inactive actions on the TARGET entity (not on schedule switch)
+      const activeActions = ps ? this._buildScheduleActions(ps) : null;
+      const inactiveActions = ps ? this._buildStopActions(ps) : null;
+      // Triggers: schedule turn_on + slot start/end + periodic + state change of condition entities (immediate reaction)
+      const triggers = [
+        { platform: 'state', entity_id: scheduleEntityId, to: 'on' },
+        { platform: 'state', entity_id: scheduleEntityId, attribute: 'current_slot' },
+        { platform: 'time_pattern', minutes: `/${condInterval}` },
+      ];
+      const condEntityIds = [...new Set(validConds.map(c => c.entity).filter(Boolean))];
+      for (const ce of condEntityIds) triggers.push({ platform: 'state', entity_id: ce });
+      // Action block: if active+inactive both defined, choose/default. If only active, only fire when met.
+      let actionBlock;
+      if (activeActions && inactiveActions) {
+        actionBlock = {
+          choose: [{
+            conditions: [{ condition: 'not', conditions: [condBlock] }],
+            sequence: inactiveActions,
+          }],
+          default: activeActions,
+        };
+      } else if (activeActions) {
+        actionBlock = {
+          choose: [{
+            conditions: [condBlock],
+            sequence: activeActions,
+          }],
+        };
+      } else {
+        // Fallback (no ps): old behaviour — toggle schedule switch
+        actionBlock = {
           choose: [{
             conditions: [{ condition: 'not', conditions: [condBlock] }],
             sequence: [{ service: 'switch.turn_off', target: { entity_id: scheduleEntityId } }],
           }],
           default: [{ service: 'switch.turn_on', target: { entity_id: scheduleEntityId } }],
-        }],
+        };
+      }
+      const automationConfig = {
+        alias: `WSC Conditions - ${scheduleEntityId}`,
+        description: 'Auto-generated by Weekly Schedule Card',
+        trigger: triggers,
+        condition: [
+          { condition: 'state', entity_id: scheduleEntityId, state: 'on' },
+          { condition: 'template', value_template: `{{ state_attr('${scheduleEntityId}', 'current_slot') != None }}` },
+        ],
+        action: [actionBlock],
         mode: 'single',
       };
       try {
-        const resp = await this._hass.connection.sendMessagePromise({
-          type: 'config/automation/config',
-          automation_id: targetId,
-          config: automationConfig,
-        });
-        const newId = resp?.automation_id || targetId;
-        // Persist the actual automation ID
-        await this._saveCondData(scheduleEntityId, newId, validConds, condCombinator, condInterval);
+        await this._hass.callApi('POST', `config/automation/config/${targetId}`, automationConfig);
+        await this._saveCondData(scheduleEntityId, targetId, validConds, condCombinator, condInterval);
       } catch (e) {
         console.error('WSC condAuto save failed', e);
-        // Conditions are already saved above — only the HA automation is missing
       }
+    }
+
+    // Snapshot of preset/fan/swing/hvac from popup state → storage (so we can re-populate UI at reload).
+    async _persistExtras(scheduleEntityId, ps) {
+      const extras = {};
+      if (ps.enableHvac && ps.hvacMode) extras.hvacMode = ps.hvacMode;
+      if (ps.enablePreset && ps.presetMode) extras.presetMode = ps.presetMode;
+      if (ps.enableFan && ps.fanMode) extras.fanMode = ps.fanMode;
+      if (ps.enableSwing && ps.swingMode) extras.swingMode = ps.swingMode;
+      const hasAny = Object.keys(extras).length > 0;
+      await this._saveExtras(scheduleEntityId, hasAny ? extras : null, undefined);
+    }
+
+    // Sync HA automation that applies extras (preset/fan/swing/hvac) at slot start.
+    // Skipped if condition automation exists for same schedule (extras already in activeActions).
+    async _syncExtrasAutomation(scheduleEntityId, ps) {
+      const existingId = this._getExtrasAutoId(scheduleEntityId);
+      // If condition automation exists, it handles extras → ensure no orphan extras auto
+      if (this._getCondAutoId(scheduleEntityId)) {
+        if (existingId) {
+          try { await this._hass.callApi('DELETE', `config/automation/config/${existingId}`); } catch (e) { console.error('WSC extrasAuto delete failed', e); }
+          await this._saveExtras(scheduleEntityId, null, null);
+        }
+        return;
+      }
+      const hasExtras = (ps.enableHvac && ps.hvacMode) || (ps.enablePreset && ps.presetMode) || (ps.enableFan && ps.fanMode) || (ps.enableSwing && ps.swingMode);
+      if (!hasExtras) {
+        if (existingId) {
+          try { await this._hass.callApi('DELETE', `config/automation/config/${existingId}`); } catch (e) { console.error('WSC extrasAuto delete failed', e); }
+          await this._saveExtras(scheduleEntityId, null, null);
+        }
+        return;
+      }
+      const allActions = this._buildScheduleActions(ps);
+      // Skip set_temperature (already in scheduler timeslot) — keep only secondary services
+      const extraActions = allActions.filter(a => !a.service.endsWith('set_temperature') && !a.service.endsWith('turn_on') && !a.service.endsWith('turn_off'));
+      if (!extraActions.length) {
+        if (existingId) {
+          try { await this._hass.callApi('DELETE', `config/automation/config/${existingId}`); } catch {}
+          await this._saveExtras(scheduleEntityId, null, null);
+        }
+        return;
+      }
+      const targetId = existingId || `wsc_extras_${scheduleEntityId.replace('switch.', '')}`;
+      const automationConfig = {
+        alias: `WSC Extras - ${scheduleEntityId}`,
+        description: 'Auto-generated by Weekly Schedule Card',
+        trigger: [
+          { platform: 'state', entity_id: scheduleEntityId, attribute: 'current_slot' },
+        ],
+        condition: [
+          { condition: 'state', entity_id: scheduleEntityId, state: 'on' },
+          { condition: 'template', value_template: `{{ state_attr('${scheduleEntityId}', 'current_slot') != None }}` },
+        ],
+        action: extraActions,
+        mode: 'single',
+      };
+      try {
+        await this._hass.callApi('POST', `config/automation/config/${targetId}`, automationConfig);
+        // Persist automation id (keep existing extras, just update id)
+        const currentExtras = this._getExtras(scheduleEntityId);
+        await this._saveExtras(scheduleEntityId, currentExtras, targetId);
+      } catch (e) {
+        console.error('WSC extrasAuto save failed', e);
+      }
+    }
+
+    // ── Modal helpers (alert / confirm / prompt sostituiti da <dialog>) ──────
+    //
+    // Sostituiscono le funzioni browser-native con dialog in shadow DOM, allineate
+    // allo stile di _showNewProfileDialog. Bloccate da meno PWA, traducibili e
+    // coerenti con il resto della UI della card. API: tutte ritornano Promise.
+
+    _modalStyles() {
+      return `
+      dialog.wsc-modal{border:none;padding:0;margin:0;background:rgba(0,0,0,.55);width:100vw;height:100vh;max-width:100vw;max-height:100vh;display:flex;align-items:center;justify-content:center}
+      dialog.wsc-modal::backdrop{display:none}
+      .wsc-modal-box{background:var(--card-background-color,#fff);border-radius:14px;padding:20px;width:min(360px,90vw);display:flex;flex-direction:column;gap:14px;box-shadow:0 8px 32px rgba(0,0,0,.3);color:var(--primary-text-color)}
+      .wsc-modal-msg{font-size:.92em;line-height:1.4;white-space:pre-wrap}
+      .wsc-modal-label{font-size:.78em;font-weight:600;color:var(--secondary-text-color)}
+      .wsc-modal-inp{width:100%;padding:8px 10px;border-radius:8px;border:1px solid var(--divider-color,#ccc);background:var(--card-background-color,#fff);color:var(--primary-text-color);font-size:.9em;box-sizing:border-box;font-family:inherit}
+      .wsc-modal-inp:focus{outline:none;border-color:var(--primary-color,#03a9f4)}
+      .wsc-modal-footer{display:flex;gap:8px;justify-content:flex-end}
+      .wsc-modal-btn{padding:8px 18px;border-radius:9px;border:none;cursor:pointer;font-size:.84em;font-weight:600}
+      .wsc-modal-cancel{background:var(--divider-color,#e0e0e0);color:var(--primary-text-color)}
+      .wsc-modal-ok{background:var(--primary-color,#03a9f4);color:white}`;
+    }
+
+    // Open a centered <dialog>, set up Esc/click-out to resolve(cancelValue),
+    // and call setup() to wire OK/cancel buttons. Centralizes the boilerplate.
+    _openModal(bodyHtml, { setup, cancelValue }) {
+      this._setStyles('modal', this._modalStyles());
+      const existing = this.shadowRoot.querySelector('dialog.wsc-modal');
+      if (existing) existing.remove();
+      const dlg = document.createElement('dialog');
+      dlg.className = 'wsc-modal';
+      dlg.innerHTML = `<div class="wsc-modal-box">${bodyHtml}</div>`;
+      this._dialogOpen = true;
+      this.shadowRoot.appendChild(dlg);
+      dlg.showModal();
+      return new Promise(resolve => {
+        const close = (value) => { this._dialogOpen = false; dlg.close(); dlg.remove(); resolve(value); };
+        dlg.addEventListener('click', e => { if (e.target === dlg) close(cancelValue); });
+        dlg.addEventListener('cancel', e => { e.preventDefault(); close(cancelValue); }); // Esc
+        setup(dlg, close);
+      });
+    }
+
+    _alert(message, { okLabel } = {}) {
+      const ok = okLabel || this.t('popup.ok') || 'OK';
+      const body = `
+      <div class="wsc-modal-msg">${String(message).replace(/</g,'&lt;')}</div>
+      <div class="wsc-modal-footer">
+        <button class="wsc-modal-btn wsc-modal-ok">${ok}</button>
+      </div>`;
+      return this._openModal(body, {
+        cancelValue: undefined,
+        setup: (dlg, close) => {
+          const btn = dlg.querySelector('.wsc-modal-ok');
+          btn.focus();
+          btn.addEventListener('click', () => close());
+          dlg.addEventListener('keydown', e => { if (e.key === 'Enter') close(); });
+        },
+      });
+    }
+
+    _confirm(message, { okLabel, cancelLabel } = {}) {
+      const ok = okLabel || this.t('popup.ok') || 'OK';
+      const cancel = cancelLabel || this.t('popup.cancel') || 'Cancel';
+      const body = `
+      <div class="wsc-modal-msg">${String(message).replace(/</g,'&lt;')}</div>
+      <div class="wsc-modal-footer">
+        <button class="wsc-modal-btn wsc-modal-cancel">${cancel}</button>
+        <button class="wsc-modal-btn wsc-modal-ok">${ok}</button>
+      </div>`;
+      return this._openModal(body, {
+        cancelValue: false,
+        setup: (dlg, close) => {
+          const okBtn = dlg.querySelector('.wsc-modal-ok');
+          okBtn.focus();
+          okBtn.addEventListener('click', () => close(true));
+          dlg.querySelector('.wsc-modal-cancel').addEventListener('click', () => close(false));
+          dlg.addEventListener('keydown', e => { if (e.key === 'Enter') close(true); });
+        },
+      });
+    }
+
+    _prompt(label, defaultValue = '', { okLabel, cancelLabel } = {}) {
+      const ok = okLabel || this.t('popup.ok') || 'OK';
+      const cancel = cancelLabel || this.t('popup.cancel') || 'Cancel';
+      const body = `
+      <div class="wsc-modal-label">${String(label).replace(/</g,'&lt;')}</div>
+      <input class="wsc-modal-inp" type="text" value="${String(defaultValue).replace(/"/g,'&quot;')}">
+      <div class="wsc-modal-footer">
+        <button class="wsc-modal-btn wsc-modal-cancel">${cancel}</button>
+        <button class="wsc-modal-btn wsc-modal-ok">${ok}</button>
+      </div>`;
+      return this._openModal(body, {
+        cancelValue: null,
+        setup: (dlg, close) => {
+          const inp = dlg.querySelector('.wsc-modal-inp');
+          inp.focus(); inp.select();
+          dlg.querySelector('.wsc-modal-ok').addEventListener('click', () => close(inp.value));
+          dlg.querySelector('.wsc-modal-cancel').addEventListener('click', () => close(null));
+          inp.addEventListener('keydown', e => { if (e.key === 'Enter') close(inp.value); });
+        },
+      });
     }
 
     // ── Profile create / duplicate / cancel ───────────────────────────────────
@@ -879,8 +1343,10 @@
         const color = this._blockColor(s, entityConf);
         const isOff = s.state === 'off';
         const hasStop = this._hasAutoChild(s.entity_id);
-        const hasCond = this._getStoredConditions(s.entity_id).conditions.length > 0;
+        const evalRes = this._evalAllConditions(s.entity_id);
+        const hasCond = evalRes.hasCond;
         const isActive = s.attributes.current_slot !== null && s.attributes.current_slot !== undefined;
+        const isMuted = isActive && !isOff && hasCond && !evalRes.satisfied;
         const temp = s.attributes.actions?.[0]?.data?.temperature ?? null;
         const label = this._detectDomain(entityConf?.entity) === 'climate' && temp != null
           ? `${temp}°` : s.attributes.friendly_name;
@@ -888,7 +1354,7 @@
           const [a, b] = slot.split(' - ');
           const sMin = this._parseTime(a);
           let eMin = this._parseTime(b); if (eMin === 0) eMin = 1440;
-          blocks.push({ startPct: this._minutesToPercent(sMin), heightPct: this._minutesToPercent(eMin - sMin), color, isOff, hasStop, hasCond, isActive, label, entityId: s.entity_id });
+          blocks.push({ startPct: this._minutesToPercent(sMin), heightPct: this._minutesToPercent(eMin - sMin), color, isOff, hasStop, hasCond, isActive, isMuted, label, entityId: s.entity_id });
         }
       }
       return blocks.sort((a, b) => a.startPct - b.startPct);
@@ -1053,6 +1519,8 @@
       this._popupState._defaultNotifyMsgEnd = this._buildDefaultNotifyMessage(this._popupState, 'end');
       this._popupState.notifyMessage = this._popupState._defaultNotifyMsg;
       this._popupState.notifyMessageEnd = this._popupState._defaultNotifyMsgEnd;
+      this._popupState._defaultName = this._buildDefaultScheduleName(this._popupState);
+      this._popupState.name = this._popupState._defaultName;
       this._renderPopup();
     }
 
@@ -1078,7 +1546,28 @@
         else if (idx === -2) days.push(0,1,2,3,4);
         else if (idx === -3) days.push(5,6);
       });
-      const ad = actions?.[0]?.data || {}, svc = actions?.[0]?.service || '';
+      // Merge all action data (climate now uses one action per service: set_temperature, set_preset_mode, ...)
+      const ad = {};
+      let svc = '';
+      for (const a of actions || []) {
+        const d = a.data || a.service_data || {};
+        if (d.temperature !== undefined) ad.temperature = d.temperature;
+        if (d.hvac_mode !== undefined) ad.hvac_mode = d.hvac_mode;
+        if (d.preset_mode !== undefined) ad.preset_mode = d.preset_mode;
+        if (d.fan_mode !== undefined) ad.fan_mode = d.fan_mode;
+        if (d.swing_mode !== undefined) ad.swing_mode = d.swing_mode;
+        if (d.brightness_pct !== undefined) ad.brightness_pct = d.brightness_pct;
+        if (d.brightness !== undefined) ad.brightness = d.brightness;
+        if (!svc) svc = a.service || '';
+      }
+      // Storage extras override (HA Scheduler keeps only the first action — preset/fan/swing/hvac live in storage)
+      const storedExtras = this._getExtras(entityId);
+      if (storedExtras) {
+        if (storedExtras.hvacMode != null) ad.hvac_mode = storedExtras.hvacMode;
+        if (storedExtras.presetMode != null) ad.preset_mode = storedExtras.presetMode;
+        if (storedExtras.fanMode != null) ad.fan_mode = storedExtras.fanMode;
+        if (storedExtras.swingMode != null) ad.swing_mode = storedExtras.swingMode;
+      }
       const domain = this._detectDomain(ec.entity);
       this._popupState = {
         mode: 'edit', entityId, entityConf: ec, domain,
@@ -1275,6 +1764,17 @@
           <label><input type="radio" name="comb" value="or" ${ps.condCombinator==='or'?'checked':''}> ${this.t('cond.or_any')}</label>
         </div>
         ${ps.conditions.map((c,i)=>{
+          const hasEntity = !!c.entity;
+          const entityInput = `<input class="cond-entity" list="cond-ents-${i}" placeholder="${this.t('cond.entity')}" value="${(c.entity||'').replace(/"/g,'&quot;')}" data-ci="${i}">
+            <datalist id="cond-ents-${i}">${condEnts.map(eid=>`<option value="${eid}">`).join('')}</datalist>`;
+          if (!hasEntity) {
+            // Wait for entity selection before showing operator/value pickers
+            return `<div class="cond-row">
+              ${entityInput}
+              <span class="cond-hint">${this.t('cond.choose_entity')||"⬅ Scegli un'entità"}</span>
+              <button class="cond-del" data-ci="${i}">✕</button>
+            </div>`;
+          }
           const spec = this._getCondFieldSpec(c.entity, c.attribute);
           const validOp = spec.operators.includes(c.operator) ? c.operator : spec.operators[0];
           const opHtml = `<select class="cond-op" data-ci="${i}">${spec.operators.map(op=>`<option value="${op}" ${validOp===op?'selected':''}>${OP_LABEL[op]||op}</option>`).join('')}</select>`;
@@ -1291,19 +1791,22 @@
           } else if (spec.kind === 'boolean' || spec.kind === 'select') {
             const opts = spec.options || [];
             valHtml = `<select class="cond-val" data-ci="${i}"><option value="">--</option>${opts.map(o=>`<option value="${o}" ${c.value===o?'selected':''}>${o}</option>`).join('')}</select>`;
+          } else if (spec.kind === 'climate-picker') {
+            // attribute not yet selected
+            valHtml = `<span class="cond-hint">${this.t('cond.choose_attribute')||'⬅ Scegli un attributo'}</span>`;
           } else {
             valHtml = `<input class="cond-val" type="text" data-ci="${i}" placeholder="${this.t('cond.value')}" value="${(c.value||'').replace(/"/g,'&quot;')}">`;
           }
           return `
           <div class="cond-row">
-            <input class="cond-entity" list="cond-ents-${i}" placeholder="${this.t('cond.entity')}" value="${(c.entity||'').replace(/"/g,'&quot;')}" data-ci="${i}">
-            <datalist id="cond-ents-${i}">${condEnts.map(eid=>`<option value="${eid}">`).join('')}</datalist>
+            ${entityInput}
             ${attrHtml}
-            ${opHtml}
+            ${spec.kind === 'climate-picker' ? '' : opHtml}
             ${valHtml}
             <button class="cond-del" data-ci="${i}">✕</button>
           </div>`;
         }).join('')}
+        ${ps.conditions.length === 0 ? `<div class="cond-empty">ℹ️ ${this.t('cond.empty_hint') || (this._lang==='it'?'Nessuna condizione attiva — lo schedule girerà sempre nei suoi orari':this._lang==='fr'?'Aucune condition active — le planning fonctionnera toujours dans ses créneaux':'No active conditions — schedule will always run in its slots')}</div>` : ''}
         <button class="cond-add">${this.t('cond.add')}</button>
         <div class="cond-interval-row">
           <span style="font-size:.75em;color:var(--secondary-text-color)">${this.t('cond.recheck')}</span>
@@ -1411,8 +1914,10 @@
         .cond-val{flex:1;min-width:60px;padding:4px 6px;border-radius:6px;border:1px solid var(--divider-color,#ccc);background:var(--card-background-color,#fff);color:var(--primary-text-color);font-size:.78em}
         .cond-attribute{flex:0 0 110px;padding:4px 4px;border-radius:6px;border:1px solid var(--divider-color,#ccc);background:var(--card-background-color,#fff);color:var(--primary-text-color);font-size:.74em}
         .cond-unit{font-size:.75em;color:var(--secondary-text-color);padding:0 2px;flex-shrink:0}
+        .cond-hint{flex:1;font-size:.72em;color:var(--secondary-text-color);font-style:italic;padding:0 4px}
         .cond-del{background:none;border:none;cursor:pointer;color:var(--error-color,#f44336);font-size:.85em;padding:2px 6px;line-height:1}
         .cond-add{padding:5px 12px;border-radius:7px;border:1px dashed var(--primary-color,#03a9f4);background:none;color:var(--primary-color,#03a9f4);cursor:pointer;font-size:.78em;align-self:flex-start}
+        .cond-empty{padding:8px 10px;border-radius:6px;background:color-mix(in srgb,var(--secondary-text-color) 8%,transparent);color:var(--secondary-text-color);font-size:.75em;font-style:italic;line-height:1.4}
         .cond-interval-row{display:flex;align-items:center;gap:8px;padding-top:6px;border-top:1px solid var(--divider-color,#eee);margin-top:4px}
         .cond-interval{padding:3px 6px;border-radius:6px;border:1px solid var(--divider-color,#ccc);background:var(--card-background-color,#fff);color:var(--primary-text-color);font-size:.78em}
         .notif-row{display:flex;flex-direction:column;gap:3px}
@@ -1498,7 +2003,14 @@
           <div class="notif-body">
             <div class="notif-row">
               <label class="section-label" style="margin:0 0 3px">${this.t('popup.notify_service_label')}</label>
-              <input class="notif-svc" type="text" placeholder="notify.mobile_app_phone" value="${(ps.notifyService||'').replace(/"/g,'&quot;')}">
+              ${(() => {
+                const notifySvcs = Object.keys(this._hass?.services?.notify || {}).sort().map(s => `notify.${s}`);
+                const current = ps.notifyService || '';
+                const inList = notifySvcs.includes(current);
+                const extra = (current && !inList) ? `<option value="${current.replace(/"/g,'&quot;')}" selected>${current} ⚠</option>` : '';
+                const opts = notifySvcs.map(svc => `<option value="${svc}" ${current === svc ? 'selected' : ''}>${svc}</option>`).join('');
+                return `<select class="notif-svc"><option value="">-- ${this._lang==='it'?'seleziona':this._lang==='fr'?'sélectionner':'select'} --</option>${extra}${opts}</select>`;
+              })()}
             </div>
             <div class="notif-row">
               <label class="section-label" style="margin:0 0 3px">${this.t('notify.trigger_label') || 'Quando notificare'}</label>
@@ -1557,18 +2069,19 @@
       dlg.querySelectorAll('.entity-pill').forEach(pill =>
         pill.addEventListener('click', () => {
           const i = parseInt(pill.dataset.ei);
-          ps.entityConf = ps.groupEntities[i];
-          ps.domain = this._detectDomain(ps.entityConf.entity);
-          dlg.querySelectorAll('.entity-pill').forEach((p, pi) => {
-            const ec = ps.groupEntities[pi];
-            const sel = ec.entity === ps.entityConf.entity;
-            const color = ec.color || '#9E9E9E';
-            p.classList.toggle('sel', sel);
-            p.style.background = sel ? color + '1F' : '';
-            p.style.borderColor = sel ? color : '';
-            p.style.color = sel ? color : '';
-            p.style.boxShadow = sel ? '0 0 8px ' + color + '66' : '';
-          });
+          const newEc = ps.groupEntities[i];
+          if (!newEc || newEc.entity === ps.entityConf.entity) return;
+          const newDomain = this._detectDomain(newEc.entity);
+          ps.entityConf = newEc;
+          ps.domain = newDomain;
+          // Reset domain-specific action defaults so the form matches the new entity
+          ps.enableTemp = newDomain === 'climate';
+          ps.enableHvac = false; ps.enablePreset = false; ps.enableFan = false; ps.enableSwing = false;
+          ps.hvacMode = ''; ps.presetMode = ''; ps.fanMode = ''; ps.swingMode = '';
+          ps.enableBrightness = false;
+          ps.stopAction = null;
+          // Re-render the whole popup so domainSection + name + notify defaults update
+          this._renderPopup();
         })
       );
 
@@ -1686,14 +2199,26 @@
         const i = parseInt(inp.dataset.ci);
         const oldEntity = ps.conditions[i].entity;
         ps.conditions[i].entity = inp.value;
-        // Reset attribute/value when entity changes — schema is different
-        if (oldEntity !== inp.value) { ps.conditions[i].attribute = ''; ps.conditions[i].value = ''; }
+        if (oldEntity !== inp.value) {
+          ps.conditions[i].attribute = '';
+          ps.conditions[i].value = '';
+          // Align operator with new entity's allowed set (avoids stale '>' on boolean entities)
+          const newSpec = this._getCondFieldSpec(inp.value, '');
+          if (!newSpec.operators.includes(ps.conditions[i].operator)) {
+            ps.conditions[i].operator = newSpec.operators[0];
+          }
+        }
         this._renderPopup();
       }));
       dlg.querySelectorAll('.cond-attribute').forEach(sel=>sel.addEventListener('change',()=>{
         const i = parseInt(sel.dataset.ci);
         ps.conditions[i].attribute = sel.value;
         ps.conditions[i].value = '';
+        // Align operator with new attribute's allowed set
+        const newSpec = this._getCondFieldSpec(ps.conditions[i].entity, sel.value);
+        if (!newSpec.operators.includes(ps.conditions[i].operator)) {
+          ps.conditions[i].operator = newSpec.operators[0];
+        }
         this._renderPopup();
       }));
       dlg.querySelectorAll('.cond-op').forEach(sel=>sel.addEventListener('change',()=>{ ps.conditions[parseInt(sel.dataset.ci)].operator=sel.value; }));
@@ -1702,7 +2227,7 @@
       dlg.querySelector('.cond-interval')?.addEventListener('change', e=>{ ps.condInterval=parseInt(e.target.value); });
       // Notifications
       dlg.querySelector('#notifToggle')?.addEventListener('click', () => { ps._notifOpen=!ps._notifOpen; this._renderPopup(); });
-      dlg.querySelector('.notif-svc')?.addEventListener('input', e=>{ ps.notifyService=e.target.value; });
+      dlg.querySelector('.notif-svc')?.addEventListener('change', e=>{ ps.notifyService=e.target.value; });
       dlg.querySelectorAll('input[name="notif-trig"]').forEach(r => r.addEventListener('change', () => {
         ps.notifyTrigger = r.value;
         this._renderPopup();
@@ -1757,11 +2282,11 @@
 
       this._setupTimebarDrag(dlg, ps, magnetPoints);
 
-      // Auto-refresh default notify message when popup state changes
-      const refreshNotif = () => this._refreshNotifyDefault(dlg);
-      dlg.addEventListener('input', refreshNotif);
-      dlg.addEventListener('change', refreshNotif);
-      dlg.querySelectorAll('.day-chip,.shortcut-btn').forEach(el => el.addEventListener('click', () => setTimeout(refreshNotif, 0)));
+      // Auto-refresh default notify message + schedule name when popup state changes
+      const refreshAll = () => { this._refreshNotifyDefault(dlg); this._refreshNameDefault(dlg); };
+      dlg.addEventListener('input', refreshAll);
+      dlg.addEventListener('change', refreshAll);
+      dlg.querySelectorAll('.day-chip,.shortcut-btn').forEach(el => el.addEventListener('click', () => setTimeout(refreshAll, 0)));
     }
 
     _setupTimebarDrag(dlg, ps, magnetPoints) {
@@ -1832,6 +2357,7 @@
         if (hl) hl.style.removeProperty('--handle-color');
         if (hr) hr.style.removeProperty('--handle-color');
         this._refreshNotifyDefault(dlg);
+        this._refreshNameDefault(dlg);
       };
       eb.addEventListener('pointerup', stop);
       eb.addEventListener('pointercancel', stop);
@@ -1860,28 +2386,17 @@
 
     async _saveSchedule() {
       const ps = this._popupState;
-      if (!ps?.days.length) { alert(this.t('errors.no_days')); return; }
+      if (!ps?.days.length) { await this._alert(this.t('errors.no_days')); return; }
       const overlap = this._checkOverlap(ps);
-      if (overlap) { alert(overlap); return; }
+      if (overlap) { await this._alert(overlap); return; }
 
       const weekdays = ps.days.map(d => this._getDayKey(d));
       const eid = ps.entityConf.entity;
-      const dom = ps.domain;
-      let actions = [];
-      if (dom === 'climate') {
-        const sd = {};
-        if (ps.enableTemp) sd.temperature = ps.temp;
-        if (ps.enableHvac && ps.hvacMode) sd.hvac_mode = ps.hvacMode;
-        if (ps.enablePreset && ps.presetMode) sd.preset_mode = ps.presetMode;
-        if (ps.enableFan && ps.fanMode) sd.fan_mode = ps.fanMode;
-        if (ps.enableSwing && ps.swingMode) sd.swing_mode = ps.swingMode;
-        actions = [{ entity_id: eid, service: (ps.enableHvac && !ps.enableTemp) ? 'climate.set_hvac_mode' : 'climate.set_temperature', service_data: sd }];
-      } else if (dom === 'light') {
-        const sd = ps.enableBrightness && ps.turnOn ? { brightness_pct: ps.brightness } : {};
-        actions = [{ entity_id: eid, service: ps.turnOn ? 'light.turn_on' : 'light.turn_off', service_data: sd }];
-      } else {
-        actions = [{ entity_id: eid, service: ps.turnOn ? `${dom}.turn_on` : `${dom}.turn_off`, service_data: {} }];
-      }
+      ps.domain;
+      // Build actions using shared helper (climate: one action per service — preset/fan/swing each need their own)
+      const built = this._buildScheduleActions(ps);
+      // Scheduler component expects {entity_id, service, service_data} (no `target` wrapping)
+      const actions = built.map(a => ({ entity_id: eid, service: a.service, service_data: a.data || {} }));
       const timeslots = [{ start: this._minutesToTime(ps.startMin), stop: this._minutesToTime(ps.endMin === 1440 ? 0 : ps.endMin), actions }];
 
       const saveNotify = (scheduleId) => {
@@ -1906,7 +2421,9 @@
             await this._addScheduleToProfile(newId);
             saveNotify(newId);
             await this._syncAutoChild(newId, ps);
-            await this._syncConditionAutomation(newId, ps.conditions, ps.condCombinator, ps.condInterval);
+            await this._syncConditionAutomation(newId, ps.conditions, ps.condCombinator, ps.condInterval, ps);
+            await this._persistExtras(newId, ps);
+            await this._syncExtrasAutomation(newId, ps);
             const prof = this._getSelectedProfile();
             if (prof && !this._isProfileActive(prof)) {
               try { await this._hass.callService('switch', 'turn_off', { entity_id: newId }); } catch {}
@@ -1918,9 +2435,11 @@
           await this._hass.callService('scheduler', 'edit', p);
           saveNotify(ps.entityId);
           await this._syncAutoChild(ps.entityId, ps);
-          await this._syncConditionAutomation(ps.entityId, ps.conditions, ps.condCombinator, ps.condInterval);
+          await this._syncConditionAutomation(ps.entityId, ps.conditions, ps.condCombinator, ps.condInterval, ps);
+          await this._persistExtras(ps.entityId, ps);
+          await this._syncExtrasAutomation(ps.entityId, ps);
         }
-      } catch (e) { alert(`Failed to save: ${e.message || e}`); return; }
+      } catch (e) { await this._alert(`${this.t('errors.save_failed')}: ${e.message || e}`); return; }
       await this._wsSet(this._storageData).catch(() => {});
       this._closePopup();
     }
@@ -1928,17 +2447,21 @@
     async _deleteSchedule() {
       const ps = this._popupState;
       if (!ps || ps.mode !== 'edit') return;
-      if (!confirm(this.t('errors.delete_confirm'))) return;
+      if (!await this._confirm(this.t('errors.delete_confirm'))) return;
       const eid = ps.entityId;
       const childId = this._getAutoChildId(eid);
       const condAutoId = this._getCondAutoId(eid);
+      const extrasAutoId = this._getExtrasAutoId(eid);
       const data = this._storageData;
       for (const p of data.profiles || []) {
         p.schedules = (p.schedules || []).filter(x => x !== eid);
         p.scheduleLinks = (p.scheduleLinks || []).filter(l => l.id !== eid);
       }
       if (condAutoId) {
-        try { await this._hass.connection.sendMessagePromise({ type: 'config/automation/delete', automation_id: condAutoId }); } catch (e) { console.error('WSC condAuto delete failed', e); }
+        try { await this._hass.callApi('DELETE', `config/automation/config/${condAutoId}`); } catch (e) { console.error('WSC condAuto delete failed', e); }
+      }
+      if (extrasAutoId) {
+        try { await this._hass.callApi('DELETE', `config/automation/config/${extrasAutoId}`); } catch (e) { console.error('WSC extrasAuto delete failed', e); }
       }
       if (childId) {
         try { await this._hass.callService('scheduler', 'remove', { entity_id: childId }); } catch {}
@@ -1970,13 +2493,19 @@
             try { await this._hass.callService('switch', 'turn_off', { entity_id: eid }); } catch {}
           activeProfiles = activeProfiles.filter(x => x !== cp.id);
         }
-        const profSched = new Set(profiles.flatMap(pr => pr.schedules || []));
+        const profSched = new Set([
+          ...profiles.flatMap(pr => pr.schedules || []),
+          ...profiles.flatMap(pr => (pr.scheduleLinks || []).map(l => l.autoChildId).filter(Boolean)),
+        ]);
         for (const s of Object.values(this._hass.states))
           if (s.entity_id.startsWith('switch.schedule_') && !profSched.has(s.entity_id) && s.state === 'on')
             try { await this._hass.callService('switch', 'turn_off', { entity_id: s.entity_id }); } catch {}
       }
       for (const eid of p.schedules || [])
         try { await this._hass.callService('switch', 'turn_on', { entity_id: eid }); } catch {}
+      for (const link of p.scheduleLinks || [])
+        if (link.autoChildId)
+          try { await this._hass.callService('switch', 'turn_on', { entity_id: link.autoChildId }); } catch {}
       if (!activeProfiles.includes(id)) activeProfiles.push(id);
       await this._wsSet({ ...data, activeProfiles });
       this.render();
@@ -1995,7 +2524,7 @@
 
     async _deleteProfile(id) {
       if (id === 'default') return;
-      if (!confirm(this.t('errors.delete_profile_confirm'))) return;
+      if (!await this._confirm(this.t('errors.delete_profile_confirm'))) return;
       const data = this._storageData;
       const p = (data.profiles || []).find(x => x.id === id);
       if (p) {
@@ -2013,7 +2542,7 @@
     async _renameProfile(id) {
       const profiles=this._storageData.profiles||[];
       const p=profiles.find(x=>x.id===id); if(!p) return;
-      const name=prompt('New name:',p.name);
+      const name=await this._prompt(this.t('profile.rename'),p.name);
       if(!name?.trim()) return;
       await this._wsSet({...this._storageData,profiles:profiles.map(x=>x.id===id?{...x,name:name.trim()}:x)});
       this.render();
@@ -2022,7 +2551,7 @@
       const profiles = this._storageData.profiles || [];
       const src = profiles.find(x => x.id === id);
       if (!src) return;
-      const name = prompt('Name for the copy:', `${src.name} (copy)`);
+      const name = await this._prompt(this.t('profile.duplicate'), `${src.name} (copy)`);
       if (!name?.trim()) return;
       const newId = `prf_${Date.now()}`;
       const newProfile = {
@@ -2106,17 +2635,17 @@
           const blocksHtml = blocks.map(b => {
             const glowStyle = b.isActive ? `;--cblk-glow:${b.color};--cblk-glow-soft:${b.color}80` : '';
             const showContent = b.heightPct > 4;
-            return `<div class="compact-blk${b.isOff?' off':''}${b.isActive?' active':''}" data-entity="${b.entityId}" data-day="${di}" style="left:${b.startPct}%;width:${b.heightPct}%;background-color:${b.color}${glowStyle}">` +
+            return `<div class="compact-blk${b.isOff?' off':''}${b.isActive?' active':''}${b.isMuted?' muted':''}" data-entity="${b.entityId}" data-day="${di}" style="left:${b.startPct}%;width:${b.heightPct}%;background-color:${b.color}${glowStyle}">` +
               (showContent ? `<ha-icon icon="${icon}" style="--mdi-icon-size:10px;color:white;opacity:.9;flex-shrink:0"></ha-icon><span class="compact-blk-val">${b.label||''}</span>` : '') +
               `</div>`;
           }).join('');
 
-          return `<div class="compact-ent-row${rowIdx>0?' compact-ent-sep':''}" data-day="${di}" data-ei="${ei}">
+          return `<div class="compact-ent-row${rowIdx>0?' compact-ent-sep':''}" data-day="${di}" data-ei="${ei}" data-entity-id="${ec.entity}">
           <div class="compact-ent-icon" style="background:${color}26">
             <ha-icon icon="${icon}" style="--mdi-icon-size:18px;color:${color}E6"></ha-icon>
           </div>
           <span class="compact-ent-name">${(ec.name||ec.entity).replace(/</g,'&lt;')}</span>
-          <div class="compact-bar" data-day="${di}" data-ei="${ei}" style="position:relative;flex:1;height:32px;background:var(--divider-color,#e0e0e0);border-radius:6px;overflow:hidden;cursor:pointer">
+          <div class="compact-bar" data-day="${di}" data-ei="${ei}" data-entity-id="${ec.entity}" style="position:relative;flex:1;height:32px;background:var(--divider-color,#e0e0e0);border-radius:6px;overflow:hidden;cursor:pointer">
             ${blocksHtml}
           </div>
         </div>`;
@@ -2210,7 +2739,7 @@
             : b.heightPct >= minForValue
               ? `<span class="focus-blk-val">${(b.label||'').replace(/</g,'&lt;')}</span>`
               : '';
-        return `<div class="focus-blk${b.isOff?' off':''}${b.isActive?' active':''}" data-entity="${b.entityId}" style="top:${b.startPct}%;height:${b.heightPct}%;background-color:${b.color}${glowStyle};min-height:20px;${posStyle}">${content}</div>`;
+        return `<div class="focus-blk${b.isOff?' off':''}${b.isActive?' active':''}${b.isMuted?' muted':''}" data-entity="${b.entityId}" style="top:${b.startPct}%;height:${b.heightPct}%;background-color:${b.color}${glowStyle};min-height:20px;${posStyle}">${content}</div>`;
       }).join('');
 
       // CSS grid column template: axis fixed, focus day gets max 45%, slims share rest equally
@@ -2279,11 +2808,10 @@
 
     // ── Groups view ───────────────────────────────────────────────────────────
 
-    _renderGroupEditView(group) {
-      this._groupsMode=true; this._profilesMode=false;
-      const availableEnts=this._getAvailableEntities();
-      const domains=[...new Set(availableEnts.map(e=>e.domain))];
-      const S=`
+    // CSS regole comuni a _renderGroupsView e _renderGroupEditView.
+    // Mantenute in un unico posto per evitare drift tra le due viste.
+    _groupSharedStyles() {
+      return `
       :host{display:block;font-family:var(--primary-font-family,sans-serif)}
       ha-card{padding:16px}
       .card-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px}
@@ -2314,13 +2842,22 @@
       .dom-badge{font-size:.62em;font-weight:700;padding:1px 6px;border-radius:6px;color:white;flex-shrink:0;min-width:44px;text-align:center}
       .dom-climate{background:#FF7043}.dom-switch{background:#42A5F5}.dom-light{background:#F9A825}.dom-fan{background:#26C6DA}.dom-cover{background:#AB47BC}
       .ent-name{flex:1;font-size:.83em;color:var(--primary-text-color);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-      .ent-label-inp{padding:4px 8px;border-radius:6px;border:1px solid var(--divider-color,#ccc);font-size:.78em;color:var(--primary-text-color);background:var(--card-background-color,#fff);font-family:inherit;width:80px;flex-shrink:0}
+      .ent-label-inp{padding:4px 8px;border-radius:6px;border:1px solid var(--divider-color,#ccc);font-size:.78em;color:var(--primary-text-color);background:var(--card-background-color,#fff);font-family:inherit;width:80px;flex-shrink:0}`;
+    }
+
+    _renderGroupEditView(group) {
+      this._groupsMode=true; this._profilesMode=false;
+      const availableEnts=this._getAvailableEntities();
+      const domains=[...new Set(availableEnts.map(e=>e.domain))];
+      const S = this._groupSharedStyles() + `
       .ge-actions{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap}
       .btn-save-ge{background:var(--primary-color,#03a9f4);color:white;padding:8px 18px;border-radius:10px;border:none;cursor:pointer;font-size:.85em;font-weight:600}
       .btn-cancel-ge{background:var(--divider-color,#e0e0e0);color:var(--primary-text-color);padding:8px 18px;border-radius:10px;border:none;cursor:pointer;font-size:.85em;font-weight:600}
       .btn-del-ge{background:none;border:1px solid var(--error-color,#f44336);color:var(--error-color,#f44336);padding:7px 16px;border-radius:10px;cursor:pointer;font-size:.85em;font-weight:600;margin-left:auto}`;
 
-      this.shadowRoot.innerHTML=`<style>${S}</style><ha-card>
+      this._setStyles('group-edit', S);
+      const root = this._ensureRoot();
+      root.innerHTML=`<ha-card>
       <div class="card-header"><span class="card-title">Edit: ${group.name.replace(/</g,'&lt;')}</span><button class="btn-back">← Back</button></div>
       <div class="form">
         <div class="form-row"><div class="form-label">${this.t('group.name')}</div><input type="text" class="form-input grp-name-inp" value="${group.name.replace(/"/g,'&quot;')}"></div>
@@ -2358,11 +2895,11 @@
       </div>
     </ha-card>`;
 
-      const sr=this.shadowRoot;
+      const sr=root;
       sr.querySelector('.btn-back').addEventListener('click',()=>this._renderGroupsView());
       sr.querySelector('.btn-cancel-ge').addEventListener('click',()=>this._renderGroupsView());
       sr.querySelector('.btn-del-ge').addEventListener('click',async()=>{
-        if(!confirm(this.t('group.delete_confirm'))) return;
+        if(!await this._confirm(this.t('group.delete_confirm'))) return;
         const profile=this._getSelectedProfile();
         const newGroups=(profile?.groups||[]).filter(g=>g.id!==group.id);
         const profiles=(this._storageData.profiles||[]).map(p=>p.id===profile?.id?{...p,groups:newGroups}:p);
@@ -2395,10 +2932,10 @@
 
       sr.querySelector('.btn-save-ge').addEventListener('click',async()=>{
         const name=sr.querySelector('.grp-name-inp').value.trim();
-        if(!name){alert(this.t('group.enter_name'));return;}
+        if(!name){await this._alert(this.t('group.enter_name'));return;}
         const color=sr.querySelector('.group-pal .pal-value')?.value||group.color||PALETTE[2];
         const selected=[...sr.querySelectorAll('.ent-chk:checked')];
-        if(!selected.length){alert(this.t('group.select_entity'));return;}
+        if(!selected.length){await this._alert(this.t('group.select_entity'));return;}
         const oldEntityIds=(group.entities||[]).map(e=>e.entity);
         const newEntityIds=selected.map(chk=>chk.dataset.entity);
         const removed=oldEntityIds.filter(eid=>!newEntityIds.includes(eid));
@@ -2406,7 +2943,7 @@
           const activeScheds=removed.flatMap(eid=>this._getSchedules(eid).filter(s=>s.state==='on'));
           if(activeScheds.length){
             const n=activeScheds.length;
-            const yes=confirm(`${n} ${this.t('group.removed_active')}`);
+            const yes=await this._confirm(`${n} ${this.t('group.removed_active')}`);
             if(yes) for(const s of activeScheds) try{await this._hass.callService('switch','turn_off',{entity_id:s.entity_id});}catch{}
           }
         }
@@ -2423,7 +2960,7 @@
         const newGroups=(profile?.groups||[]).map(g=>g.id===group.id?{...g,name,color,entities}:g);
         const profiles=(this._storageData.profiles||[]).map(p=>p.id===profile?.id?{...p,groups:newGroups}:p);
         try{await this._wsSet({...this._storageData,profiles});this._renderGroupsView();}
-        catch(e){alert(`${this.t('errors.save_failed')}: ${e.message||e}`);}
+        catch(e){await this._alert(`${this.t('errors.save_failed')}: ${e.message||e}`);}
       });
     }
 
@@ -2445,13 +2982,7 @@
       const availableEnts=this._getAvailableEntities();
       const domains=[...new Set(availableEnts.map(e=>e.domain))];
       const yamlMap=Object.fromEntries(this._entities.map(e=>[e.entity,e]));
-      const S=`
-      :host{display:block;font-family:var(--primary-font-family,sans-serif)}
-      ha-card{padding:16px}
-      .card-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px}
-      .card-title{font-size:1.1em;font-weight:500;color:var(--primary-text-color)}
-      .btn-back{padding:6px 14px;border-radius:10px;border:1px solid var(--divider-color,#ccc);background:none;cursor:pointer;font-size:.8em;color:var(--primary-text-color)}
-      .btn-back:hover{background:var(--divider-color,#e0e0e0)}
+      const S = this._groupSharedStyles() + `
       .group-list{display:flex;flex-direction:column;gap:10px;margin-bottom:20px}
       .group-card{border:1px solid var(--divider-color,#e0e0e0);border-radius:10px;padding:12px 14px}
       .group-hd{display:flex;align-items:center;gap:8px;margin-bottom:8px}
@@ -2464,37 +2995,14 @@
       .btn-del{background:none;border:1px solid var(--error-color,#f44336);color:var(--error-color,#f44336);padding:5px 12px;border-radius:8px;cursor:pointer;font-size:.78em;font-weight:600}
       .btn-edit-grp{background:none;border:1px solid var(--primary-color,#03a9f4);color:var(--primary-color,#03a9f4);padding:5px 12px;border-radius:8px;cursor:pointer;font-size:.78em;font-weight:600}
       .sec{font-size:.75em;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--secondary-text-color);margin-bottom:10px}
-      .form{border:1px dashed var(--divider-color,#ccc);border-radius:10px;padding:14px}
-      .form-row{margin-bottom:12px}
-      .form-label{font-size:.78em;font-weight:600;color:var(--secondary-text-color);margin-bottom:6px}
-      .form-input{width:100%;padding:7px 10px;border-radius:8px;border:1px solid var(--divider-color,#ccc);background:var(--card-background-color,#fff);color:var(--primary-text-color);font-size:.85em;box-sizing:border-box;font-family:inherit}
-      .form-input:focus{outline:none;border-color:var(--primary-color,#03a9f4)}
       .color-row{display:flex;align-items:center;gap:8px}
-      .color-lbl{font-size:.78em;color:var(--secondary-text-color);margin-bottom:4px;display:block}
-      .color-palette{display:flex;flex-wrap:wrap;gap:5px;padding:4px 0}
-      .pal-swatch{width:22px;height:22px;border-radius:50%;cursor:pointer;border:2px solid transparent;box-sizing:border-box;outline:1px solid rgba(0,0,0,.1);transition:transform .1s}
-      .pal-swatch:hover{transform:scale(1.15)}
-      .pal-swatch.sel{border-color:var(--primary-text-color,#333);box-shadow:0 0 0 2px var(--card-background-color,white),0 0 0 4px var(--primary-text-color,#333)}
-      .ent-list{display:flex;flex-direction:column;gap:4px;max-height:320px;overflow-y:auto}
-      .ent-item{display:flex;flex-direction:column;gap:4px;padding:8px 10px;border-radius:8px;border:1px solid var(--divider-color,#ccc);cursor:default;user-select:none}
-      .ent-item.sel{border-color:var(--primary-color,#03a9f4);background:color-mix(in srgb,var(--primary-color,#03a9f4) 10%,transparent)}
-      .ent-row-top{display:flex;align-items:center;gap:8px;width:100%;cursor:pointer}
-      .ent-item .color-palette{display:none;padding:2px 0}
-      .ent-item.sel .color-palette{display:flex}
-      .domain-filter{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px}
-      .dom-btn{padding:3px 10px;border-radius:10px;border:1px solid var(--divider-color,#ccc);background:none;cursor:pointer;font-size:.72em;color:var(--primary-text-color)}
-      .dom-btn.active{background:var(--primary-color,#03a9f4);color:white;border-color:var(--primary-color,#03a9f4)}
-      .ent-search{width:100%;padding:6px 10px;border-radius:8px;border:1px solid var(--divider-color,#ccc);background:var(--card-background-color,#fff);color:var(--primary-text-color);font-size:.82em;box-sizing:border-box;font-family:inherit;margin-bottom:8px}
-      .ent-search:focus{outline:none;border-color:var(--primary-color,#03a9f4)}
-      .dom-badge{font-size:.62em;font-weight:700;padding:1px 6px;border-radius:6px;color:white;flex-shrink:0;min-width:44px;text-align:center}
-      .dom-climate{background:#FF7043}.dom-switch{background:#42A5F5}.dom-light{background:#F9A825}.dom-fan{background:#26C6DA}.dom-cover{background:#AB47BC}
-      .ent-name{flex:1;font-size:.83em;color:var(--primary-text-color);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-      .ent-label-inp{padding:4px 8px;border-radius:6px;border:1px solid var(--divider-color,#ccc);font-size:.78em;color:var(--primary-text-color);background:var(--card-background-color,#fff);font-family:inherit;width:80px;flex-shrink:0}
       .btn-create{background:var(--primary-color,#03a9f4);color:white;padding:8px 18px;border-radius:10px;border:none;cursor:pointer;font-size:.85em;font-weight:600;margin-top:4px}
       .btn-create:hover{filter:brightness(.9)}
       .empty{font-size:.85em;color:var(--secondary-text-color)}`;
 
-      this.shadowRoot.innerHTML=`<style>${S}</style><ha-card>
+      this._setStyles('groups', S);
+      const root = this._ensureRoot();
+      root.innerHTML=`<ha-card>
       <div class="card-header"><span class="card-title">Groups</span><button class="btn-back">← Back</button></div>
       <div class="group-list">
         ${groups.length?groups.map(g=>`
@@ -2537,58 +3045,58 @@
       </div>
     </ha-card>`;
 
-      this.shadowRoot.querySelector('.btn-back').addEventListener('click',()=>{this._groupsMode=false;this.render();});
-      this.shadowRoot.querySelectorAll('.btn-del').forEach(btn=>btn.addEventListener('click',async()=>{
-        if(!confirm(this.t('group.delete_confirm'))) return;
+      root.querySelector('.btn-back').addEventListener('click',()=>{this._groupsMode=false;this.render();});
+      root.querySelectorAll('.btn-del').forEach(btn=>btn.addEventListener('click',async()=>{
+        if(!await this._confirm(this.t('group.delete_confirm'))) return;
         const newGroups=groups.filter(g=>g.id!==btn.dataset.id);
         const profiles=(this._storageData.profiles||[]).map(p=>p.id===profile?.id?{...p,groups:newGroups}:p);
         await this._wsSet({...this._storageData,profiles});
         this._renderGroupsView();
       }));
-      this.shadowRoot.querySelectorAll('.btn-edit-grp').forEach(btn=>btn.addEventListener('click',()=>{
+      root.querySelectorAll('.btn-edit-grp').forEach(btn=>btn.addEventListener('click',()=>{
         const g=groups.find(x=>x.id===btn.dataset.id);
         if(g) this._renderGroupEditView(g);
       }));
-      this._bindColorPalettes(this.shadowRoot);
-      this.shadowRoot.querySelectorAll('.ent-row-top').forEach(top=>{
+      this._bindColorPalettes(root);
+      root.querySelectorAll('.ent-row-top').forEach(top=>{
         top.addEventListener('click',e=>{
           if(e.target.tagName==='INPUT') return;
           const chk=top.querySelector('.ent-chk'); chk.checked=!chk.checked;
           top.closest('.ent-item').classList.toggle('sel',chk.checked);
         });
       });
-      this.shadowRoot.querySelectorAll('.ent-chk').forEach(chk=>chk.addEventListener('change',()=>chk.closest('.ent-item').classList.toggle('sel',chk.checked)));
+      root.querySelectorAll('.ent-chk').forEach(chk=>chk.addEventListener('change',()=>chk.closest('.ent-item').classList.toggle('sel',chk.checked)));
 
       let activeDomain='';
       const filterEnts=()=>{
-        const search=this.shadowRoot.querySelector('.ent-search')?.value.toLowerCase()||'';
-        this.shadowRoot.querySelectorAll('.ent-item').forEach(item=>{
+        const search=root.querySelector('.ent-search')?.value.toLowerCase()||'';
+        root.querySelectorAll('.ent-item').forEach(item=>{
           const ok=(!activeDomain||item.dataset.domain===activeDomain)&&(!search||item.dataset.name.includes(search));
           item.style.display=ok?'':'none';
         });
       };
-      this.shadowRoot.querySelectorAll('.dom-btn').forEach(btn=>btn.addEventListener('click',()=>{
+      root.querySelectorAll('.dom-btn').forEach(btn=>btn.addEventListener('click',()=>{
         activeDomain=btn.dataset.domain;
-        this.shadowRoot.querySelectorAll('.dom-btn').forEach(b=>b.classList.toggle('active',b===btn));
+        root.querySelectorAll('.dom-btn').forEach(b=>b.classList.toggle('active',b===btn));
         filterEnts();
       }));
-      this.shadowRoot.querySelector('.ent-search').addEventListener('input',filterEnts);
+      root.querySelector('.ent-search').addEventListener('input',filterEnts);
 
-      this.shadowRoot.querySelector('.btn-create').addEventListener('click',async()=>{
-        const name=this.shadowRoot.querySelector('.new-group-name').value.trim();
-        if(!name){alert(this.t('group.enter_name'));return;}
-        const color=this.shadowRoot.querySelector('.group-pal .pal-value')?.value||PALETTE[2];
-        const selected=[...this.shadowRoot.querySelectorAll('.ent-chk:checked')];
-        if(!selected.length){alert(this.t('group.select_entity'));return;}
+      root.querySelector('.btn-create').addEventListener('click',async()=>{
+        const name=root.querySelector('.new-group-name').value.trim();
+        if(!name){await this._alert(this.t('group.enter_name'));return;}
+        const color=root.querySelector('.group-pal .pal-value')?.value||PALETTE[2];
+        const selected=[...root.querySelectorAll('.ent-chk:checked')];
+        if(!selected.length){await this._alert(this.t('group.select_entity'));return;}
         const usedColors=[];
         const entities=selected.map(chk=>{
           const eid=chk.dataset.entity;
-          const palVal=this.shadowRoot.querySelector(`.ent-item[data-entity="${eid}"] .pal-value`)?.value;
+          const palVal=root.querySelector(`.ent-item[data-entity="${eid}"] .pal-value`)?.value;
           const entColor=palVal||this._autoColor(usedColors);
           usedColors.push(entColor);
           return {
             entity:eid,
-            name:this.shadowRoot.querySelector(`.ent-label-inp[data-entity="${eid}"]`)?.value.trim()||this._hass.states[eid]?.attributes.friendly_name||eid,
+            name:root.querySelector(`.ent-label-inp[data-entity="${eid}"]`)?.value.trim()||this._hass.states[eid]?.attributes.friendly_name||eid,
             color:entColor,
           };
         });
@@ -2596,7 +3104,7 @@
         const newGroups=[...groups,{id,name,color,entities}];
         const profiles=(this._storageData.profiles||[]).map(p=>p.id===profile?.id?{...p,groups:newGroups}:p);
         try{await this._wsSet({...this._storageData,profiles});this._renderGroupsView();}
-        catch(e){alert(`${this.t('errors.save_failed')}: ${e.message||e}`);}
+        catch(e){await this._alert(`${this.t('errors.save_failed')}: ${e.message||e}`);}
       });
     }
 
@@ -2605,7 +3113,7 @@
     render() {}
   }
 
-  // Last modified: 2026-05-25 18:45 CEST
+  // Last modified: 2026-05-28 14:30 CEST
 
 
   class WeeklyScheduleCard extends WeeklyScheduleBase {
@@ -2615,120 +3123,10 @@
       this._layout = ['columns', 'rows'].includes(saved) ? saved : 'columns';
     }
 
-    // ── Main render ───────────────────────────────────────────────────────────
-
-    render() {
-      if (!this._config || !this._hass || !this._storageData) return;
-
-      const profiles=this._storageData.profiles||[];
-      const inNewProfile = !!this._profileEditMode;
-      const editingProfile = inNewProfile ? profiles.find(p => p.id === this._profileEditMode.profileId) : null;
-
-      if (!this._entities.length && !(this._getSelectedProfile()?.groups?.length)) {
-        this.shadowRoot.innerHTML=`
-        <style>:host{display:block;font-family:var(--primary-font-family,sans-serif)}
-        ha-card{padding:28px;text-align:center;display:flex;flex-direction:column;align-items:center;gap:14px}
-        .empty-title{font-size:1em;font-weight:600;color:var(--primary-text-color)}
-        .empty-sub{font-size:.85em;color:var(--secondary-text-color);max-width:320px;line-height:1.5}
-        .btn-setup{padding:10px 24px;border-radius:10px;background:var(--primary-color,#03a9f4);color:white;border:none;cursor:pointer;font-size:.88em;font-weight:600}</style>
-        <ha-card>
-          <div class="empty-title">${this.t('card.no_entities')}</div>
-          <div class="empty-sub">${this.t('card.no_entities_sub')}</div>
-          <button class="btn-setup">${this.t('card.manage_groups')}</button>
-        </ha-card>`;
-        this.shadowRoot.querySelector('.btn-setup').addEventListener('click',()=>this._renderGroupsView());
-        return;
-      }
-
-      const DAYS = ['mon','tue','wed','thu','fri','sat','sun'].map(k=>this.t(`days.${k}`));
-      const allTabs = this._getAllTabs();
-      const tab = this._currentTab();
-      const isGroup = tab.type === 'group';
-      const H = 480;
-
-      const timeLabels = [];
-      for (let h=0;h<24;h+=2) timeLabels.push({label:`${String(h).padStart(2,'0')}:00`,pct:(h/24)*100});
-
-      // Build column-mode grid HTML
-      const _blk = b => `<div class="block ${b.isOff?'off':''}${b.isActive?' active':''}" data-entity="${b.entityId}" style="top:${b.startPct}%;height:${b.heightPct}%;background-color:${b.color};min-height:4px${b.isActive?`;--blk-glow:${b.color};--blk-glow-soft:${b.color}80`:''}">${b.heightPct>8?b.label:''}${b.hasStop?'<span class="blk-stop">⏹</span>':''}${b.hasCond?'<span class="blk-stop" style="right:12px">⚡</span>':''}</div>`;
-      let colGrid = '';
-      if (!isGroup) {
-        colGrid = DAYS.map((_,di)=>{
-          const blocks = this._getBlocksForDay(di, this._getProfileSchedules(tab.entity), tab);
-          return `<div class="day-column" data-day="${di}" style="border-left:3px solid ${tab.color||'transparent'}">
-          ${blocks.map(_blk).join('')}
-          <div class="add-hint">+</div>
-        </div>`;
-        }).join('');
-      } else if (this._layout !== 'rows' && this._layout !== 'focus') {
-        const ents = tab.entities||[], N=ents.length;
-        colGrid = DAYS.map((_,di)=>`
-        <div class="day-column day-column-grp" data-day="${di}">
-          ${ents.map((ec,ei)=>{
-            const blocks=this._getBlocksForDay(di,this._getProfileSchedules(ec.entity),ec);
-            return `<div class="sub-col" data-day="${di}" data-ei="${ei}" style="left:${(ei/N)*100}%;width:${(1/N)*100}%;box-shadow:inset 3px 0 0 0 ${ec.color||'transparent'}">
-              ${ei>0?'<div class="sub-divider"></div>':''}
-              ${blocks.map(_blk).join('')}
-              <div class="add-hint">+</div>
-            </div>`;
-          }).join('')}
-        </div>`).join('');
-      }
-
-      // Gantt rows mode
-      const gantt = this._layout === 'rows' ? `
-      <div class="gantt">
-        <div class="gantt-hdr">
-          <div class="gantt-day-col"></div>
-          <div class="gantt-ent-spacer"></div>
-          <div class="gantt-axis">
-            ${[0,6,12,18,24].map(h=>`<div class="gantt-tick" style="left:${(h/24)*100}%">${String(h%24).padStart(2,'0')}:00</div><div class="gantt-vline" style="left:${(h/24)*100}%"></div>`).join('')}
-          </div>
-        </div>
-        ${DAYS.map((day,di)=>`
-          <div class="gantt-day" data-day="${di}">
-            <div class="gantt-day-lbl">${day}</div>
-            <div class="gantt-rows">
-              ${(tab.entities || (tab.entity ? [tab] : [])).map((ec,ei)=>`
-                <div class="gantt-row" data-day="${di}" data-ei="${ei}" style="border-left:3px solid ${ec.color||'#9E9E9E'};border-top:3px solid ${ec.color||'#9E9E9E'}">
-                  <div class="gantt-ent-lbl">${ec.name||ec.entity}</div>
-                  <div class="gantt-area">
-                    ${[0,6,12,18,24].map(h=>`<div class="gantt-vline" style="left:${(h/24)*100}%"></div>`).join('')}
-                    ${this._getProfileSchedules(ec.entity).filter(s=>this._appliesToDay(s.attributes.weekdays||[],di)).flatMap(s=>(s.attributes.timeslots||[]).map(slot=>{
-                      const [a,b]=slot.split(' - ');
-                      const sMin=this._parseTime(a); let eMin=this._parseTime(b); if(eMin===0)eMin=1440;
-                      const color=this._blockColor(s,ec), isOff=s.state==='off';
-                      const hasStop=this._hasAutoChild(s.entity_id);
-                      const hasCond=this._getStoredConditions(s.entity_id).conditions.length > 0;
-                      const isActive=s.attributes.current_slot!==null&&s.attributes.current_slot!==undefined;
-                      const temp=s.attributes.actions?.[0]?.data?.temperature??null;
-                      const lbl=this._detectDomain(ec.entity)==='climate'&&temp!=null?`${temp}°`:s.attributes.friendly_name;
-                      const glowStyle=isActive?`;--blk-glow:${color};--blk-glow-soft:${color}80`:'';
-                      return `<div class="gantt-block ${isOff?'off':''}${isActive?' active':''}" data-entity="${s.entity_id}" style="left:${this._minutesToPercent(sMin)}%;width:${this._minutesToPercent(eMin-sMin)}%;background-color:${color}${glowStyle}">${(eMin-sMin)>60?lbl:''}${hasStop?'<span class="blk-stop">⏹</span>':''}${hasCond?'<span class="blk-stop" style="right:12px">⚡</span>':''}</div>`;
-                    })).join('')}
-                    <div class="gantt-add">+</div>
-                  </div>
-                </div>`).join('')}
-            </div>
-          </div>`).join('')}
-      </div>` : '';
-
-      // Compact view
-      isGroup && this._layout === 'compact' ? this._buildCompactView(tab, DAYS) : '';
-
-      // Focus view
-      isGroup && this._layout === 'focus' ? this._buildFocusView(tab, DAYS, H) : '';
-
-      // Legend
-      const legend = isGroup
-        ? `<div class="ent-legend">${(tab.entities||[]).map(ec=>'<div class="ent-legend-item"><div class="ent-legend-dot" style="background:' + (ec.color||'#9E9E9E') + '"></div><span>' + (ec.name||ec.entity) + '</span></div>').join('')}</div>`
-        : `<div class="legend">${this._getProfileSchedules(tab.entity).map(s=>{
-          const color=this._blockColor(s,tab),isOff=s.state==='off',temp=s.attributes.actions?.[0]?.data?.temperature??null;
-          return `<div class="legend-item" data-entity="${s.entity_id}" style="${isOff?'opacity:.55':''}"><div class="legend-dot" style="background-color:${color}"></div><span>${s.attributes.friendly_name||s.entity_id}${this._detectDomain(tab.entity)==='climate'&&temp!=null?` — ${temp}°`:''}${isOff?' (off)':''}</span></div>`;
-        }).join('')}</div>`;
-
-      this.shadowRoot.innerHTML = `
-      <style>
+    // Persistent CSS for the editing card (split out of render() so the browser
+    // doesn't re-parse it on every state change — see _setStyles in base-card).
+    _mainStyles(H) {
+      return `
         :host{display:block;font-family:var(--primary-font-family,sans-serif)}
         ha-card{padding:14px 16px 8px}
         .card-header{display:flex;flex-direction:column;gap:0;margin-bottom:0}
@@ -2766,6 +3164,8 @@
         .block:hover{filter:brightness(.84);opacity:1}
         .block.active{animation:block-pulse 2s infinite ease-in-out;opacity:1!important;z-index:2}
         .block.off{opacity:.5;background-image:repeating-linear-gradient(45deg,transparent,transparent 4px,rgba(255,255,255,.15) 4px,rgba(255,255,255,.15) 6px)}
+        .block.muted,.gantt-block.muted{background-image:repeating-linear-gradient(45deg,transparent,transparent 4px,rgba(255,152,0,.5) 4px,rgba(255,152,0,.5) 8px)!important;outline:2px dashed #FF9800;outline-offset:-2px;animation:none!important;opacity:.85!important}
+        .block.muted::after,.gantt-block.muted::after{content:'🔇';position:absolute;top:1px;left:3px;font-size:.7em;z-index:3;text-shadow:0 1px 2px rgba(0,0,0,.5);pointer-events:none}
         .blk-stop{position:absolute;bottom:2px;right:2px;font-size:.5em;opacity:.75;pointer-events:none;line-height:1}
         .add-hint{position:absolute;bottom:6px;right:0;left:0;text-align:center;font-size:1.1em;color:var(--secondary-text-color);opacity:0;pointer-events:none;transition:opacity .15s}
         .day-column:hover .add-hint,.sub-col:hover .add-hint{opacity:.5}
@@ -2811,64 +3211,131 @@
         .chip-dd-item.disabled{opacity:.38;pointer-events:none}
         .chip-add{padding:4px 10px;border-radius:16px;border:1.5px dashed var(--divider-color,#ccc);background:none;cursor:pointer;font-size:.85em;color:var(--secondary-text-color);line-height:1;flex-shrink:0;transition:all .12s}
         .chip-add:hover{border-color:var(--primary-color,#03a9f4);color:var(--primary-color,#03a9f4)}
-        @keyframes compact-pulse{0%,100%{box-shadow:0 0 4px var(--cblk-glow,transparent),0 0 8px var(--cblk-glow-soft,transparent)}50%{box-shadow:0 0 8px var(--cblk-glow,transparent),0 0 16px var(--cblk-glow-soft,transparent)}}
-        .compact-days{display:flex;flex-direction:column;gap:4px}
-        .compact-day-wrap{border-radius:8px;overflow:hidden}
-        .compact-today-wrap{background:color-mix(in srgb,var(--primary-color,#03a9f4) 5%,transparent)}
-        .compact-day-hdr{display:flex;align-items:center;height:44px;padding:0 12px;gap:8px;cursor:pointer;border-radius:8px;box-sizing:border-box}
-        .compact-day-hdr:hover{background:color-mix(in srgb,var(--primary-color,#03a9f4) 3%,transparent)}
-        .compact-day-bar{width:3px;align-self:stretch;border-radius:2px;flex-shrink:0}
-        .compact-day-name{font-size:.85em;font-weight:600;width:36px;flex-shrink:0}
-        .compact-mini-timeline{flex:1;position:relative;height:8px;background:color-mix(in srgb,var(--divider-color,#e0e0e0) 30%,transparent);border-radius:4px;overflow:hidden}
-        .compact-mini-bar{position:absolute;border-radius:2px}
-        .compact-day-content{padding:0 4px 8px 12px}
-        .compact-ent-row{display:flex;align-items:center;gap:8px;padding:6px 0}
-        .compact-ent-sep{border-top:1px solid var(--divider-color,#e0e0e0)}
-        .compact-ent-icon{width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
-        .compact-ent-name{font-size:.75em;color:var(--primary-text-color);width:80px;flex-shrink:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-        .compact-bar{flex:1;height:32px;background:var(--divider-color,#e0e0e0);border-radius:6px;position:relative;overflow:hidden;cursor:pointer}
-        .compact-blk{position:absolute;top:1px;bottom:1px;border-radius:5px;display:flex;align-items:center;justify-content:center;gap:2px;overflow:hidden;cursor:pointer;transition:transform .15s,opacity .15s;opacity:.85;font-size:.65em;font-weight:600;color:white;text-shadow:0 1px 2px rgba(0,0,0,.4);min-width:4px;box-sizing:border-box}
-        .compact-blk:hover{transform:scaleY(1.04);opacity:.9}
-        .compact-blk.active{animation:compact-pulse 2s infinite ease-in-out;opacity:1!important;z-index:2}
-        .compact-blk.off{opacity:.5;background-image:repeating-linear-gradient(45deg,transparent,transparent 4px,rgba(255,255,255,.15) 4px,rgba(255,255,255,.15) 6px)}
-        .compact-blk-val{white-space:nowrap;overflow:hidden;max-width:40px}
-        .compact-ticks{position:relative;height:14px;margin-top:2px}
-        .compact-tick{position:absolute;font-size:.55em;color:var(--secondary-text-color);opacity:.6;transform:translateX(-50%)}
-        @keyframes focus-pulse{0%,100%{box-shadow:0 0 4px var(--fblk-glow,transparent),0 0 8px var(--fblk-glow-soft,transparent)}50%{box-shadow:0 0 8px var(--fblk-glow,transparent),0 0 16px var(--fblk-glow-soft,transparent)}}
-        .focus-wrap{overflow-x:auto}
-        .focus-container{display:grid;align-items:stretch}
-        .focus-axis{width:36px;flex-shrink:0;display:flex;flex-direction:column}
-        .focus-axis-spacer{height:40px;flex-shrink:0}
-        .focus-axis-body{flex:1;position:relative}
-        .focus-axis-tick{position:absolute;right:4px;font-size:.6em;color:var(--secondary-text-color);transform:translateY(-50%);white-space:nowrap}
-        .focus-col--active{display:flex;flex-direction:column;border:1px solid color-mix(in srgb,var(--primary-color,#03a9f4) 30%,transparent);border-radius:12px;box-shadow:0 2px 12px rgba(0,0,0,.08);background:var(--card-background-color,#fff);min-width:0;overflow:hidden}
-        .focus-col-hdr{height:40px;display:flex;align-items:center;justify-content:center;font-size:.85em;font-weight:600;flex-shrink:0}
-        .focus-lane-hdrs{position:relative;height:18px;flex-shrink:0;margin:0 2px 2px}
-        .focus-lane-hdr{position:absolute;top:0;bottom:0;display:flex;align-items:center;justify-content:center;gap:3px;font-size:.6em;font-weight:600;color:var(--secondary-text-color);overflow:hidden;white-space:nowrap;padding:0 2px;box-sizing:border-box}
-        .focus-lane-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0}
-        .focus-col-body{flex:1;position:relative;overflow:hidden;cursor:pointer}
-        .focus-blk{position:absolute;border-radius:8px;display:flex;align-items:center;padding:3px 6px;gap:4px;overflow:hidden;cursor:pointer;transition:filter .15s;opacity:.9;font-size:.68em;color:white;box-sizing:border-box}
-        .focus-blk:hover{filter:brightness(.84);opacity:1}
-        .focus-blk.active{animation:focus-pulse 2s infinite ease-in-out;border:2px solid rgba(255,255,255,.75);opacity:1!important;z-index:2}
-        .focus-blk.off{opacity:.5;background-image:repeating-linear-gradient(45deg,transparent,transparent 4px,rgba(255,255,255,.15) 4px,rgba(255,255,255,.15) 6px)}
-        .focus-blk-info{display:flex;flex-direction:column;min-width:0;overflow:hidden;gap:1px}
-        .focus-blk-info-row{flex-direction:row!important;gap:4px;align-items:center}
-        .focus-blk-name{font-size:.72em;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.2}
-        .focus-blk-val{font-size:.68em;opacity:.9;white-space:nowrap;overflow:hidden;line-height:1.2}
-        .focus-slim{display:flex;flex-direction:column;cursor:pointer;border-radius:8px;transition:background .15s;min-width:0;overflow:hidden}
-        .focus-slim:hover{background:color-mix(in srgb,var(--primary-color,#03a9f4) 5%,transparent)}
-        .focus-slim-hdr{height:40px;display:flex;align-items:flex-start;justify-content:center;padding-top:8px;font-size:.65em;font-weight:600;flex-shrink:0}
-        .focus-slim-body{flex:1;position:relative;overflow:hidden}
-        .focus-slim-bar{position:absolute;border-radius:3px;min-height:4px;box-sizing:border-box}
-        .focus-slim:hover .focus-slim-bar{opacity:1!important}
-      </style>
-      <style id="tt-style">
+        .empty-title{font-size:1em;font-weight:600;color:var(--primary-text-color)}
+        .empty-sub{font-size:.85em;color:var(--secondary-text-color);max-width:320px;line-height:1.5}
+        .btn-setup{padding:10px 24px;border-radius:10px;background:var(--primary-color,#03a9f4);color:white;border:none;cursor:pointer;font-size:.88em;font-weight:600}
+        .ha-card-empty{padding:28px;text-align:center;display:flex;flex-direction:column;align-items:center;gap:14px}`;
+    }
+
+    _tooltipStyles() {
+      return `
         .sched-tooltip{position:fixed;background:rgba(0,0,0,.78);color:#fff;border-radius:8px;padding:8px 12px;font-size:.75em;box-shadow:0 4px 16px rgba(0,0,0,.3);z-index:9999;pointer-events:none;max-width:220px;line-height:1.5;backdrop-filter:blur(8px);animation:tt-in .15s ease}
         @keyframes tt-in{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
         .sched-tooltip::after{content:'';position:absolute;bottom:-6px;left:50%;transform:translateX(-50%);border:6px solid transparent;border-top-color:rgba(0,0,0,.78);border-bottom:none}
         .sched-tooltip .tt-name{font-weight:600;margin-bottom:3px}
-        .sched-tooltip .tt-row{opacity:.8;font-size:.9em}
-      </style>
+        .sched-tooltip .tt-row{opacity:.8;font-size:.9em}`;
+    }
+
+    // ── Main render ───────────────────────────────────────────────────────────
+
+    render() {
+      if (!this._config || !this._hass || !this._storageData) return;
+
+      const profiles=this._storageData.profiles||[];
+      const inNewProfile = !!this._profileEditMode;
+      const editingProfile = inNewProfile ? profiles.find(p => p.id === this._profileEditMode.profileId) : null;
+
+      if (!this._entities.length && !(this._getSelectedProfile()?.groups?.length)) {
+        this._setStyles('main', this._mainStyles(480));
+        this._setStyles('tt', this._tooltipStyles());
+        const root = this._ensureRoot();
+        root.innerHTML = `
+        <ha-card class="ha-card-empty">
+          <div class="empty-title">${this.t('card.no_entities')}</div>
+          <div class="empty-sub">${this.t('card.no_entities_sub')}</div>
+          <button class="btn-setup">${this.t('card.manage_groups')}</button>
+        </ha-card>`;
+        root.querySelector('.btn-setup').addEventListener('click',()=>this._renderGroupsView());
+        return;
+      }
+
+      const DAYS = ['mon','tue','wed','thu','fri','sat','sun'].map(k=>this.t(`days.${k}`));
+      const allTabs = this._getAllTabs();
+      const tab = this._currentTab();
+      const isGroup = tab.type === 'group';
+      const H = 480;
+
+      const timeLabels = [];
+      for (let h=0;h<24;h+=2) timeLabels.push({label:`${String(h).padStart(2,'0')}:00`,pct:(h/24)*100});
+
+      // Build column-mode grid HTML
+      const _blk = b => `<div class="block ${b.isOff?'off':''}${b.isActive?' active':''}${b.isMuted?' muted':''}" data-entity="${b.entityId}" style="top:${b.startPct}%;height:${b.heightPct}%;background-color:${b.color};min-height:4px${b.isActive?`;--blk-glow:${b.color};--blk-glow-soft:${b.color}80`:''}">${b.heightPct>8?b.label:''}${b.hasStop?'<span class="blk-stop">⏹</span>':''}${b.hasCond?'<span class="blk-stop" style="right:12px">⚡</span>':''}</div>`;
+      let colGrid = '';
+      if (!isGroup) {
+        colGrid = DAYS.map((_,di)=>{
+          const blocks = this._getBlocksForDay(di, this._getProfileSchedules(tab.entity), tab);
+          return `<div class="day-column" data-day="${di}" style="border-left:3px solid ${tab.color||'transparent'}">
+          ${blocks.map(_blk).join('')}
+          <div class="add-hint">+</div>
+        </div>`;
+        }).join('');
+      } else if (this._layout !== 'rows') {
+        const ents = tab.entities||[], N=ents.length;
+        colGrid = DAYS.map((_,di)=>`
+        <div class="day-column day-column-grp" data-day="${di}">
+          ${ents.map((ec,ei)=>{
+            const blocks=this._getBlocksForDay(di,this._getProfileSchedules(ec.entity),ec);
+            return `<div class="sub-col" data-day="${di}" data-ei="${ei}" style="left:${(ei/N)*100}%;width:${(1/N)*100}%;box-shadow:inset 3px 0 0 0 ${ec.color||'transparent'}">
+              ${ei>0?'<div class="sub-divider"></div>':''}
+              ${blocks.map(_blk).join('')}
+              <div class="add-hint">+</div>
+            </div>`;
+          }).join('')}
+        </div>`).join('');
+      }
+
+      // Gantt rows mode
+      const gantt = this._layout === 'rows' ? `
+      <div class="gantt">
+        <div class="gantt-hdr">
+          <div class="gantt-day-col"></div>
+          <div class="gantt-ent-spacer"></div>
+          <div class="gantt-axis">
+            ${[0,6,12,18,24].map(h=>`<div class="gantt-tick" style="left:${(h/24)*100}%">${String(h%24).padStart(2,'0')}:00</div><div class="gantt-vline" style="left:${(h/24)*100}%"></div>`).join('')}
+          </div>
+        </div>
+        ${DAYS.map((day,di)=>`
+          <div class="gantt-day" data-day="${di}">
+            <div class="gantt-day-lbl">${day}</div>
+            <div class="gantt-rows">
+              ${(tab.entities || (tab.entity ? [tab] : [])).map((ec,ei)=>`
+                <div class="gantt-row" data-day="${di}" data-ei="${ei}" style="border-left:3px solid ${ec.color||'#9E9E9E'};border-top:3px solid ${ec.color||'#9E9E9E'}">
+                  <div class="gantt-ent-lbl">${ec.name||ec.entity}</div>
+                  <div class="gantt-area">
+                    ${[0,6,12,18,24].map(h=>`<div class="gantt-vline" style="left:${(h/24)*100}%"></div>`).join('')}
+                    ${this._getProfileSchedules(ec.entity).filter(s=>this._appliesToDay(s.attributes.weekdays||[],di)).flatMap(s=>(s.attributes.timeslots||[]).map(slot=>{
+                      const [a,b]=slot.split(' - ');
+                      const sMin=this._parseTime(a); let eMin=this._parseTime(b); if(eMin===0)eMin=1440;
+                      const color=this._blockColor(s,ec), isOff=s.state==='off';
+                      const hasStop=this._hasAutoChild(s.entity_id);
+                      const evalRes=this._evalAllConditions(s.entity_id);
+                      const hasCond=evalRes.hasCond;
+                      const isActive=s.attributes.current_slot!==null&&s.attributes.current_slot!==undefined;
+                      const isMuted=isActive&&!isOff&&hasCond&&!evalRes.satisfied;
+                      const temp=s.attributes.actions?.[0]?.data?.temperature??null;
+                      const lbl=this._detectDomain(ec.entity)==='climate'&&temp!=null?`${temp}°`:s.attributes.friendly_name;
+                      const glowStyle=isActive?`;--blk-glow:${color};--blk-glow-soft:${color}80`:'';
+                      return `<div class="gantt-block ${isOff?'off':''}${isActive?' active':''}${isMuted?' muted':''}" data-entity="${s.entity_id}" style="left:${this._minutesToPercent(sMin)}%;width:${this._minutesToPercent(eMin-sMin)}%;background-color:${color}${glowStyle}">${(eMin-sMin)>60?lbl:''}${hasStop?'<span class="blk-stop">⏹</span>':''}${hasCond?'<span class="blk-stop" style="right:12px">⚡</span>':''}</div>`;
+                    })).join('')}
+                    <div class="gantt-add">+</div>
+                  </div>
+                </div>`).join('')}
+            </div>
+          </div>`).join('')}
+      </div>` : '';
+
+      // Legend
+      const legend = isGroup
+        ? `<div class="ent-legend">${(tab.entities||[]).map(ec=>'<div class="ent-legend-item"><div class="ent-legend-dot" style="background:' + (ec.color||'#9E9E9E') + '"></div><span>' + (ec.name||ec.entity) + '</span></div>').join('')}</div>`
+        : `<div class="legend">${this._getProfileSchedules(tab.entity).map(s=>{
+          const color=this._blockColor(s,tab),isOff=s.state==='off',temp=s.attributes.actions?.[0]?.data?.temperature??null;
+          return `<div class="legend-item" data-entity="${s.entity_id}" style="${isOff?'opacity:.55':''}"><div class="legend-dot" style="background-color:${color}"></div><span>${s.attributes.friendly_name||s.entity_id}${this._detectDomain(tab.entity)==='climate'&&temp!=null?` — ${temp}°`:''}${isOff?' (off)':''}</span></div>`;
+        }).join('')}</div>`;
+
+      this._setStyles('main', this._mainStyles(H));
+      this._setStyles('tt', this._tooltipStyles());
+      const root = this._ensureRoot();
+      root.innerHTML = `
       <ha-card>
         ${inNewProfile ? `
         <div class="card-header">
@@ -2938,15 +3405,15 @@
 
       // Tab switching
       if (allTabs.length>1) {
-        this.shadowRoot.querySelectorAll('.tab').forEach(t=>t.addEventListener('click',()=>{
+        root.querySelectorAll('.tab').forEach(t=>t.addEventListener('click',()=>{
           this._activeTab=parseInt(t.dataset.tab);
           try{localStorage.setItem('weekly-schedule-tab',this._activeTab);}catch{}
           this.render();
         }));
       }
 
-      this.shadowRoot.querySelector('.btn-groups')?.addEventListener('click',()=>this._renderGroupsView());
-      this.shadowRoot.querySelector('.btn-layout-toggle')?.addEventListener('click',()=>{
+      root.querySelector('.btn-groups')?.addEventListener('click',()=>this._renderGroupsView());
+      root.querySelector('.btn-layout-toggle')?.addEventListener('click',()=>{
         this._layout = this._layout === 'columns' ? 'rows' : 'columns';
         try { localStorage.setItem('weekly-schedule-layout', this._layout); } catch {}
         this._animatedRender();
@@ -2954,17 +3421,17 @@
 
       // New-profile Save / Cancel
       if (inNewProfile) {
-        this.shadowRoot.querySelector('.btn-profile-save')?.addEventListener('click', () => {
+        root.querySelector('.btn-profile-save')?.addEventListener('click', () => {
           this._profileEditMode = null;
           this.render();
         });
-        this.shadowRoot.querySelector('.btn-profile-cancel')?.addEventListener('click', () => this._cancelNewProfile());
+        root.querySelector('.btn-profile-cancel')?.addEventListener('click', () => this._cancelNewProfile());
       }
 
-      this.shadowRoot.querySelector('ha-card').addEventListener('click',()=>{
-        this.shadowRoot.querySelectorAll('.chip-dropdown').forEach(d=>d.classList.remove('open'));
+      root.querySelector('ha-card').addEventListener('click',()=>{
+        root.querySelectorAll('.chip-dropdown').forEach(d=>d.classList.remove('open'));
       });
-      this.shadowRoot.querySelectorAll('.profile-chip').forEach(chip=>chip.addEventListener('click',e=>{
+      root.querySelectorAll('.profile-chip').forEach(chip=>chip.addEventListener('click',e=>{
         if(e.target.closest('.chip-menu')) return;
         if(e.target.closest('.chip-activate')) {
           const p=profiles.find(x=>x.id===chip.dataset.pid); if(!p) return;
@@ -2977,86 +3444,50 @@
         this._activeTab=0;
         this.render();
       }));
-      this.shadowRoot.querySelectorAll('.psb-activate-btn').forEach(btn=>btn.addEventListener('click',e=>{
+      root.querySelectorAll('.psb-activate-btn').forEach(btn=>btn.addEventListener('click',e=>{
         e.stopPropagation();
         const p=profiles.find(x=>x.id===btn.dataset.pid); if(!p) return;
         this._activateProfile(p.id);
       }));
-      this.shadowRoot.querySelectorAll('.chip-menu').forEach(btn=>btn.addEventListener('click',e=>{
+      root.querySelectorAll('.chip-menu').forEach(btn=>btn.addEventListener('click',e=>{
         e.stopPropagation();
         const dd=btn.closest('.chip-wrap').querySelector('.chip-dropdown');
         const open=dd.classList.contains('open');
-        this.shadowRoot.querySelectorAll('.chip-dropdown').forEach(d=>d.classList.remove('open'));
+        root.querySelectorAll('.chip-dropdown').forEach(d=>d.classList.remove('open'));
         if(!open) dd.classList.add('open');
       }));
-      this.shadowRoot.querySelectorAll('.chip-dd-item').forEach(item=>item.addEventListener('click',()=>{
+      root.querySelectorAll('.chip-dd-item').forEach(item=>item.addEventListener('click',()=>{
         const pid=item.dataset.pid, action=item.dataset.action;
-        this.shadowRoot.querySelectorAll('.chip-dropdown').forEach(d=>d.classList.remove('open'));
+        root.querySelectorAll('.chip-dropdown').forEach(d=>d.classList.remove('open'));
         if(action==='rename') this._renameProfile(pid);
         else if(action==='duplicate') this._duplicateProfile(pid);
         else if(action==='delete') this._deleteProfile(pid);
       }));
-      this.shadowRoot.querySelector('.chip-add')?.addEventListener('click',e=>{
+      root.querySelector('.chip-add')?.addEventListener('click',e=>{
         e.stopPropagation();
         this._showNewProfileDialog();
       });
 
       if (!isGroup) {
-        this.shadowRoot.querySelectorAll('.block').forEach(el=>el.addEventListener('click',e=>{e.stopPropagation();this._openEditPopup(el.dataset.entity);}));
-        this.shadowRoot.querySelectorAll('.day-column').forEach(col=>col.addEventListener('click',e=>{
+        root.querySelectorAll('.block').forEach(el=>el.addEventListener('click',e=>{e.stopPropagation();this._openEditPopup(el.dataset.entity);}));
+        root.querySelectorAll('.day-column').forEach(col=>col.addEventListener('click',e=>{
           if(e.target.classList.contains('block')) return;
           const rect=col.getBoundingClientRect();
           this._openCreatePopup(parseInt(col.dataset.day),((e.clientY-rect.top)/rect.height)*100,tab);
         }));
-        this.shadowRoot.querySelectorAll('.legend-item').forEach(el=>el.addEventListener('click',()=>this._openEditPopup(el.dataset.entity)));
+        root.querySelectorAll('.legend-item').forEach(el=>el.addEventListener('click',()=>this._openEditPopup(el.dataset.entity)));
       } else if (this._layout === 'rows') {
-        this.shadowRoot.querySelectorAll('.gantt-block').forEach(el=>el.addEventListener('click',e=>{e.stopPropagation();this._openEditPopup(el.dataset.entity);}));
-        this.shadowRoot.querySelectorAll('.gantt-area').forEach(area=>area.addEventListener('click',e=>{
+        root.querySelectorAll('.gantt-block').forEach(el=>el.addEventListener('click',e=>{e.stopPropagation();this._openEditPopup(el.dataset.entity);}));
+        root.querySelectorAll('.gantt-area').forEach(area=>area.addEventListener('click',e=>{
           if(e.target.classList.contains('gantt-block')) return;
           const row=area.closest('.gantt-row');
           const ei=parseInt(row.dataset.ei), di=parseInt(row.dataset.day);
           const rect=area.getBoundingClientRect();
           this._openCreatePopup(di,((e.clientX-rect.left)/rect.width)*100,(tab.entities||[])[ei]);
         }));
-      } else if (this._layout === 'compact') {
-        this.shadowRoot.querySelectorAll('.compact-blk').forEach(el=>el.addEventListener('click',e=>{
-          e.stopPropagation();
-          this._openEditPopup(el.dataset.entity);
-        }));
-        this.shadowRoot.querySelectorAll('.compact-bar').forEach(bar=>bar.addEventListener('click',e=>{
-          if(e.target.closest('.compact-blk')) return;
-          const di=parseInt(bar.dataset.day), ei=parseInt(bar.dataset.ei);
-          const rect=bar.getBoundingClientRect();
-          const xPct=((e.clientX-rect.left)/rect.width)*100;
-          const ec=(tab.entities||[])[ei];
-          if(ec) this._openCreatePopup(di,xPct,ec);
-        }));
-        this.shadowRoot.querySelectorAll('.compact-day-hdr').forEach(hdr=>hdr.addEventListener('click',()=>{
-          const di=parseInt(hdr.dataset.day);
-          if(this._compactExpanded.has(di)) this._compactExpanded.delete(di);
-          else this._compactExpanded.add(di);
-          this.render();
-        }));
-      } else if (this._layout === 'focus') {
-        this.shadowRoot.querySelectorAll('.focus-blk').forEach(el=>el.addEventListener('click',e=>{
-          e.stopPropagation();
-          this._openEditPopup(el.dataset.entity);
-        }));
-        this.shadowRoot.querySelectorAll('.focus-col-body').forEach(body=>body.addEventListener('click',e=>{
-          if(e.target.closest('.focus-blk')) return;
-          const di=parseInt(body.dataset.day);
-          const rect=body.getBoundingClientRect();
-          const yPct=((e.clientY-rect.top)/rect.height)*100;
-          const ec=(tab.entities||[])[0];
-          if(ec) this._openCreatePopup(di,yPct,ec);
-        }));
-        this.shadowRoot.querySelectorAll('.focus-slim').forEach(col=>col.addEventListener('click',()=>{
-          this._focusDay=parseInt(col.dataset.day);
-          this.render();
-        }));
       } else {
-        this.shadowRoot.querySelectorAll('.block').forEach(el=>el.addEventListener('click',e=>{e.stopPropagation();this._openEditPopup(el.dataset.entity);}));
-        this.shadowRoot.querySelectorAll('.sub-col').forEach(col=>col.addEventListener('click',e=>{
+        root.querySelectorAll('.block').forEach(el=>el.addEventListener('click',e=>{e.stopPropagation();this._openEditPopup(el.dataset.entity);}));
+        root.querySelectorAll('.sub-col').forEach(col=>col.addEventListener('click',e=>{
           if(e.target.classList.contains('block')) return;
           const ei=parseInt(col.dataset.ei), di=parseInt(col.dataset.day);
           const rect=col.getBoundingClientRect();
@@ -3094,11 +3525,52 @@
       this._interval = null;
     }
 
-    set hass(hass) { this._hass = hass; this._render(); }
+    set hass(hass) {
+      this._hass = hass;
+      if (!this._storageData && !this._loadingStorage) {
+        this._loadingStorage = true;
+        hass.connection.sendMessagePromise({ type:'frontend/get_user_data', key:'weekly_schedule_card' })
+          .then(r => { this._storageData = r?.value || { profiles: [] }; this._loadingStorage = false; this._render(); })
+          .catch(() => { this._storageData = { profiles: [] }; this._loadingStorage = false; this._render(); });
+      }
+      this._render();
+    }
     setConfig(config) { this._config = config; }
     getCardSize() { return 2; }
 
     _parseTime(t) { const [h,m]=t.split(':').map(Number); return h*60+(m||0); }
+
+    _getCondsMini(scheduleId) {
+      for (const p of this._storageData?.profiles || []) {
+        const link = (p.scheduleLinks || []).find(l => l.id === scheduleId);
+        if (link?.conditions) return { conditions: link.conditions, combinator: link.condCombinator || 'and' };
+      }
+      return { conditions: [], combinator: 'and' };
+    }
+    _evalCondMini(c) {
+      if (!c?.entity) return false;
+      const s = this._hass?.states?.[c.entity]; if (!s) return false;
+      const raw = c.attribute ? s.attributes?.[c.attribute] : s.state;
+      if (raw == null) return false;
+      const v = String(raw), tv = String(c.value);
+      switch (c.operator) {
+        case '==': return v === tv;
+        case '!=': return v !== tv;
+        case '>':  return parseFloat(v) >  parseFloat(tv);
+        case '<':  return parseFloat(v) <  parseFloat(tv);
+        case '>=': return parseFloat(v) >= parseFloat(tv);
+        case '<=': return parseFloat(v) <= parseFloat(tv);
+      }
+      return false;
+    }
+    _isMuted(scheduleId) {
+      const { conditions, combinator } = this._getCondsMini(scheduleId);
+      const valid = (conditions||[]).filter(c => c.entity && c.value !== '' && c.value != null);
+      if (!valid.length) return false;
+      const results = valid.map(c => this._evalCondMini(c));
+      const satisfied = combinator === 'or' ? results.some(Boolean) : results.every(Boolean);
+      return !satisfied;
+    }
 
     _isActiveNow(s) {
       const now = new Date();
@@ -3139,15 +3611,23 @@
         ?this._config.entities.map(e=>typeof e==='string'?e:e.entity)
         :this._config?.entity?[this._config.entity]:null;
 
-      const active=Object.values(states).filter(s=>
-        s.entity_id.startsWith('switch.schedule_')&&s.state!=='off'&&this._isActiveNow(s)
-      ).filter(s=>{
-        if(!cfgEntities)return true;
+      const entFilter=s=>{
+        if(!cfgEntities) return true;
         const ents=s.attributes.entities||[];
         return ents.some(e=>cfgEntities.includes(typeof e==='string'?e:e.entity_id));
-      });
+      };
+      const allSched=Object.values(states)
+        .filter(s=>s.entity_id.startsWith('switch.schedule_'))
+        .filter(s=>!(s.attributes.tags||[]).includes('weekly_schedule_auto'))
+        .filter(entFilter);
 
-      const rows=active.map(s=>{
+      const activeAll=allSched.filter(s=>s.state!=='off'&&this._isActiveNow(s));
+      const running=activeAll.filter(s=>!this._isMuted(s.entity_id));
+      const muted=activeAll.filter(s=>this._isMuted(s.entity_id));
+      const activeIds=new Set(activeAll.map(s=>s.entity_id));
+      const others=allSched.filter(s=>!activeIds.has(s.entity_id));
+
+      const rowHtml=(s,badge)=>{
         const ents=s.attributes.entities||[];
         const firstEnt=typeof ents[0]==='string'?ents[0]:ents[0]?.entity_id||'';
         const icon=this._domainIcon(firstEnt);
@@ -3156,13 +3636,40 @@
         return `<div class="mini-row">
         <div class="mini-icon-wrap">${icon}</div>
         <span class="mini-name">${name}</span>
-        ${action?`<span class="mini-action">${action}`:''}${action?'</span>':''}
+        ${badge?`<span class="mini-badge">${badge}</span>`:''}
+        ${action?`<span class="mini-action">${action}</span>`:''}
       </div>`;
-      }).join('');
+      };
+      const activeRows=running.map(s=>rowHtml(s,'')).join('');
+      const mutedRows=muted.map(s=>rowHtml(s,'🔇')).join('');
 
+      // Group others by primary entity
+      const groups=new Map();
       const lang=this._hass?.language||'en';
+      const offLbl=lang==='it'?'off':lang==='fr'?'éteint':'off';
+      const idleLbl=lang==='it'?'non attivo':lang==='fr'?'inactif':'idle';
+      for(const s of others){
+        const ents=s.attributes.entities||[];
+        const firstEnt=typeof ents[0]==='string'?ents[0]:ents[0]?.entity_id||'(unknown)';
+        const entState=states[firstEnt];
+        const entName=entState?.attributes?.friendly_name||firstEnt;
+        if(!groups.has(firstEnt)) groups.set(firstEnt,{name:entName,items:[]});
+        const badge=s.state==='off'?offLbl:idleLbl;
+        groups.get(firstEnt).items.push(rowHtml(s,badge));
+      }
+      const othersHtml=[...groups.values()].map(g=>`
+      <div class="mini-group-hdr">${g.name.replace(/</g,'&lt;')}</div>
+      ${g.items.join('')}
+    `).join('');
+
+      const expanded=!!this._expanded;
+      const expandLbl=lang==='it'?'Mostra tutti':lang==='fr'?'Tout afficher':'Show all';
+      const collapseLbl=lang==='it'?'Nascondi':lang==='fr'?'Masquer':'Hide';
+
       const defTitle=lang==='it'?'Schedule attivi':lang==='fr'?'Plannings actifs':'Active schedules';
       const title=(this._config?.title||defTitle).replace(/</g,'&lt;');
+      const emptyActive=lang==='it'?'Nessuno schedule attivo ora':lang==='fr'?'Aucun planning actif':'No schedule active now';
+      const mutedLbl=lang==='it'?'Attivi ma in pausa (condizione non soddisfatta)':lang==='fr'?'Actifs mais en pause (condition non satisfaite)':'Active but muted (condition not met)';
       this.shadowRoot.innerHTML=`
       <style>
         :host{display:block}
@@ -3173,18 +3680,54 @@
         .mini-icon-wrap{width:36px;height:36px;border-radius:10px;background:rgba(3,169,244,.12);display:flex;align-items:center;justify-content:center;font-size:1.1em;flex-shrink:0}
         .mini-name{flex:1;font-size:.83em;color:var(--primary-text-color);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
         .mini-action{font-size:.78em;color:var(--primary-color,#03a9f4);font-weight:600;flex-shrink:0}
+        .mini-badge{font-size:.62em;background:var(--divider-color,#e0e0e0);color:var(--secondary-text-color);padding:1px 6px;border-radius:8px;flex-shrink:0;text-transform:uppercase;letter-spacing:.04em}
         .mini-empty{text-align:center;padding:16px 0;font-size:.8em;color:var(--secondary-text-color)}
+        .mini-expand{display:flex;align-items:center;justify-content:center;gap:6px;width:100%;margin-top:8px;padding:8px;border:none;background:none;color:var(--primary-color,#03a9f4);cursor:pointer;font-size:.78em;font-weight:600;border-radius:8px}
+        .mini-expand:hover{background:color-mix(in srgb,var(--primary-color,#03a9f4) 8%,transparent)}
+        .mini-others{margin-top:8px;border-top:1px solid var(--divider-color,#eee);padding-top:4px}
+        .mini-group-hdr{font-size:.72em;font-weight:700;letter-spacing:.04em;color:var(--secondary-text-color);text-transform:uppercase;margin:8px 0 2px}
+        .mini-muted-hdr{font-size:.72em;font-weight:700;letter-spacing:.04em;color:#FF9800;text-transform:uppercase;margin:10px 0 2px;border-top:1px dashed #FF9800;padding-top:6px}
+        .mini-row.muted-row .mini-icon-wrap{background:repeating-linear-gradient(45deg,transparent,transparent 3px,rgba(255,152,0,.4) 3px,rgba(255,152,0,.4) 6px)}
+        .mini-row.muted-row .mini-badge{background:#FF9800;color:#fff}
       </style>
       <ha-card>
         <div class="mini-title">${title}</div>
-        ${rows||`<div class="mini-empty">📅 ${this._hass?.language==='it'?'Nessuno schedule attivo ora':this._hass?.language==='fr'?'Aucun planning actif':'No schedule active now'}</div>`}
+        ${activeRows||(muted.length?'':`<div class="mini-empty">📅 ${emptyActive}</div>`)}
+        ${muted.length?`<div class="mini-muted-hdr">🔇 ${mutedLbl}</div>${mutedRows.replace(/class="mini-row"/g,'class="mini-row muted-row"')}`:''}
+        ${others.length?`
+          <button class="mini-expand">
+            <span>${expanded?collapseLbl:expandLbl}</span>
+            <span>${expanded?'▴':'▾'} (${others.length})</span>
+          </button>
+          ${expanded?`<div class="mini-others">${othersHtml}</div>`:''}
+        `:''}
       </ha-card>`;
+
+      this.shadowRoot.querySelector('.mini-expand')?.addEventListener('click',()=>{
+        this._expanded=!this._expanded;
+        this._render();
+      });
 
       if(!this._interval) this._interval=setInterval(()=>this._render(),60000);
     }
 
+    connectedCallback() {
+      if(!this._storageListener) {
+        this._storageListener = e => {
+          if(!e.detail?.data) return;
+          this._storageData = e.detail.data;
+          this._render();
+        };
+        window.addEventListener('wsc-storage-changed', this._storageListener);
+      }
+    }
+
     disconnectedCallback() {
       if(this._interval){clearInterval(this._interval);this._interval=null;}
+      if(this._storageListener){
+        window.removeEventListener('wsc-storage-changed', this._storageListener);
+        this._storageListener = null;
+      }
     }
   }
 
