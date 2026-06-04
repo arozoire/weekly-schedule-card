@@ -67,14 +67,23 @@ hass.callService('scheduler', 'remove', { entity_id })
 // Usare schedule figlio (1 min, tagged) per auto-off
 ```
 
-## Auto-off/auto-on
-Schedule figlio separato, durata 1 min, tagged:
-```javascript
-tags: ['weekly_schedule_auto', 'parent:switch.schedule_XXX']
-```
-- Invisibile nella griglia (filtrato per tag)
-- Eliminato automaticamente se eliminato il parent
-- Aggiornato se cambia orario fine del parent
+## Auto-off / azione di fine slot (v1.0.6: automazione, NON più child schedule)
+Automazione HA `wsc_autooff_<eid>` (`_syncAutoOffAutomation`, storage `link.autoOffAutoId`):
+- trigger template `state_attr(eid,'current_slot') is none` (fine slot), condition schedule `state:on`.
+- action: `delay 3s` → `condition template` guardia "vince il prossimo schedule" (salta se
+  un altro schedule WSC controlla la stessa entità ora) → azioni di fine (`_buildStopActions`).
+- Azione di fine ricca per dominio: `ps.stopAction` (tipo) + `ps.stopValue` (valore), storage
+  `link.stopAction`/`link.stopValue`. Tipi: turn_on/off, set_temperature, set_hvac/preset/fan/swing_mode,
+  set_brightness, set_color (rgb), set_color_temp, set_speed (fan %), set_position/open/close/stop (cover).
+- Migrazione: i vecchi child (`autoChildId`, tag `parent:`) vengono rimossi al salvataggio.
+  Rimossi `_syncAutoChild`/`_findChildByParentTag`/`_saveAutoChildId`.
+
+## Editor azioni per dominio (v1.0.6)
+`_actionFieldsForEntity` non c'è: la logica è in `domainSection` (climate/light/fan/cover/switch) +
+`_entityCaps(eid)` (capacità reali: supported_color_modes, percentage, current_position, *_modes).
+Azione PRINCIPALE per dominio: climate (temp/hvac/preset/fan/swing), light (on/off + brightness +
+**colore rgb** se supportato), fan (on/off + **velocità %**), cover (**apri/chiudi/ferma + posizione %**),
+switch (on/off). Builder unico `_buildScheduleActions`. Colore via `_colorPickerHTML` (palette → rgb).
 
 ## Condizioni
 Non supportate da Scheduler Component → automazione HA generata:
@@ -196,7 +205,7 @@ notifications:
 
 ## Last modified
 always update last modified date with day an hour Rome utc
-2026-06-04 Rome (v1.0.5)
+2026-06-04 Rome (v1.0.6)
 
 ## Fix notifica automazione + delete-then-recreate (2026-06-04, v1.0.5)
 - **Notifica non scattava**: i template usavano `trigger.from_state.attributes.current_slot is none`;

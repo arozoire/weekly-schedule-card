@@ -17,7 +17,8 @@
       warnings:{ temp_unusual:'⚠️ Unusual value — check device compatibility',temp_very_high:'🔴 Warning: very high temperature',out_of_slider_range:'Outside typical range for this entity' },
       cond:{ add:'Add condition',entity:'Entity',operator:'Operator',value:'Value',and_all:'All (AND)',or_any:'Any (OR)',recheck:'Re-check interval' },
       notify:{ restore_auto:'Restore auto text',trigger_label:'When to notify',trigger_none:'Never',trigger_start:'On start',trigger_end:'On end',trigger_both:'Start + end',msg_start_label:'Start message',msg_end_label:'End message',default_start:'Schedule started',default_end:'Schedule ended' },
-      linked:{ title:'Linked objects',auto_off:'Auto-off child',cond_auto:'Condition automation',extras_auto:'Extras automation',notify:'Notification',open:'Open',edit_yaml:'Edit YAML',missing:'missing' }
+      linked:{ title:'Linked objects',auto_off:'Auto-off automation',cond_auto:'Condition automation',extras_auto:'Extras automation',notify:'Notification',open:'Open',edit_yaml:'Edit YAML',missing:'missing' },
+      endact:{ brightness:'Set brightness',color:'Set color',color_temp:'Set color temp',speed:'Set speed',position:'Set position',open:'Open',close:'Close',stop:'Stop' }
     },
     it: {
       card:{ title:'Pianificazione Settimanale',new_profile:'Nuovo profilo',groups:'Gruppi',no_entities:'Nessuna entità configurata',no_entities_sub:'Aggiungi entità via YAML o crea un Gruppo per iniziare.',manage_groups:'Gestisci Gruppi',layout_rows_view:'Vista righe',layout_cols_view:'Vista colonne',no_schedule_now:'Nessuno schedule attivo ora',empty_schedule:'Nessuno schedule' },
@@ -29,7 +30,8 @@
       warnings:{ temp_unusual:'⚠️ Valore insolito — verifica compatibilità con il tuo dispositivo',temp_very_high:'🔴 Attenzione: temperatura molto alta',out_of_slider_range:'Fuori dal range tipico per questa entità' },
       cond:{ add:'Aggiungi condizione',entity:'Entità',operator:'Operatore',value:'Valore',and_all:'Tutte (AND)',or_any:'Una qualsiasi (OR)',recheck:'Intervallo rivalutazione' },
       notify:{ restore_auto:'Ripristina testo automatico',trigger_label:'Quando notificare',trigger_none:'Mai',trigger_start:"All'inizio",trigger_end:'Alla fine',trigger_both:'Inizio + fine',msg_start_label:'Messaggio inizio',msg_end_label:'Messaggio fine',default_start:'Schedule attivato',default_end:'Schedule terminato' },
-      linked:{ title:'Oggetti collegati',auto_off:'Schedule auto-off (figlio)',cond_auto:'Automazione condizioni',extras_auto:'Automazione extra',notify:'Notifica',open:'Apri',edit_yaml:'Modifica YAML',missing:'mancante' }
+      linked:{ title:'Oggetti collegati',auto_off:'Automazione auto-off',cond_auto:'Automazione condizioni',extras_auto:'Automazione extra',notify:'Notifica',open:'Apri',edit_yaml:'Modifica YAML',missing:'mancante' },
+      endact:{ brightness:'Imposta luminosità',color:'Imposta colore',color_temp:'Imposta temp. colore',speed:'Imposta velocità',position:'Imposta posizione',open:'Apri',close:'Chiudi',stop:'Ferma' }
     },
     fr: {
       card:{ title:'Planning Hebdomadaire',new_profile:'Nouveau profil',groups:'Groupes',no_entities:'Aucune entité configurée',no_entities_sub:'Ajoutez des entités via la config YAML, ou créez un Groupe pour commencer.',manage_groups:'Gérer les Groupes',layout_rows_view:'Vue lignes',layout_cols_view:'Vue colonnes',no_schedule_now:'Aucun planning actif',empty_schedule:'Aucun planning' },
@@ -41,7 +43,8 @@
       warnings:{ temp_unusual:"⚠️ Valeur inhabituelle — vérifiez la compatibilité avec votre appareil",temp_very_high:"🔴 Attention : température très élevée",out_of_slider_range:'Hors de la plage typique pour cette entité' },
       cond:{ add:'Ajouter condition',entity:'Entité',operator:'Opérateur',value:'Valeur',and_all:'Toutes (AND)',or_any:"N'importe laquelle (OR)",recheck:'Intervalle de réévaluation' },
       notify:{ restore_auto:'Restaurer texte auto',trigger_label:'Quand notifier',trigger_none:'Jamais',trigger_start:'Au début',trigger_end:'À la fin',trigger_both:'Début + fin',msg_start_label:'Message début',msg_end_label:'Message fin',default_start:'Schedule démarré',default_end:'Schedule terminé' },
-      linked:{ title:'Objets liés',auto_off:'Schedule auto-off (enfant)',cond_auto:'Automatisation conditions',extras_auto:'Automatisation extra',notify:'Notification',open:'Ouvrir',edit_yaml:'Modifier YAML',missing:'manquant' }
+      linked:{ title:'Objets liés',auto_off:'Automatisation auto-off',cond_auto:'Automatisation conditions',extras_auto:'Automatisation extra',notify:'Notification',open:'Ouvrir',edit_yaml:'Modifier YAML',missing:'manquant' },
+      endact:{ brightness:'Définir luminosité',color:'Définir couleur',color_temp:'Définir temp. couleur',speed:'Définir vitesse',position:'Définir position',open:'Ouvrir',close:'Fermer',stop:'Arrêter' }
     }
   };
 
@@ -314,24 +317,6 @@
       return null;
     }
 
-    // Locate the auto-child schedule by its unique `parent:<eid>` tag.
-    // Robust against slow state propagation and concurrent schedule creations
-    // (unlike by-diff polling which can miss the entity or pick a wrong one).
-    async _findChildByParentTag(parentEid) {
-      const tag = `parent:${parentEid}`;
-      for (let i = 0; i < 12; i++) {
-        await new Promise(r => setTimeout(r, 500));
-        for (const s of Object.values(this._hass.states)) {
-          if (!s.entity_id.startsWith('switch.schedule_')) continue;
-          const tags = s.attributes?.tags;
-          if (Array.isArray(tags) && tags.includes('weekly_schedule_auto') && tags.includes(tag)) {
-            return s.entity_id;
-          }
-        }
-      }
-      return null;
-    }
-
     async _addScheduleToProfile(entityId) {
       const data = this._storageData;
       const profile = this._getSelectedProfile();
@@ -354,26 +339,6 @@
 
     _hasAutoChild(entityId) { return !!this._getAutoChildId(entityId); }
 
-    async _saveAutoChildId(parentEntityId, childId) {
-      const data = this._storageData;
-      let found = false;
-      for (const p of data.profiles || []) {
-        if (!p.scheduleLinks) p.scheduleLinks = [];
-        const link = p.scheduleLinks.find(l => l.id === parentEntityId);
-        if (link) { link.autoChildId = childId; found = true; }
-      }
-      if (!found) {
-        const profile = this._getSelectedProfile();
-        if (profile) {
-          if (!profile.scheduleLinks) profile.scheduleLinks = [];
-          let link = profile.scheduleLinks.find(l => l.id === parentEntityId);
-          if (!link) { link = { id: parentEntityId }; profile.scheduleLinks.push(link); }
-          link.autoChildId = childId;
-        }
-      }
-      await this._wsSet(data);
-    }
-
     async _clearAutoChildId(parentEntityId) {
       const data = this._storageData;
       for (const p of data.profiles || []) {
@@ -381,6 +346,38 @@
         if (link) delete link.autoChildId;
       }
       await this._wsSet(data);
+    }
+
+    // ── Auto-off (end-of-slot) helpers ────────────────────────────────────────
+
+    _getAutoOffAutoId(scheduleEntityId) {
+      for (const p of this._storageData?.profiles || []) {
+        const link = (p.scheduleLinks || []).find(l => l.id === scheduleEntityId);
+        if (link?.autoOffAutoId) return link.autoOffAutoId;
+      }
+      return null;
+    }
+
+    async _saveAutoOffAutoId(scheduleEntityId, autoId) {
+      const data = this._storageData;
+      for (const p of data.profiles || []) {
+        const link = (p.scheduleLinks || []).find(l => l.id === scheduleEntityId);
+        if (link) { if (autoId) link.autoOffAutoId = autoId; else delete link.autoOffAutoId; }
+      }
+      await this._wsSet(data);
+    }
+
+    // Stored end-of-slot action ({stopAction, stopValue}) or null if not persisted.
+    _getStoredStop(scheduleEntityId) {
+      for (const p of this._storageData?.profiles || []) {
+        const link = (p.scheduleLinks || []).find(l => l.id === scheduleEntityId);
+        if (link && 'stopAction' in link) return { stopAction: link.stopAction || null, stopValue: link.stopValue ?? null };
+      }
+      return null;
+    }
+
+    _hasEndAction(scheduleEntityId) {
+      return !!(this._getStoredStop(scheduleEntityId)?.stopAction) || this._hasAutoChild(scheduleEntityId);
     }
 
     // ── Condition storage helpers ─────────────────────────────────────────────
@@ -528,6 +525,7 @@
           if (link.condAutoId) deletions.push(link.condAutoId);
           if (link.extrasAutoId) deletions.push(link.extrasAutoId);
           if (link.notifyAutoId) deletions.push(link.notifyAutoId);
+          if (link.autoOffAutoId) deletions.push(link.autoOffAutoId);
           if (link.autoChildId) childRemovals.add(link.autoChildId);
           // Also remove from p.schedules
           p.schedules = (p.schedules || []).filter(x => x !== link.id);
@@ -558,51 +556,46 @@
         console.log(`[WSC] Cleaned up ${deletions.length} orphan automation(s), ${childRemovals.size} orphan child schedule(s)`);
     }
 
-    // ── Auto-child sync ───────────────────────────────────────────────────────
+    // ── Auto-off automation (end-of-slot action; replaces the old child schedule) ──
 
-    async _syncAutoChild(parentEntityId, ps) {
-      const existingChildId = this._getAutoChildId(parentEntityId);
-      if (!ps.stopAction) {
-        if (existingChildId) {
-          try { await this._hass.callService('scheduler', 'remove', { entity_id: existingChildId }); } catch {}
-          await this._clearAutoChildId(parentEntityId);
+    async _syncAutoOffAutomation(scheduleEntityId, ps) {
+      const existingId = this._getAutoOffAutoId(scheduleEntityId);
+      // Migration: remove any legacy child schedule for this parent.
+      const legacyChild = this._getAutoChildId(scheduleEntityId);
+      if (legacyChild) {
+        try { await this._hass.callService('scheduler', 'remove', { entity_id: legacyChild }); } catch {}
+        await this._clearAutoChildId(scheduleEntityId);
+      }
+      const cleanup = async () => {
+        if (existingId) {
+          try { await this._hass.callApi('DELETE', `config/automation/config/${existingId}`); } catch (e) { console.error('WSC autoOff delete failed', e); }
+          await this._saveAutoOffAutoId(scheduleEntityId, null);
         }
-        return;
-      }
-      const childStartMin = Math.min(ps.endMin, 1439);
-      const childStopMin  = (childStartMin + 1) >= 1440 ? 0 : childStartMin + 1;
-      const childStart = this._minutesToTime(childStartMin);
-      const childStop  = this._minutesToTime(childStopMin);
+      };
+      const endActions = this._buildStopActions(ps); // null if no end action
+      if (!endActions || !endActions.length) { await cleanup(); return; }
       const eid = ps.entityConf.entity;
-      const dom = ps.domain;
-      let childService, childData = {};
-      if (ps.stopAction === 'set_temperature') {
-        childService = 'climate.set_temperature'; childData = { temperature: ps.stopTemp };
-      } else if (ps.stopAction === 'turn_on') {
-        childService = `${dom}.turn_on`;
-      } else {
-        childService = `${dom}.turn_off`;
-      }
-      const childActions   = [{ entity_id: eid, service: childService, service_data: childData }];
-      const childTimeslots = [{ start: childStart, stop: childStop, actions: childActions }];
-      const weekdays       = ps.days.map(d => this._getDayKey(d));
-      const childTags      = ['weekly_schedule_auto', `parent:${parentEntityId}`];
-
-      if (existingChildId && this._hass.states[existingChildId]) {
-        try {
-          await this._hass.callService('scheduler', 'edit', {
-            entity_id: existingChildId, weekdays, timeslots: childTimeslots, tags: childTags,
-          });
-        } catch (e) { console.error('WSC syncAutoChild edit failed', e); }
-      } else {
-        try {
-          await this._hass.callService('scheduler', 'add', {
-            weekdays, timeslots: childTimeslots, repeat_type: 'repeat', tags: childTags,
-          });
-          const newChildId = await this._findChildByParentTag(parentEntityId);
-          if (newChildId) await this._saveAutoChildId(parentEntityId, newChildId);
-          else console.warn('WSC syncAutoChild: child created but not found via tag lookup');
-        } catch (e) { console.error('WSC syncAutoChild add failed', e); }
+      const targetId = existingId || `wsc_autooff_${scheduleEntityId.replace('switch.', '')}`;
+      // Race guard: do nothing if another WSC schedule controlling the same entity is
+      // active right now → the next schedule wins (es. A→off mentre B→on subito dopo).
+      const guardTpl = `{% set ns = namespace(a=false) %}{% for s in states.switch if s.entity_id.startswith('switch.schedule_') and s.entity_id != '${scheduleEntityId}' and s.state == 'on' and state_attr(s.entity_id, 'current_slot') is not none and '${eid}' in (s.attributes.entities | default([])) %}{% set ns.a = true %}{% endfor %}{{ not ns.a }}`;
+      const automationConfig = {
+        alias: `WSC Auto-off - ${scheduleEntityId}`,
+        description: 'Auto-generated by Weekly Schedule Card',
+        trigger: [{ platform: 'template', value_template: `{{ state_attr('${scheduleEntityId}', 'current_slot') is none }}` }],
+        condition: [{ condition: 'state', entity_id: scheduleEntityId, state: 'on' }],
+        action: [
+          { delay: { seconds: 3 } },
+          { condition: 'template', value_template: guardTpl },
+          ...endActions,
+        ],
+        mode: 'restart',
+      };
+      try {
+        await this._recreateAutomation(targetId, automationConfig);
+        await this._saveAutoOffAutoId(scheduleEntityId, targetId);
+      } catch (e) {
+        console.error('WSC autoOff save failed', e);
       }
     }
 
@@ -629,7 +622,7 @@
       let endAction;
       if (ps.stopAction === 'turn_off') endAction = lang==='en'?'auto turn off':lang==='fr'?'extinction automatique':'spegnimento automatico';
       else if (ps.stopAction === 'turn_on') endAction = lang==='en'?'auto turn on':lang==='fr'?'allumage automatique':'accensione automatica';
-      else if (ps.stopAction === 'set_temperature') endAction = lang==='en'?`set ${ps.stopTemp}°C`:lang==='fr'?`régler ${ps.stopTemp}°C`:`imposta ${ps.stopTemp}°C`;
+      else if (ps.stopAction === 'set_temperature') endAction = lang==='en'?`set ${ps.stopValue}°C`:lang==='fr'?`régler ${ps.stopValue}°C`:`imposta ${ps.stopValue}°C`;
       else endAction = lang==='en'?'no action':lang==='fr'?'aucune action':'nessuna azione';
       // condition line
       let condLine = '';
@@ -883,10 +876,26 @@
         if (!out.length) out.push({ service: 'climate.turn_on', target: { entity_id: eid } });
       } else if (dom === 'light') {
         if (ps.turnOn) {
-          const data = ps.enableBrightness ? { brightness_pct: ps.brightness } : {};
+          const data = {};
+          if (ps.enableBrightness) data.brightness_pct = ps.brightness;
+          if (ps.enableColor && ps.color) data.rgb_color = this._hexToRgb(ps.color);
           out.push({ service: 'light.turn_on', target: { entity_id: eid }, data });
         } else {
           out.push({ service: 'light.turn_off', target: { entity_id: eid } });
+        }
+      } else if (dom === 'fan') {
+        if (ps.turnOn) {
+          const data = ps.enableSpeed ? { percentage: ps.speed } : {};
+          out.push({ service: 'fan.turn_on', target: { entity_id: eid }, data });
+        } else {
+          out.push({ service: 'fan.turn_off', target: { entity_id: eid } });
+        }
+      } else if (dom === 'cover') {
+        if (ps.enablePosition) {
+          out.push({ service: 'cover.set_cover_position', target: { entity_id: eid }, data: { position: ps.position } });
+        } else {
+          const map = { open: 'open_cover', close: 'close_cover', stop: 'stop_cover' };
+          out.push({ service: `cover.${map[ps.coverAction] || 'close_cover'}`, target: { entity_id: eid } });
         }
       } else {
         out.push({ service: ps.turnOn ? `${dom}.turn_on` : `${dom}.turn_off`, target: { entity_id: eid } });
@@ -894,22 +903,140 @@
       return out;
     }
 
-    // Build HA service actions array for the stop action (inactive state).
-    // Returns null if no stopAction is defined.
+    // Build HA service actions array for the end-of-slot (auto-off) / inactive action.
+    // Uses ps.stopAction (type) + ps.stopValue (value). Returns null if no action.
     _buildStopActions(ps) {
-      if (!ps.stopAction) return null;
+      const t = ps.stopAction;
+      if (!t) return null;
       const eid = ps.entityConf.entity;
       const dom = ps.domain;
-      if (ps.stopAction === 'set_temperature') {
-        return [{ service: 'climate.set_temperature', target: { entity_id: eid }, data: { temperature: ps.stopTemp } }];
-      }
-      if (ps.stopAction === 'turn_off') {
-        return [{ service: `${dom}.turn_off`, target: { entity_id: eid } }];
-      }
-      if (ps.stopAction === 'turn_on') {
-        return [{ service: `${dom}.turn_on`, target: { entity_id: eid } }];
+      const v = ps.stopValue;
+      const tgt = { entity_id: eid };
+      switch (t) {
+        case 'turn_on':       return [{ service: `${dom}.turn_on`, target: tgt }];
+        case 'turn_off':      return [{ service: `${dom}.turn_off`, target: tgt }];
+        case 'set_temperature': return [{ service: 'climate.set_temperature', target: tgt, data: { temperature: parseFloat(v) } }];
+        case 'set_hvac_mode': return [{ service: 'climate.set_hvac_mode', target: tgt, data: { hvac_mode: v } }];
+        case 'set_preset_mode': return [{ service: 'climate.set_preset_mode', target: tgt, data: { preset_mode: v } }];
+        case 'set_fan_mode':  return [{ service: 'climate.set_fan_mode', target: tgt, data: { fan_mode: v } }];
+        case 'set_swing_mode': return [{ service: 'climate.set_swing_mode', target: tgt, data: { swing_mode: v } }];
+        case 'set_brightness': return [{ service: 'light.turn_on', target: tgt, data: { brightness_pct: parseInt(v) } }];
+        case 'set_color':     return [{ service: 'light.turn_on', target: tgt, data: { rgb_color: this._hexToRgb(v) } }];
+        case 'set_color_temp': return [{ service: 'light.turn_on', target: tgt, data: { color_temp_kelvin: parseInt(v) } }];
+        case 'set_speed':     return [{ service: 'fan.set_percentage', target: tgt, data: { percentage: parseInt(v) } }];
+        case 'set_position':  return [{ service: 'cover.set_cover_position', target: tgt, data: { position: parseInt(v) } }];
+        case 'open':          return [{ service: 'cover.open_cover', target: tgt }];
+        case 'close':         return [{ service: 'cover.close_cover', target: tgt }];
+        case 'stop':          return [{ service: 'cover.stop_cover', target: tgt }];
       }
       return null;
+    }
+
+    _hexToRgb(hex) {
+      const m = /^#?([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})$/i.exec(String(hex || ''));
+      return m ? [parseInt(m[1], 16), parseInt(m[2], 16), parseInt(m[3], 16)] : [255, 255, 255];
+    }
+    _rgbToHex(rgb) {
+      if (!Array.isArray(rgb)) return '#FFFFFF';
+      return '#' + rgb.slice(0, 3).map(x => Math.max(0, Math.min(255, x | 0)).toString(16).padStart(2, '0')).join('').toUpperCase();
+    }
+
+    // ── End-of-slot action: capability detection + UI ─────────────────────────
+
+    _entityCaps(entityId) {
+      const a = this._hass?.states?.[entityId]?.attributes || {};
+      const cm = a.supported_color_modes || [];
+      const sf = a.supported_features || 0;
+      return {
+        lightBrightness: cm.some(m => m !== 'onoff'),
+        lightRgb: cm.some(m => ['hs', 'rgb', 'rgbw', 'rgbww', 'xy'].includes(m)),
+        lightColorTemp: cm.includes('color_temp'),
+        fanSpeed: ('percentage' in a) || (sf & 1) === 1,
+        coverPosition: ('current_position' in a) || (sf & 4) === 4,
+        hvacModes: a.hvac_modes || [],
+        presetModes: a.preset_modes || [],
+        fanModes: a.fan_modes || [],
+        swingModes: a.swing_modes || [],
+      };
+    }
+
+    _endActionTypes(entityId) {
+      const dom = this._detectDomain(entityId);
+      const c = this._entityCaps(entityId);
+      const out = [{ v: '', label: this.t('popup.none') }];
+      const onoff = () => { out.push({ v: 'turn_off', label: this.t('popup.turn_off') }); out.push({ v: 'turn_on', label: this.t('popup.turn_on') }); };
+      if (dom === 'climate') {
+        onoff();
+        out.push({ v: 'set_temperature', label: this.t('popup.set_temp') });
+        if (c.hvacModes.length) out.push({ v: 'set_hvac_mode', label: this.t('popup.hvac_mode') });
+        if (c.presetModes.length) out.push({ v: 'set_preset_mode', label: this.t('popup.preset_mode') });
+        if (c.fanModes.length) out.push({ v: 'set_fan_mode', label: this.t('popup.fan_mode') });
+        if (c.swingModes.length) out.push({ v: 'set_swing_mode', label: this.t('popup.swing_mode') });
+      } else if (dom === 'light') {
+        onoff();
+        if (c.lightBrightness) out.push({ v: 'set_brightness', label: this.t('endact.brightness') });
+        if (c.lightRgb) out.push({ v: 'set_color', label: this.t('endact.color') });
+        if (c.lightColorTemp) out.push({ v: 'set_color_temp', label: this.t('endact.color_temp') });
+      } else if (dom === 'fan') {
+        onoff();
+        if (c.fanSpeed) out.push({ v: 'set_speed', label: this.t('endact.speed') });
+      } else if (dom === 'cover') {
+        out.push({ v: 'close', label: this.t('endact.close') });
+        out.push({ v: 'open', label: this.t('endact.open') });
+        out.push({ v: 'stop', label: this.t('endact.stop') });
+        if (c.coverPosition) out.push({ v: 'set_position', label: this.t('endact.position') });
+      } else {
+        onoff();
+      }
+      return out;
+    }
+
+    _endActionDefault(type, entityId) {
+      const a = this._hass?.states?.[entityId]?.attributes || {};
+      switch (type) {
+        case 'set_temperature': return 18;
+        case 'set_brightness':
+        case 'set_speed':
+        case 'set_position': return 50;
+        case 'set_color': return '#FFFFFF';
+        case 'set_color_temp': return Math.round(((a.min_color_temp_kelvin || 2200) + (a.max_color_temp_kelvin || 6500)) / 2);
+        case 'set_hvac_mode': return (a.hvac_modes || [])[0] || '';
+        case 'set_preset_mode': return (a.preset_modes || [])[0] || '';
+        case 'set_fan_mode': return (a.fan_modes || [])[0] || '';
+        case 'set_swing_mode': return (a.swing_modes || [])[0] || '';
+        default: return null;
+      }
+    }
+
+    _endActionValueHtml(ps) {
+      const t = ps.stopAction, v = ps.stopValue, eid = ps.entityConf.entity;
+      const a = this._hass?.states?.[eid]?.attributes || {};
+      if (t === 'set_temperature')
+        return `<div class="end-act-val param-inline"><input type="number" class="end-val-num temp-inp" min="5" max="35" step="0.5" value="${v}"><span style="font-size:.8em;color:var(--secondary-text-color)">°C</span></div>`;
+      if (t === 'set_brightness' || t === 'set_speed' || t === 'set_position')
+        return `<div class="end-act-val param-inline"><span class="end-val-pct" style="min-width:40px;text-align:right;font-weight:700">${v}%</span><input type="range" class="end-val-range" min="0" max="100" step="1" value="${v}"></div>`;
+      if (t === 'set_color')
+        return `<div class="end-act-val">${this._colorPickerHTML(v || '#FFFFFF')}</div>`;
+      if (t === 'set_color_temp') {
+        const mn = a.min_color_temp_kelvin || 2000, mx = a.max_color_temp_kelvin || 6500;
+        return `<div class="end-act-val param-inline"><input type="number" class="end-val-num" min="${mn}" max="${mx}" step="50" value="${v}"><span style="font-size:.8em;color:var(--secondary-text-color)">K</span></div>`;
+      }
+      if (t === 'set_hvac_mode' || t === 'set_preset_mode' || t === 'set_fan_mode' || t === 'set_swing_mode') {
+        const lists = { set_hvac_mode: a.hvac_modes, set_preset_mode: a.preset_modes, set_fan_mode: a.fan_modes, set_swing_mode: a.swing_modes };
+        const opts = (lists[t] || []).map(m => `<option value="${m}" ${v === m ? 'selected' : ''}>${m}</option>`).join('');
+        return `<div class="end-act-val"><select class="end-val-sel param-select">${opts}</select></div>`;
+      }
+      return '';
+    }
+
+    _endActionHtml(ps) {
+      const types = this._endActionTypes(ps.entityConf.entity);
+      const cur = ps.stopAction || '';
+      const sel = `<select class="end-act-type param-select">${types.map(o => `<option value="${o.v}" ${cur === o.v ? 'selected' : ''}>${o.label}</option>`).join('')}</select>`;
+      return `<div>
+        <div class="section-label">${this.t('popup.auto_off')}</div>
+        <div class="param-inline" style="gap:10px;align-items:center;flex-wrap:wrap">${sel}${this._endActionValueHtml(ps)}</div>
+      </div>`;
     }
 
     // Delete the existing automation (best-effort) then POST a fresh one.
@@ -1127,11 +1254,20 @@
       const states = this._hass?.states || {};
       const findAuto = (cfgId) => cfgId ? Object.values(states).find(s => s.entity_id.startsWith('automation.') && s.attributes?.id === cfgId) : null;
       const rows = [];
-      const childId = this._getAutoChildId(eid);
-      if (childId) {
-        const ent = states[childId];
-        rows.push(this._linkRow('mdi:timer-off-outline', this.t('linked.auto_off'), childId, ent ? ent.state : null,
-          ent ? [{ label: this.t('linked.open'), act: 'more-info', val: childId }] : []));
+      const autoOffId = this._getAutoOffAutoId(eid);
+      if (autoOffId) {
+        const ent = findAuto(autoOffId);
+        rows.push(this._linkRow('mdi:timer-off-outline', this.t('linked.auto_off'), ent ? ent.entity_id : autoOffId, ent ? ent.state : null,
+          [ent ? { label: this.t('linked.open'), act: 'more-info', val: ent.entity_id } : null,
+           { label: this.t('linked.edit_yaml'), act: 'edit-auto', val: autoOffId }]));
+      } else {
+        // Legacy child schedule (pre-migration)
+        const childId = this._getAutoChildId(eid);
+        if (childId) {
+          const ent = states[childId];
+          rows.push(this._linkRow('mdi:timer-off-outline', this.t('linked.auto_off') + ' (legacy)', childId, ent ? ent.state : null,
+            ent ? [{ label: this.t('linked.open'), act: 'more-info', val: childId }] : []));
+        }
       }
       const condId = this._getCondAutoId(eid);
       if (condId) {
@@ -1457,7 +1593,7 @@
         if (!this._appliesToDay(s.attributes.weekdays || [], dayIndex)) continue;
         const color = this._blockColor(s, entityConf);
         const isOff = s.state === 'off';
-        const hasStop = this._hasAutoChild(s.entity_id);
+        const hasStop = this._hasEndAction(s.entity_id);
         const evalRes = this._evalAllConditions(s.entity_id);
         const hasCond = evalRes.hasCond;
         const isActive = s.attributes.current_slot !== null && s.attributes.current_slot !== undefined;
@@ -1623,7 +1759,10 @@
         hvacMode: '', presetMode: '', fanMode: '', swingMode: '',
         enableTemp: domain === 'climate', enableHvac: false, enablePreset: false, enableFan: false, enableSwing: false,
         turnOn: true, brightness: 100, enableBrightness: false,
-        stopAction: null, stopTemp: 18,
+        enableColor: false, color: '#FFFFFF',
+        enableSpeed: false, speed: 50,
+        coverAction: 'close', enablePosition: false, position: 50,
+        stopAction: null, stopValue: null,
         conditions: [], condCombinator: 'and', condInterval: 15, _condOpen: false,
         notifyService: '', notifyMessage: '', notifyMessageEnd: '',
         _defaultNotifyMsg: '', _defaultNotifyMsgEnd: '',
@@ -1673,6 +1812,10 @@
         if (d.swing_mode !== undefined) ad.swing_mode = d.swing_mode;
         if (d.brightness_pct !== undefined) ad.brightness_pct = d.brightness_pct;
         if (d.brightness !== undefined) ad.brightness = d.brightness;
+        if (d.rgb_color !== undefined) ad.rgb_color = d.rgb_color;
+        if (d.color_temp_kelvin !== undefined) ad.color_temp_kelvin = d.color_temp_kelvin;
+        if (d.percentage !== undefined) ad.percentage = d.percentage;
+        if (d.position !== undefined) ad.position = d.position;
         if (!svc) svc = a.service || '';
       }
       // Storage extras override (HA Scheduler keeps only the first action — preset/fan/swing/hvac live in storage)
@@ -1695,7 +1838,17 @@
         turnOn: !svc.endsWith('turn_off'),
         brightness: ad.brightness_pct ?? ad.brightness ?? 100,
         enableBrightness: ad.brightness_pct !== undefined || ad.brightness !== undefined,
+        enableColor: ad.rgb_color !== undefined,
+        color: ad.rgb_color ? this._rgbToHex(ad.rgb_color) : '#FFFFFF',
+        enableSpeed: ad.percentage !== undefined,
+        speed: ad.percentage ?? 50,
+        coverAction: (svc.includes('open_cover') ? 'open' : svc.includes('stop_cover') ? 'stop' : 'close'),
+        enablePosition: ad.position !== undefined,
+        position: ad.position ?? 50,
         stopAction: (() => {
+          const stored = this._getStoredStop(entityId);
+          if (stored) return stored.stopAction;
+          // Legacy fallback: read from old child schedule
           const cid = this._getAutoChildId(entityId);
           const cs  = cid ? this._hass.states[cid] : null;
           const svc = cs?.attributes.actions?.[0]?.service || '';
@@ -1704,10 +1857,15 @@
           if (svc.includes('turn_off')) return 'turn_off';
           return null;
         })(),
-        stopTemp: (() => {
+        stopValue: (() => {
+          const stored = this._getStoredStop(entityId);
+          if (stored && stored.stopValue != null) return stored.stopValue;
+          // Legacy fallback: child temperature for set_temperature
           const cid = this._getAutoChildId(entityId);
           const cs  = cid ? this._hass.states[cid] : null;
-          return cs?.attributes.actions?.[0]?.data?.temperature ?? 18;
+          const cd = cs?.attributes.actions?.[0]?.data || {};
+          if (cd.temperature != null) return cd.temperature;
+          return null;
         })(),
         conditions: this._getStoredConditions(entityId).conditions,
         condCombinator: this._getStoredConditions(entityId).condCombinator,
@@ -1740,6 +1898,8 @@
       const existing = this.shadowRoot.querySelector('dialog');
       if (existing) existing.remove();
       const ps = this._popupState;
+      // Normalize end-action value (ensures value widgets have a sane default)
+      if (ps.stopAction && ps.stopValue == null) ps.stopValue = this._endActionDefault(ps.stopAction, ps.entityConf.entity);
       const DAY_NAMES = ['mon','tue','wed','thu','fri','sat','sun'].map(k=>this.t(`days.${k}`));
       const SNAP_OPTIONS = [5,10,15,30];
       const schedules = this._getSchedules(ps.entityConf.entity);
@@ -1817,18 +1977,6 @@
           <label class="action-check"><input type="checkbox" class="chk-swing" ${ps.enableSwing?'checked':''}><span>${this.t('popup.swing_mode')}</span></label>
           ${modeField('swing', climateAttrs.swing_modes, ps.swingMode, ps.enableSwing, 'off, both…')}
         </div>
-        <div class="action-row" style="border-bottom:none;margin-top:4px;flex-direction:column;align-items:flex-start;gap:6px">
-          <span class="section-label" style="margin:0">${this.t('popup.auto_off')}</span>
-          <div class="radio-row" style="flex-wrap:wrap;gap:10px">
-            <label><input type="radio" name="stop-act" value="" ${!ps.stopAction?'checked':''}> ${this.t('popup.none')}</label>
-            <label><input type="radio" name="stop-act" value="turn_off" ${ps.stopAction==='turn_off'?'checked':''}> ${this.t('popup.turn_off')}</label>
-            <label><input type="radio" name="stop-act" value="set_temperature" ${ps.stopAction==='set_temperature'?'checked':''}> ${this.t('popup.set_temp')}</label>
-          </div>
-          <div class="stop-temp-row param-inline" style="${ps.stopAction==='set_temperature'?'':'display:none'}">
-            <input type="number" class="stop-temp-inp temp-inp" min="5" max="35" step="0.5" value="${ps.stopTemp}">
-            <span style="font-size:.8em;color:var(--secondary-text-color)">°C</span>
-          </div>
-        </div>
       </div>` :
       ps.domain === 'light' ? `
       <div>
@@ -1844,28 +1992,50 @@
             <input type="range" class="brightness-slider" min="0" max="100" step="1" value="${ps.brightness}" ${ps.enableBrightness?'':'disabled'}>
           </div>
         </div>
-        <div class="action-row" style="border-bottom:none;margin-top:4px;flex-direction:column;align-items:flex-start;gap:6px">
-          <span class="section-label" style="margin:0">${this.t('popup.auto_off')}</span>
-          <div class="radio-row" style="flex-wrap:wrap;gap:10px">
-            <label><input type="radio" name="stop-act" value="" ${!ps.stopAction?'checked':''}> ${this.t('popup.none')}</label>
-            <label><input type="radio" name="stop-act" value="turn_off" ${ps.stopAction==='turn_off'?'checked':''}> ${this.t('popup.turn_off')}</label>
-            <label><input type="radio" name="stop-act" value="turn_on" ${ps.stopAction==='turn_on'?'checked':''}> ${this.t('popup.turn_on')}</label>
-          </div>
-        </div>
-      </div>` : `
+        ${this._entityCaps(ps.entityConf.entity).lightRgb ? `
+        <div class="action-row" style="border-bottom:none;align-items:flex-start">
+          <label class="action-check"><input type="checkbox" class="chk-color" ${ps.enableColor?'checked':''}><span>${this.t('endact.color')}</span></label>
+          ${this._colorPickerHTML(ps.color || '#FFFFFF', 'light-color-pal')}
+        </div>` : ''}
+      </div>` :
+      ps.domain === 'fan' ? `
       <div>
         <div class="section-label">${this.t('popup.action')}</div>
         <div class="radio-row">
           <label><input type="radio" name="switch-action" value="on" ${ps.turnOn?'checked':''}> ${this.t('popup.turn_on')}</label>
           <label><input type="radio" name="switch-action" value="off" ${!ps.turnOn?'checked':''}> ${this.t('popup.turn_off')}</label>
         </div>
-        <div class="action-row" style="border-bottom:none;margin-top:4px;flex-direction:column;align-items:flex-start;gap:6px">
-          <span class="section-label" style="margin:0">${this.t('popup.auto_off')}</span>
-          <div class="radio-row" style="flex-wrap:wrap;gap:10px">
-            <label><input type="radio" name="stop-act" value="" ${!ps.stopAction?'checked':''}> ${this.t('popup.none')}</label>
-            <label><input type="radio" name="stop-act" value="turn_off" ${ps.stopAction==='turn_off'?'checked':''}> ${this.t('popup.turn_off')}</label>
-            <label><input type="radio" name="stop-act" value="turn_on" ${ps.stopAction==='turn_on'?'checked':''}> ${this.t('popup.turn_on')}</label>
+        ${this._entityCaps(ps.entityConf.entity).fanSpeed ? `
+        <div class="action-row" style="margin-top:8px;border-bottom:none">
+          <label class="action-check"><input type="checkbox" class="chk-speed" ${ps.enableSpeed?'checked':''}><span>${this.t('endact.speed')}</span></label>
+          <div class="param-inline ${ps.enableSpeed?'':'disabled'}">
+            <span class="speed-value" style="min-width:40px;text-align:right;font-weight:700">${ps.speed}%</span>
+            <input type="range" class="speed-slider" min="0" max="100" step="1" value="${ps.speed}" ${ps.enableSpeed?'':'disabled'}>
           </div>
+        </div>` : ''}
+      </div>` :
+      ps.domain === 'cover' ? `
+      <div>
+        <div class="section-label">${this.t('popup.action')}</div>
+        <div class="radio-row" style="flex-wrap:wrap;gap:10px">
+          <label><input type="radio" name="cover-action" value="open" ${ps.coverAction==='open'?'checked':''}> ${this.t('endact.open')}</label>
+          <label><input type="radio" name="cover-action" value="close" ${ps.coverAction!=='open'&&ps.coverAction!=='stop'?'checked':''}> ${this.t('endact.close')}</label>
+          <label><input type="radio" name="cover-action" value="stop" ${ps.coverAction==='stop'?'checked':''}> ${this.t('endact.stop')}</label>
+        </div>
+        ${this._entityCaps(ps.entityConf.entity).coverPosition ? `
+        <div class="action-row" style="margin-top:8px;border-bottom:none">
+          <label class="action-check"><input type="checkbox" class="chk-position" ${ps.enablePosition?'checked':''}><span>${this.t('endact.position')}</span></label>
+          <div class="param-inline ${ps.enablePosition?'':'disabled'}">
+            <span class="position-value" style="min-width:40px;text-align:right;font-weight:700">${ps.position}%</span>
+            <input type="range" class="position-slider" min="0" max="100" step="1" value="${ps.position}" ${ps.enablePosition?'':'disabled'}>
+          </div>
+        </div>` : ''}
+      </div>` : `
+      <div>
+        <div class="section-label">${this.t('popup.action')}</div>
+        <div class="radio-row">
+          <label><input type="radio" name="switch-action" value="on" ${ps.turnOn?'checked':''}> ${this.t('popup.turn_on')}</label>
+          <label><input type="radio" name="switch-action" value="off" ${!ps.turnOn?'checked':''}> ${this.t('popup.turn_off')}</label>
         </div>
       </div>`;
 
@@ -2112,6 +2282,7 @@
           </div>
         </div>
         ${domainSection}
+        ${this._endActionHtml(ps)}
         <div>
           <div class="section-label">${this.t('popup.name')}</div>
           <input type="text" class="name-input" value="${ps.name||''}" placeholder="${this.t('popup.name_placeholder')}">
@@ -2221,7 +2392,8 @@
           ps.enableHvac = false; ps.enablePreset = false; ps.enableFan = false; ps.enableSwing = false;
           ps.hvacMode = ''; ps.presetMode = ''; ps.fanMode = ''; ps.swingMode = '';
           ps.enableBrightness = false;
-          ps.stopAction = null;
+          ps.enableColor = false; ps.enableSpeed = false; ps.enablePosition = false; ps.coverAction = 'close';
+          ps.stopAction = null; ps.stopValue = null;
           // Re-render the whole popup so domainSection + name + notify defaults update
           this._renderPopup();
         })
@@ -2326,12 +2498,38 @@
       } else {
         dlg.querySelectorAll('input[name="switch-action"]').forEach(r => r.addEventListener('change', () => { ps.turnOn = r.value === 'on'; }));
       }
-      dlg.querySelectorAll('input[name="stop-act"]').forEach(r => r.addEventListener('change', () => {
-        ps.stopAction = r.value || null;
-        const row = dlg.querySelector('.stop-temp-row');
-        if (row) row.style.display = ps.stopAction === 'set_temperature' ? '' : 'none';
-      }));
-      dlg.querySelector('.stop-temp-inp')?.addEventListener('input', e => { ps.stopTemp = parseFloat(e.target.value) || 18; });
+      // Main action extras (light color / fan speed / cover action+position)
+      const colChk = dlg.querySelector('.chk-color');
+      if (colChk) colChk.addEventListener('change', () => { ps.enableColor = colChk.checked; });
+      const spdChk = dlg.querySelector('.chk-speed'), spd = dlg.querySelector('.speed-slider'), spdV = dlg.querySelector('.speed-value');
+      if (spdChk && spd) {
+        spdChk.addEventListener('change', () => { ps.enableSpeed = spdChk.checked; spd.disabled = !spdChk.checked; spd.closest('.param-inline')?.classList.toggle('disabled', !spdChk.checked); });
+        spd.addEventListener('input', () => { ps.speed = parseInt(spd.value); if (spdV) spdV.textContent = `${ps.speed}%`; });
+      }
+      dlg.querySelectorAll('input[name="cover-action"]').forEach(r => r.addEventListener('change', () => { ps.coverAction = r.value; }));
+      const posChk = dlg.querySelector('.chk-position'), pos = dlg.querySelector('.position-slider'), posV = dlg.querySelector('.position-value');
+      if (posChk && pos) {
+        posChk.addEventListener('change', () => { ps.enablePosition = posChk.checked; pos.disabled = !posChk.checked; pos.closest('.param-inline')?.classList.toggle('disabled', !posChk.checked); });
+        pos.addEventListener('input', () => { ps.position = parseInt(pos.value); if (posV) posV.textContent = `${ps.position}%`; });
+      }
+      // End-of-slot (auto-off) action editor
+      dlg.querySelector('.end-act-type')?.addEventListener('change', e => {
+        ps.stopAction = e.target.value || null;
+        ps.stopValue = ps.stopAction ? this._endActionDefault(ps.stopAction, ps.entityConf.entity) : null;
+        this._renderPopup();
+      });
+      dlg.querySelector('.end-val-num')?.addEventListener('input', e => { ps.stopValue = e.target.value; });
+      dlg.querySelector('.end-val-sel')?.addEventListener('change', e => { ps.stopValue = e.target.value; });
+      const endRange = dlg.querySelector('.end-val-range');
+      if (endRange) endRange.addEventListener('input', e => {
+        ps.stopValue = parseInt(e.target.value);
+        const pct = dlg.querySelector('.end-val-pct'); if (pct) pct.textContent = `${ps.stopValue}%`;
+      });
+      if (dlg.querySelector('.color-palette')) {
+        this._bindColorPalettes(dlg);
+        dlg.querySelectorAll('.end-act-val .pal-swatch').forEach(sw => sw.addEventListener('click', () => { ps.stopValue = sw.dataset.color; }));
+        dlg.querySelectorAll('.light-color-pal .pal-swatch').forEach(sw => sw.addEventListener('click', () => { ps.color = sw.dataset.color; }));
+      }
 
       // Conditions
       dlg.querySelector('#condToggle')?.addEventListener('click', () => { ps._condOpen=!ps._condOpen; this._renderPopup(); });
@@ -2550,6 +2748,8 @@
         link.notifyMessage = ps.notifyMessage;
         link.notifyMessageEnd = ps.notifyMessageEnd;
         link.notifyTrigger = ps.notifyTrigger || 'start';
+        link.stopAction = ps.stopAction || null;
+        link.stopValue = ps.stopValue;
       };
 
       try {
@@ -2562,7 +2762,7 @@
           if (newId) {
             await this._addScheduleToProfile(newId);
             saveNotify(newId);
-            await this._syncAutoChild(newId, ps);
+            await this._syncAutoOffAutomation(newId, ps);
             await this._syncConditionAutomation(newId, ps.conditions, ps.condCombinator, ps.condInterval, ps);
             await this._persistExtras(newId, ps);
             await this._syncExtrasAutomation(newId, ps);
@@ -2577,7 +2777,7 @@
           if (ps.name) p.name = ps.name;
           await this._hass.callService('scheduler', 'edit', p);
           saveNotify(ps.entityId);
-          await this._syncAutoChild(ps.entityId, ps);
+          await this._syncAutoOffAutomation(ps.entityId, ps);
           await this._syncConditionAutomation(ps.entityId, ps.conditions, ps.condCombinator, ps.condInterval, ps);
           await this._persistExtras(ps.entityId, ps);
           await this._syncExtrasAutomation(ps.entityId, ps);
@@ -2597,6 +2797,7 @@
       const condAutoId = this._getCondAutoId(eid);
       const extrasAutoId = this._getExtrasAutoId(eid);
       const notifyAutoId = this._getNotifyAutoId(eid);
+      const autoOffAutoId = this._getAutoOffAutoId(eid);
       const data = this._storageData;
       for (const p of data.profiles || []) {
         p.schedules = (p.schedules || []).filter(x => x !== eid);
@@ -2610,6 +2811,9 @@
       }
       if (notifyAutoId) {
         try { await this._hass.callApi('DELETE', `config/automation/config/${notifyAutoId}`); } catch (e) { console.error('WSC notifyAuto delete failed', e); }
+      }
+      if (autoOffAutoId) {
+        try { await this._hass.callApi('DELETE', `config/automation/config/${autoOffAutoId}`); } catch (e) { console.error('WSC autoOff delete failed', e); }
       }
       if (childId) {
         try { await this._hass.callService('scheduler', 'remove', { entity_id: childId }); } catch {}
@@ -2684,6 +2888,8 @@
             try { await this._hass.callApi('DELETE', `config/automation/config/${link.extrasAutoId}`); } catch (e) { console.error('WSC extrasAuto delete failed', e); }
           if (link.notifyAutoId)
             try { await this._hass.callApi('DELETE', `config/automation/config/${link.notifyAutoId}`); } catch (e) { console.error('WSC notifyAuto delete failed', e); }
+          if (link.autoOffAutoId)
+            try { await this._hass.callApi('DELETE', `config/automation/config/${link.autoOffAutoId}`); } catch (e) { console.error('WSC autoOff delete failed', e); }
           if (link.autoChildId)
             try { await this._hass.callService('scheduler', 'remove', { entity_id: link.autoChildId }); } catch {}
         }
