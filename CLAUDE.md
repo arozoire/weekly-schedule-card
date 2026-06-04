@@ -136,7 +136,6 @@ File: `src/locales/en.json`, `it.json`, `fr.json`.
 ## Bug noti / limitazioni
 - Scheduler Component non supporta `conditions` nei timeslots
 - Scheduler Component non supporta `stop_action` nei timeslots
-- Notifiche funzionano solo con dashboard aperta (no automazioni server-side)
 - Profili: limite pratico ~10 profili per vincolo 255 char input_text
 
 ## Config YAML completa
@@ -197,7 +196,23 @@ notifications:
 
 ## Last modified
 always update last modified date with day an hour Rome utc
-2026-06-03 Rome
+2026-06-04 Rome
+
+## Notifiche server-side + pannello "Oggetti collegati" (2026-06-04)
+- **Notifiche ora sono automazioni HA** (`_syncNotifyAutomation`, id `wsc_notify_<eid>`):
+  funzionano anche con dashboard/HA chiusi. Trigger su `current_slot`, `choose`
+  inizio/fine (template su transizione none↔valore) secondo `notifyTrigger`,
+  azione `notify.xxx`. Storage: `link.notifyAutoId`.
+  - Rimosso l'invio in-browser `_checkNotifyTriggers` (era il vecchio limite).
+  - Pulizia integrata in `_deleteSchedule`/`_deleteProfile`/`_cleanupOrphanAutomations`.
+- **Pannello "🔧 Oggetti collegati"** in fondo al popup (solo edit): figlio auto-off +
+  automazioni cond/extra/notify, con badge stato (`on`/`off`/`mancante`) e azioni
+  **Apri** (`hass-more-info`) / **Modifica YAML** (`/config/automation/edit/<id>`).
+  Helper `_linkedObjectsHtml`/`_linkRow`. i18n: blocco `linked` (en/it/fr).
+- **Restyle chip profilo** (editing card): più piccole (h24), accento barra a sinistra
+  + tinta a gradiente `--pchip-color`, stati viewed/active più saturi.
+- **Fix dropdown chip** (editing card): `.chip-dropdown` `position:fixed` + posizione
+  via JS (`getBoundingClientRect`) per uscire dall'overflow di `.hdr-row2`.
 
 ## Fix delete-profile orphans (2026-06-03)
 - `_deleteProfile` ora pulisce per ogni `scheduleLink`: `condAutoId`/`extrasAutoId` (DELETE automation) + `autoChildId` (`scheduler.remove`) prima dei parent. Prima lasciava orfani figli auto-off e automazioni.

@@ -16,7 +16,8 @@
       errors:{ no_days:'Please select at least one day.',delete_confirm:'Delete this schedule?',delete_profile_confirm:'Delete this profile and all its schedules?',save_failed:'Failed',overlap:'Overlap with existing schedule in this profile' },
       warnings:{ temp_unusual:'⚠️ Unusual value — check device compatibility',temp_very_high:'🔴 Warning: very high temperature',out_of_slider_range:'Outside typical range for this entity' },
       cond:{ add:'Add condition',entity:'Entity',operator:'Operator',value:'Value',and_all:'All (AND)',or_any:'Any (OR)',recheck:'Re-check interval' },
-      notify:{ restore_auto:'Restore auto text',trigger_label:'When to notify',trigger_none:'Never',trigger_start:'On start',trigger_end:'On end',trigger_both:'Start + end',msg_start_label:'Start message',msg_end_label:'End message',default_start:'Schedule started',default_end:'Schedule ended' }
+      notify:{ restore_auto:'Restore auto text',trigger_label:'When to notify',trigger_none:'Never',trigger_start:'On start',trigger_end:'On end',trigger_both:'Start + end',msg_start_label:'Start message',msg_end_label:'End message',default_start:'Schedule started',default_end:'Schedule ended' },
+      linked:{ title:'Linked objects',auto_off:'Auto-off child',cond_auto:'Condition automation',extras_auto:'Extras automation',notify:'Notification',open:'Open',edit_yaml:'Edit YAML',missing:'missing' }
     },
     it: {
       card:{ title:'Pianificazione Settimanale',new_profile:'Nuovo profilo',groups:'Gruppi',no_entities:'Nessuna entità configurata',no_entities_sub:'Aggiungi entità via YAML o crea un Gruppo per iniziare.',manage_groups:'Gestisci Gruppi',layout_rows_view:'Vista righe',layout_cols_view:'Vista colonne',no_schedule_now:'Nessuno schedule attivo ora',empty_schedule:'Nessuno schedule' },
@@ -27,7 +28,8 @@
       errors:{ no_days:'Seleziona almeno un giorno.',delete_confirm:'Eliminare questo schedule?',delete_profile_confirm:'Eliminare questo profilo e tutti i suoi schedule?',save_failed:'Errore',overlap:'Sovrapposizione con schedule esistente in questo profilo' },
       warnings:{ temp_unusual:'⚠️ Valore insolito — verifica compatibilità con il tuo dispositivo',temp_very_high:'🔴 Attenzione: temperatura molto alta',out_of_slider_range:'Fuori dal range tipico per questa entità' },
       cond:{ add:'Aggiungi condizione',entity:'Entità',operator:'Operatore',value:'Valore',and_all:'Tutte (AND)',or_any:'Una qualsiasi (OR)',recheck:'Intervallo rivalutazione' },
-      notify:{ restore_auto:'Ripristina testo automatico',trigger_label:'Quando notificare',trigger_none:'Mai',trigger_start:"All'inizio",trigger_end:'Alla fine',trigger_both:'Inizio + fine',msg_start_label:'Messaggio inizio',msg_end_label:'Messaggio fine',default_start:'Schedule attivato',default_end:'Schedule terminato' }
+      notify:{ restore_auto:'Ripristina testo automatico',trigger_label:'Quando notificare',trigger_none:'Mai',trigger_start:"All'inizio",trigger_end:'Alla fine',trigger_both:'Inizio + fine',msg_start_label:'Messaggio inizio',msg_end_label:'Messaggio fine',default_start:'Schedule attivato',default_end:'Schedule terminato' },
+      linked:{ title:'Oggetti collegati',auto_off:'Schedule auto-off (figlio)',cond_auto:'Automazione condizioni',extras_auto:'Automazione extra',notify:'Notifica',open:'Apri',edit_yaml:'Modifica YAML',missing:'mancante' }
     },
     fr: {
       card:{ title:'Planning Hebdomadaire',new_profile:'Nouveau profil',groups:'Groupes',no_entities:'Aucune entité configurée',no_entities_sub:'Ajoutez des entités via la config YAML, ou créez un Groupe pour commencer.',manage_groups:'Gérer les Groupes',layout_rows_view:'Vue lignes',layout_cols_view:'Vue colonnes',no_schedule_now:'Aucun planning actif',empty_schedule:'Aucun planning' },
@@ -38,7 +40,8 @@
       errors:{ no_days:'Sélectionnez au moins un jour.',delete_confirm:'Supprimer ce schedule ?',delete_profile_confirm:'Supprimer ce profil et tous ses schedules ?',save_failed:'Échec',overlap:'Chevauchement avec un planning existant dans ce profil' },
       warnings:{ temp_unusual:"⚠️ Valeur inhabituelle — vérifiez la compatibilité avec votre appareil",temp_very_high:"🔴 Attention : température très élevée",out_of_slider_range:'Hors de la plage typique pour cette entité' },
       cond:{ add:'Ajouter condition',entity:'Entité',operator:'Opérateur',value:'Valeur',and_all:'Toutes (AND)',or_any:"N'importe laquelle (OR)",recheck:'Intervalle de réévaluation' },
-      notify:{ restore_auto:'Restaurer texte auto',trigger_label:'Quand notifier',trigger_none:'Jamais',trigger_start:'Au début',trigger_end:'À la fin',trigger_both:'Début + fin',msg_start_label:'Message début',msg_end_label:'Message fin',default_start:'Schedule démarré',default_end:'Schedule terminé' }
+      notify:{ restore_auto:'Restaurer texte auto',trigger_label:'Quand notifier',trigger_none:'Jamais',trigger_start:'Au début',trigger_end:'À la fin',trigger_both:'Début + fin',msg_start_label:'Message début',msg_end_label:'Message fin',default_start:'Schedule démarré',default_end:'Schedule terminé' },
+      linked:{ title:'Objets liés',auto_off:'Schedule auto-off (enfant)',cond_auto:'Automatisation conditions',extras_auto:'Automatisation extra',notify:'Notification',open:'Ouvrir',edit_yaml:'Modifier YAML',missing:'manquant' }
     }
   };
 
@@ -71,7 +74,6 @@
       const prev = this._prevHass;
       this._prevHass = hass;
       this._hass = hass;
-      if (prev && this._storageData) this._checkNotifyTriggers(prev, hass);
       // Auto re-fetch storage when a schedule entity is added/removed (cross-card sync)
       if (prev && this._storageData && !this._loadingStorage) {
         const prevSet = new Set(Object.keys(prev.states).filter(k => k.startsWith('switch.schedule_')));
@@ -455,6 +457,23 @@
       return null;
     }
 
+    _getNotifyAutoId(scheduleEntityId) {
+      for (const p of this._storageData?.profiles || []) {
+        const link = (p.scheduleLinks || []).find(l => l.id === scheduleEntityId);
+        if (link?.notifyAutoId) return link.notifyAutoId;
+      }
+      return null;
+    }
+
+    async _saveNotifyAutoId(scheduleEntityId, autoId) {
+      const data = this._storageData;
+      for (const p of data.profiles || []) {
+        const link = (p.scheduleLinks || []).find(l => l.id === scheduleEntityId);
+        if (link) { if (autoId) link.notifyAutoId = autoId; else delete link.notifyAutoId; }
+      }
+      await this._wsSet(data);
+    }
+
     async _saveExtras(scheduleEntityId, extras, extrasAutoId) {
       const data = this._storageData;
       let found = false;
@@ -508,6 +527,7 @@
           // Orphan — collect automation IDs + auto-off child to delete
           if (link.condAutoId) deletions.push(link.condAutoId);
           if (link.extrasAutoId) deletions.push(link.extrasAutoId);
+          if (link.notifyAutoId) deletions.push(link.notifyAutoId);
           if (link.autoChildId) childRemovals.add(link.autoChildId);
           // Also remove from p.schedules
           p.schedules = (p.schedules || []).filter(x => x !== link.id);
@@ -583,39 +603,6 @@
           if (newChildId) await this._saveAutoChildId(parentEntityId, newChildId);
           else console.warn('WSC syncAutoChild: child created but not found via tag lookup');
         } catch (e) { console.error('WSC syncAutoChild add failed', e); }
-      }
-    }
-
-    // ── In-browser notification triggers ─────────────────────────────────────
-
-    _checkNotifyTriggers(prevHass, newHass) {
-      for (const p of this._storageData?.profiles || []) {
-        for (const link of p.scheduleLinks || []) {
-          if (!link.notifyService || !link.id) continue;
-          const trig = link.notifyTrigger || 'start';
-          if (trig === 'none') continue;
-          const nst = newHass.states[link.id];
-          const pst = prevHass.states[link.id];
-          if (!nst || !pst) continue;
-          const wasInSlot = pst.attributes.current_slot !== null && pst.attributes.current_slot !== undefined;
-          const isInSlot = nst.attributes.current_slot !== null && nst.attributes.current_slot !== undefined;
-          const slotStarted = !wasInSlot && isInSlot;
-          const slotEnded = wasInSlot && !isInSlot;
-          // Start: schedule must be on now. End: schedule must have been on during the slot (prev).
-          const fireStart = slotStarted && nst.state === 'on' && (trig === 'start' || trig === 'both');
-          const fireEnd = slotEnded && pst.state === 'on' && (trig === 'end' || trig === 'both');
-          if (!fireStart && !fireEnd) continue;
-          const message = fireEnd
-            ? (link.notifyMessageEnd || link.notifyMessage || this.t('notify.default_end'))
-            : (link.notifyMessage || this.t('notify.default_start'));
-          const parts = link.notifyService.split('.');
-          if (parts.length < 2) continue;
-          const [domain, ...rest] = parts;
-          newHass.callService(domain, rest.join('.'), {
-            message,
-            title: this.t('card.title'),
-          }).catch(e => console.error('WSC notify failed', e));
-        }
       }
     }
 
@@ -1076,6 +1063,101 @@
       } catch (e) {
         console.error('WSC extrasAuto save failed', e);
       }
+    }
+
+    // ── Notify automation (server-side, works with HA frontend closed) ────────
+
+    async _syncNotifyAutomation(scheduleEntityId, ps) {
+      const existingId = this._getNotifyAutoId(scheduleEntityId);
+      const svc = ps.notifyService;
+      const trig = ps.notifyTrigger || 'start';
+      const cleanup = async () => {
+        if (existingId) {
+          try { await this._hass.callApi('DELETE', `config/automation/config/${existingId}`); } catch (e) { console.error('WSC notifyAuto delete failed', e); }
+          await this._saveNotifyAutoId(scheduleEntityId, null);
+        }
+      };
+      if (!svc || svc.split('.').length < 2 || trig === 'none') { await cleanup(); return; }
+      const title = this.t('card.title');
+      const startMsg = ps.notifyMessage || this.t('notify.default_start');
+      const endMsg = ps.notifyMessageEnd || ps.notifyMessage || this.t('notify.default_end');
+      const startedTpl = `{{ trigger.from_state is not none and trigger.from_state.attributes.current_slot is none and trigger.to_state.attributes.current_slot is not none }}`;
+      const endedTpl = `{{ trigger.from_state is not none and trigger.from_state.attributes.current_slot is not none and trigger.to_state.attributes.current_slot is none }}`;
+      const notifyAction = (msg) => ({ service: svc, data: { title, message: msg } });
+      const choose = [];
+      if (trig === 'start' || trig === 'both')
+        choose.push({ conditions: [{ condition: 'template', value_template: startedTpl }], sequence: [notifyAction(startMsg)] });
+      if (trig === 'end' || trig === 'both')
+        choose.push({ conditions: [{ condition: 'template', value_template: endedTpl }], sequence: [notifyAction(endMsg)] });
+      if (!choose.length) { await cleanup(); return; }
+      const targetId = existingId || `wsc_notify_${scheduleEntityId.replace('switch.', '')}`;
+      const automationConfig = {
+        alias: `WSC Notify - ${scheduleEntityId}`,
+        description: 'Auto-generated by Weekly Schedule Card',
+        trigger: [{ platform: 'state', entity_id: scheduleEntityId, attribute: 'current_slot' }],
+        condition: [{ condition: 'state', entity_id: scheduleEntityId, state: 'on' }],
+        action: [{ choose }],
+        mode: 'queued',
+      };
+      try {
+        await this._hass.callApi('POST', `config/automation/config/${targetId}`, automationConfig);
+        await this._saveNotifyAutoId(scheduleEntityId, targetId);
+      } catch (e) {
+        console.error('WSC notifyAuto save failed', e);
+      }
+    }
+
+    // ── Linked objects panel (diagnostics in the edit popup) ──────────────────
+
+    _linkedObjectsHtml(ps) {
+      const eid = ps?.entityId;
+      if (!eid) return '';
+      const states = this._hass?.states || {};
+      const findAuto = (cfgId) => cfgId ? Object.values(states).find(s => s.entity_id.startsWith('automation.') && s.attributes?.id === cfgId) : null;
+      const rows = [];
+      const childId = this._getAutoChildId(eid);
+      if (childId) {
+        const ent = states[childId];
+        rows.push(this._linkRow('mdi:timer-off-outline', this.t('linked.auto_off'), childId, ent ? ent.state : null,
+          ent ? [{ label: this.t('linked.open'), act: 'more-info', val: childId }] : []));
+      }
+      const condId = this._getCondAutoId(eid);
+      if (condId) {
+        const ent = findAuto(condId);
+        rows.push(this._linkRow('mdi:flash-outline', this.t('linked.cond_auto'), ent ? ent.entity_id : condId, ent ? ent.state : null,
+          [ent ? { label: this.t('linked.open'), act: 'more-info', val: ent.entity_id } : null,
+           { label: this.t('linked.edit_yaml'), act: 'edit-auto', val: condId }]));
+      }
+      const extrasId = this._getExtrasAutoId(eid);
+      if (extrasId) {
+        const ent = findAuto(extrasId);
+        rows.push(this._linkRow('mdi:tune', this.t('linked.extras_auto'), ent ? ent.entity_id : extrasId, ent ? ent.state : null,
+          [ent ? { label: this.t('linked.open'), act: 'more-info', val: ent.entity_id } : null,
+           { label: this.t('linked.edit_yaml'), act: 'edit-auto', val: extrasId }]));
+      }
+      const notifyId = this._getNotifyAutoId(eid);
+      if (notifyId) {
+        const ent = findAuto(notifyId);
+        rows.push(this._linkRow('mdi:bell-outline', this.t('linked.notify'), ent ? ent.entity_id : notifyId, ent ? ent.state : null,
+          [ent ? { label: this.t('linked.open'), act: 'more-info', val: ent.entity_id } : null,
+           { label: this.t('linked.edit_yaml'), act: 'edit-auto', val: notifyId }]));
+      }
+      if (!rows.length) return '';
+      return `<div class="linked-section"><div class="linked-hdr">🔧 ${this.t('linked.title')}</div>${rows.join('')}</div>`;
+    }
+
+    _linkRow(icon, name, idText, state, actions) {
+      const acts = (actions || []).filter(Boolean).map(a =>
+        `<button class="lo-btn" data-act="${a.act}" data-val="${String(a.val).replace(/"/g, '&quot;')}">${a.label}</button>`).join('');
+      const badge = state
+        ? `<span class="lo-badge ${state === 'on' ? 'on' : 'off'}">${state}</span>`
+        : `<span class="lo-badge missing">${this.t('linked.missing')}</span>`;
+      return `<div class="lo-row">
+      <ha-icon class="lo-ic" icon="${icon}"></ha-icon>
+      <div class="lo-meta"><span class="lo-name">${name}</span><span class="lo-id">${String(idText).replace(/</g, '&lt;')}</span></div>
+      ${badge}
+      <div class="lo-acts">${acts}</div>
+    </div>`;
     }
 
     // ── Modal helpers (alert / confirm / prompt sostituiti da <dialog>) ──────
@@ -1948,6 +2030,20 @@
         .notif-restore:hover,.notif-restore-end:hover{opacity:.7}
         .notif-trigger-row{display:flex;flex-wrap:wrap;gap:10px;font-size:.78em}
         .notif-trigger-row label{display:flex;align-items:center;gap:4px;cursor:pointer}
+        .linked-section{border-top:1px solid var(--divider-color,#eee);padding-top:10px;display:flex;flex-direction:column;gap:6px}
+        .linked-hdr{font-size:.78em;font-weight:600;color:var(--primary-text-color)}
+        .lo-row{display:flex;align-items:center;gap:8px;padding:6px 8px;border:1px solid var(--divider-color,#eee);border-radius:8px;background:var(--secondary-background-color,#f5f5f5)}
+        .lo-ic{--mdi-icon-size:18px;color:var(--secondary-text-color);flex-shrink:0}
+        .lo-meta{display:flex;flex-direction:column;min-width:0;flex:1}
+        .lo-name{font-size:.76em;font-weight:600;color:var(--primary-text-color)}
+        .lo-id{font-size:.66em;color:var(--secondary-text-color);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-family:monospace}
+        .lo-badge{font-size:.6em;font-weight:700;padding:1px 6px;border-radius:6px;flex-shrink:0;text-transform:uppercase}
+        .lo-badge.on{background:color-mix(in srgb,#4CAF50 22%,transparent);color:#2e7d32}
+        .lo-badge.off{background:color-mix(in srgb,var(--secondary-text-color) 18%,transparent);color:var(--secondary-text-color)}
+        .lo-badge.missing{background:color-mix(in srgb,#f44336 18%,transparent);color:#f44336}
+        .lo-acts{display:flex;gap:4px;flex-shrink:0}
+        .lo-btn{padding:3px 8px;border-radius:7px;border:1px solid var(--primary-color,#03a9f4);background:none;color:var(--primary-color,#03a9f4);cursor:pointer;font-size:.68em;white-space:nowrap}
+        .lo-btn:hover{background:color-mix(in srgb,var(--primary-color,#03a9f4) 10%,transparent)}
       </style>
       <div class="popup" role="dialog" aria-modal="true">
         <div class="popup-header">
@@ -2054,6 +2150,7 @@
             </div>
           </div>`:''}
         </div>
+        ${ps.mode==='edit'?this._linkedObjectsHtml(ps):''}
         <div class="popup-footer">
           ${ps.mode==='edit'?`<button class="btn btn-delete">${this.t('popup.delete')}</button>`:''}
           <div class="spacer"></div>
@@ -2073,6 +2170,18 @@
       dlg.querySelector('.btn-cancel').addEventListener('click', () => this._closePopup());
       dlg.querySelector('.btn-save').addEventListener('click', () => this._saveSchedule());
       dlg.querySelector('.btn-delete')?.addEventListener('click', () => this._deleteSchedule());
+
+      dlg.querySelectorAll('.lo-btn').forEach(btn => btn.addEventListener('click', () => {
+        const act = btn.dataset.act, val = btn.dataset.val;
+        if (act === 'more-info') {
+          this._closePopup();
+          this.dispatchEvent(new CustomEvent('hass-more-info', { detail: { entityId: val }, bubbles: true, composed: true }));
+        } else if (act === 'edit-auto') {
+          this._closePopup();
+          history.pushState(null, '', `/config/automation/edit/${val}`);
+          window.dispatchEvent(new Event('location-changed'));
+        }
+      }));
 
       dlg.querySelector('.btn-next-slot')?.addEventListener('click', () => {
         const newStart=ps.endMin, newEnd=Math.min(ps.endMin+60,1440);
@@ -2445,6 +2554,7 @@
             await this._syncConditionAutomation(newId, ps.conditions, ps.condCombinator, ps.condInterval, ps);
             await this._persistExtras(newId, ps);
             await this._syncExtrasAutomation(newId, ps);
+            await this._syncNotifyAutomation(newId, ps);
             const prof = this._getSelectedProfile();
             if (prof && !this._isProfileActive(prof)) {
               try { await this._hass.callService('switch', 'turn_off', { entity_id: newId }); } catch {}
@@ -2459,6 +2569,7 @@
           await this._syncConditionAutomation(ps.entityId, ps.conditions, ps.condCombinator, ps.condInterval, ps);
           await this._persistExtras(ps.entityId, ps);
           await this._syncExtrasAutomation(ps.entityId, ps);
+          await this._syncNotifyAutomation(ps.entityId, ps);
         }
       } catch (e) { await this._alert(`${this.t('errors.save_failed')}: ${e.message || e}`); return; }
       await this._wsSet(this._storageData).catch(() => {});
@@ -2473,6 +2584,7 @@
       const childId = this._getAutoChildId(eid);
       const condAutoId = this._getCondAutoId(eid);
       const extrasAutoId = this._getExtrasAutoId(eid);
+      const notifyAutoId = this._getNotifyAutoId(eid);
       const data = this._storageData;
       for (const p of data.profiles || []) {
         p.schedules = (p.schedules || []).filter(x => x !== eid);
@@ -2483,6 +2595,9 @@
       }
       if (extrasAutoId) {
         try { await this._hass.callApi('DELETE', `config/automation/config/${extrasAutoId}`); } catch (e) { console.error('WSC extrasAuto delete failed', e); }
+      }
+      if (notifyAutoId) {
+        try { await this._hass.callApi('DELETE', `config/automation/config/${notifyAutoId}`); } catch (e) { console.error('WSC notifyAuto delete failed', e); }
       }
       if (childId) {
         try { await this._hass.callService('scheduler', 'remove', { entity_id: childId }); } catch {}
@@ -2555,6 +2670,8 @@
             try { await this._hass.callApi('DELETE', `config/automation/config/${link.condAutoId}`); } catch (e) { console.error('WSC condAuto delete failed', e); }
           if (link.extrasAutoId)
             try { await this._hass.callApi('DELETE', `config/automation/config/${link.extrasAutoId}`); } catch (e) { console.error('WSC extrasAuto delete failed', e); }
+          if (link.notifyAutoId)
+            try { await this._hass.callApi('DELETE', `config/automation/config/${link.notifyAutoId}`); } catch (e) { console.error('WSC notifyAuto delete failed', e); }
           if (link.autoChildId)
             try { await this._hass.callService('scheduler', 'remove', { entity_id: link.autoChildId }); } catch {}
         }
