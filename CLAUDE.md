@@ -196,7 +196,17 @@ notifications:
 
 ## Last modified
 always update last modified date with day an hour Rome utc
-2026-06-04 Rome
+2026-06-04 Rome (v1.0.5)
+
+## Fix notifica automazione + delete-then-recreate (2026-06-04, v1.0.5)
+- **Notifica non scattava**: i template usavano `trigger.from_state.attributes.current_slot is none`;
+  se lo Scheduler omette l'attributo quando idle → in Jinja è *undefined* e `undefined is none`=False.
+  Fix: `_syncNotifyAutomation` usa due **template trigger** con `id` basati su
+  `state_attr(eid,'current_slot') is not none / is none` (None per assente o null),
+  condition schedule `state:on`, action `choose` per `trigger.id` (start/end).
+- **Delete-then-recreate**: nuovo helper `_recreateAutomation(targetId, config)` (DELETE best-effort + POST),
+  usato da cond/extras/notify → ogni salvataggio riscrive un'automazione pulita.
+- cond e notify restano 2 automazioni separate (`wsc_cond_*` / `wsc_notify_*`).
 
 ## Notifiche server-side + pannello "Oggetti collegati" (2026-06-04)
 - **Notifiche ora sono automazioni HA** (`_syncNotifyAutomation`, id `wsc_notify_<eid>`):
