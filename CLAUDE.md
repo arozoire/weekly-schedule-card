@@ -205,7 +205,14 @@ notifications:
 
 ## Last modified
 always update last modified date with day an hour Rome utc
-2026-06-04 Rome (v1.0.6)
+2026-06-04 Rome (v1.0.7)
+
+## Fix notifica inizio slot (2026-06-04, v1.0.7)
+- La notifica "inizio" non scattava ("fine" sì): i 2 trigger template inversi
+  (`slot_start`/`slot_end`) soffrivano dell'arming iniziale. Sostituiti in
+  `_syncNotifyAutomation` con **un solo** trigger `state` su attributo `current_slot`
+  + `choose` con template `from/to` e filtro `| default(none)` (gestisce attributo
+  assente o null). Scatta a ogni cambio → simmetrico inizio/fine.
 
 ## Fix notifica automazione + delete-then-recreate (2026-06-04, v1.0.5)
 - **Notifica non scattava**: i template usavano `trigger.from_state.attributes.current_slot is none`;
