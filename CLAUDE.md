@@ -205,7 +205,19 @@ notifications:
 
 ## Last modified
 always update last modified date with day an hour Rome utc
-2026-06-04 Rome (v1.0.7)
+2026-06-05 Rome (v1.0.8)
+
+## Fix stato 'triggered' dello switch schedule (2026-06-05, v1.0.8)
+- Scoperta dalla traccia: lo `switch.schedule_*` ha stato `on` (abilitato, fuori slot),
+  **`triggered`** (abilitato, dentro slot attivo), `off` (disabilitato).
+- Tutte le condizioni usavano `state == 'on'` → fallivano dentro lo slot (stato `triggered`):
+  notifica INIZIO non scattava, cond/extras mai dentro slot, guardia auto-off non
+  rilevava schedule attivi (`triggered`).
+- Fix: "abilitato" ora è **`state != 'off'`** (copre on+triggered+completed); "in slot"
+  resta `current_slot != None`. Corretti: condizioni di notify/cond/extras/auto-off,
+  guardia Jinja race auto-off (`s.state != 'off'`), e `_activateProfile` (`s.state !== 'off'`).
+
+## Fix notifica inizio slot (2026-06-04, v1.0.7)
 
 ## Fix notifica inizio slot (2026-06-04, v1.0.7)
 - La notifica "inizio" non scattava ("fine" sì): i 2 trigger template inversi
