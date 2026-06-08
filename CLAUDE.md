@@ -130,8 +130,16 @@ trigger con `id` (`slot` = current_slot/turn_on, `eval` = time_pattern+entità c
 **Annulla override** = `automation.turn_on` flag + `automation.trigger` cond). DELETE del flag in
 `_deleteSchedule`/`_deleteProfile`/`_cleanupOrphanAutomations`. i18n blocco `override` + `linked.override_flag`.
 
+**⚠️ entity_id da ALIAS, non da object_id (fix v1.1.1)**: HA deriva l'`entity_id` di
+un'automazione dallo slug dell'**alias**, NON dall'object_id con cui la si crea via config API.
+Alias `WSC Override flag - <eid>` → entity `automation.wsc_override_flag_<eid con . → _>`.
+`_overrideFlagEntityId` DEVE restituire questo (non `wsc_ovrflag_<slug>`), altrimenti
+template/turn_off puntano a un'entità inesistente e l'override non scatta mai. Stesso motivo:
+"Annulla override" risolve l'automazione condizioni via `attributes.id` a runtime, non costruendo
+`automation.<id>`. (`initial_state:true` + trigger `{{ false }}` + `action:[]` accettati: OK.)
+
 **Da validare in HA**: `context.parent_id` dell'applicazione scheduler a inizio slot (decide se la
-guardia 5s serve o si toglie); accettazione di `initial_state` + trigger `{{ false }}` via config API.
+guardia 5s serve o si toglie).
 
 ## Profili storage
 JSON in chunk 255 char su `input_text.weekly_schedule_profiles_N`.
@@ -244,7 +252,7 @@ notifications:
 
 ## Last modified
 always update last modified date with day an hour Rome utc
-2026-06-08 Rome (v1.1.0) — manual override fino al prossimo slot (schedule con condizioni)
+2026-06-08 Rome (v1.1.1) — fix override: entity_id automazione-flag da alias slugificato (non object_id)
 
 ## Fix stato 'triggered' dello switch schedule (2026-06-05, v1.0.8)
 - Scoperta dalla traccia: lo `switch.schedule_*` ha stato `on` (abilitato, fuori slot),

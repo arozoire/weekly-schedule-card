@@ -441,7 +441,11 @@ export default class WeeklyScheduleBase extends HTMLElement {
   // state 'on' = no override (schedule in control), 'off' = manual override active.
   // The flag entity_id is deterministic from the config object_id.
   _overrideFlagEntityId(scheduleEntityId) {
-    return `automation.wsc_ovrflag_${scheduleEntityId.replace('switch.', '')}`;
+    // HA derives an automation's entity_id from its ALIAS (slugified), NOT from the
+    // config object_id. Our flag alias is `WSC Override flag - <eid>` → slugifies to
+    // `wsc_override_flag_<eid with "." → "_">`. Must match exactly or templates/turn_off
+    // would target a non-existent entity (→ override never engages).
+    return `automation.wsc_override_flag_${scheduleEntityId.replace(/\./g, '_')}`;
   }
 
   _getOverrideEnabled(scheduleEntityId) {
@@ -2506,8 +2510,11 @@ export default class WeeklyScheduleBase extends HTMLElement {
         // val = schedule entity id. Reset flag → 'on' (no override) + re-evaluate now.
         const flagEnt = this._overrideFlagEntityId(val);
         const condId = this._getCondAutoId(val);
+        // Resolve the condition automation's real entity_id by its id attribute
+        // (entity_id derives from alias, not from the config id).
+        const condEnt = condId ? Object.values(this._hass.states).find(s => s.entity_id.startsWith('automation.') && s.attributes?.id === condId)?.entity_id : null;
         try { await this._hass.callService('automation', 'turn_on', { entity_id: flagEnt }); } catch (e) { console.error('WSC cancel-override turn_on failed', e); }
-        if (condId) { try { await this._hass.callService('automation', 'trigger', { entity_id: `automation.${condId}` }); } catch (e) { console.error('WSC cancel-override trigger failed', e); } }
+        if (condEnt) { try { await this._hass.callService('automation', 'trigger', { entity_id: condEnt }); } catch (e) { console.error('WSC cancel-override trigger failed', e); } }
         this._renderPopup();
       }
     }));
