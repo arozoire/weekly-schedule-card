@@ -400,13 +400,13 @@ class WeeklyScheduleCard extends WeeklyScheduleBase {
 
     // Tooltip hover
     this.shadowRoot.addEventListener('mouseover', e => {
-      const blk = e.target.closest('.block,.gantt-block,.compact-blk,.focus-blk'); if (!blk) return;
+      const blk = e.target.closest('.block,.gantt-block'); if (!blk) return;
       const id = blk.dataset.entity; if (!id) return;
       this._hideTooltip();
       this._ttTimer = setTimeout(() => this._showTooltip(id, blk.getBoundingClientRect()), 300);
     });
     this.shadowRoot.addEventListener('mouseout', e => {
-      if (e.target.closest('.block,.gantt-block,.compact-blk,.focus-blk')) this._hideTooltip();
+      if (e.target.closest('.block,.gantt-block')) this._hideTooltip();
     });
   }
 }

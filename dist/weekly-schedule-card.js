@@ -2,7 +2,7 @@
   'use strict';
 
   // src/base-card.js
-  // Last modified: 2026-05-25 CEST
+  // Last modified: 2026-06-08 Rome
 
   const PALETTE=['#F44336','#E91E63','#9C27B0','#673AB7','#3F51B5','#2196F3','#03A9F4','#00BCD4','#009688','#4CAF50','#8BC34A','#CDDC39','#FFEB3B','#FFC107','#FF9800','#FF5722','#795548','#9E9E9E','#607D8B','#000000','#FFFFFF','#FF80AB','#69F0AE','#40C4FF'];
 
@@ -17,8 +17,9 @@
       warnings:{ temp_unusual:'⚠️ Unusual value — check device compatibility',temp_very_high:'🔴 Warning: very high temperature',out_of_slider_range:'Outside typical range for this entity' },
       cond:{ add:'Add condition',entity:'Entity',operator:'Operator',value:'Value',and_all:'All (AND)',or_any:'Any (OR)',recheck:'Re-check interval' },
       notify:{ restore_auto:'Restore auto text',trigger_label:'When to notify',trigger_none:'Never',trigger_start:'On start',trigger_end:'On end',trigger_both:'Start + end',msg_start_label:'Start message',msg_end_label:'End message',default_start:'Schedule started',default_end:'Schedule ended' },
-      linked:{ title:'Linked objects',auto_off:'Auto-off automation',cond_auto:'Condition automation',extras_auto:'Extras automation',notify:'Notification',open:'Open',edit_yaml:'Edit YAML',missing:'missing' },
-      endact:{ brightness:'Set brightness',color:'Set color',color_temp:'Set color temp',speed:'Set speed',position:'Set position',open:'Open',close:'Close',stop:'Stop' }
+      linked:{ title:'Linked objects',auto_off:'Auto-off automation',cond_auto:'Condition automation',extras_auto:'Extras automation',notify:'Notification',override_flag:'Override flag',open:'Open',edit_yaml:'Edit YAML',missing:'missing' },
+      endact:{ brightness:'Set brightness',color:'Set color',color_temp:'Set color temp',speed:'Set speed',position:'Set position',open:'Open',close:'Close',stop:'Stop' },
+      override:{ enable:'Allow manual override',hint:'If you change the entity by hand during a slot, the schedule stops re-applying its value until the next slot (conditional schedules only).',active:'Manual override active',inactive:'No override',cancel:'Cancel override now' }
     },
     it: {
       card:{ title:'Pianificazione Settimanale',new_profile:'Nuovo profilo',groups:'Gruppi',no_entities:'Nessuna entità configurata',no_entities_sub:'Aggiungi entità via YAML o crea un Gruppo per iniziare.',manage_groups:'Gestisci Gruppi',layout_rows_view:'Vista righe',layout_cols_view:'Vista colonne',no_schedule_now:'Nessuno schedule attivo ora',empty_schedule:'Nessuno schedule' },
@@ -30,8 +31,9 @@
       warnings:{ temp_unusual:'⚠️ Valore insolito — verifica compatibilità con il tuo dispositivo',temp_very_high:'🔴 Attenzione: temperatura molto alta',out_of_slider_range:'Fuori dal range tipico per questa entità' },
       cond:{ add:'Aggiungi condizione',entity:'Entità',operator:'Operatore',value:'Valore',and_all:'Tutte (AND)',or_any:'Una qualsiasi (OR)',recheck:'Intervallo rivalutazione' },
       notify:{ restore_auto:'Ripristina testo automatico',trigger_label:'Quando notificare',trigger_none:'Mai',trigger_start:"All'inizio",trigger_end:'Alla fine',trigger_both:'Inizio + fine',msg_start_label:'Messaggio inizio',msg_end_label:'Messaggio fine',default_start:'Schedule attivato',default_end:'Schedule terminato' },
-      linked:{ title:'Oggetti collegati',auto_off:'Automazione auto-off',cond_auto:'Automazione condizioni',extras_auto:'Automazione extra',notify:'Notifica',open:'Apri',edit_yaml:'Modifica YAML',missing:'mancante' },
-      endact:{ brightness:'Imposta luminosità',color:'Imposta colore',color_temp:'Imposta temp. colore',speed:'Imposta velocità',position:'Imposta posizione',open:'Apri',close:'Chiudi',stop:'Ferma' }
+      linked:{ title:'Oggetti collegati',auto_off:'Automazione auto-off',cond_auto:'Automazione condizioni',extras_auto:'Automazione extra',notify:'Notifica',override_flag:'Flag override',open:'Apri',edit_yaml:'Modifica YAML',missing:'mancante' },
+      endact:{ brightness:'Imposta luminosità',color:'Imposta colore',color_temp:'Imposta temp. colore',speed:'Imposta velocità',position:'Imposta posizione',open:'Apri',close:'Chiudi',stop:'Ferma' },
+      override:{ enable:'Consenti override manuale',hint:'Se cambi l\'entità a mano durante uno slot, lo schedule smette di ri-applicare il suo valore fino al prossimo slot (solo schedule con condizioni).',active:'Override manuale attivo',inactive:'Nessun override',cancel:'Annulla override adesso' }
     },
     fr: {
       card:{ title:'Planning Hebdomadaire',new_profile:'Nouveau profil',groups:'Groupes',no_entities:'Aucune entité configurée',no_entities_sub:'Ajoutez des entités via la config YAML, ou créez un Groupe pour commencer.',manage_groups:'Gérer les Groupes',layout_rows_view:'Vue lignes',layout_cols_view:'Vue colonnes',no_schedule_now:'Aucun planning actif',empty_schedule:'Aucun planning' },
@@ -43,8 +45,9 @@
       warnings:{ temp_unusual:"⚠️ Valeur inhabituelle — vérifiez la compatibilité avec votre appareil",temp_very_high:"🔴 Attention : température très élevée",out_of_slider_range:'Hors de la plage typique pour cette entité' },
       cond:{ add:'Ajouter condition',entity:'Entité',operator:'Opérateur',value:'Valeur',and_all:'Toutes (AND)',or_any:"N'importe laquelle (OR)",recheck:'Intervalle de réévaluation' },
       notify:{ restore_auto:'Restaurer texte auto',trigger_label:'Quand notifier',trigger_none:'Jamais',trigger_start:'Au début',trigger_end:'À la fin',trigger_both:'Début + fin',msg_start_label:'Message début',msg_end_label:'Message fin',default_start:'Schedule démarré',default_end:'Schedule terminé' },
-      linked:{ title:'Objets liés',auto_off:'Automatisation auto-off',cond_auto:'Automatisation conditions',extras_auto:'Automatisation extra',notify:'Notification',open:'Ouvrir',edit_yaml:'Modifier YAML',missing:'manquant' },
-      endact:{ brightness:'Définir luminosité',color:'Définir couleur',color_temp:'Définir temp. couleur',speed:'Définir vitesse',position:'Définir position',open:'Ouvrir',close:'Fermer',stop:'Arrêter' }
+      linked:{ title:'Objets liés',auto_off:'Automatisation auto-off',cond_auto:'Automatisation conditions',extras_auto:'Automatisation extra',notify:'Notification',override_flag:'Indicateur surcharge',open:'Ouvrir',edit_yaml:'Modifier YAML',missing:'manquant' },
+      endact:{ brightness:'Définir luminosité',color:'Définir couleur',color_temp:'Définir temp. couleur',speed:'Définir vitesse',position:'Définir position',open:'Ouvrir',close:'Fermer',stop:'Arrêter' },
+      override:{ enable:'Autoriser la commande manuelle',hint:'Si vous changez l\'entité à la main pendant un créneau, le planning cesse de réappliquer sa valeur jusqu\'au prochain créneau (plannings avec conditions uniquement).',active:'Commande manuelle active',inactive:'Aucune surcharge',cancel:'Annuler la surcharge' }
     }
   };
 
@@ -436,6 +439,42 @@
       await this._wsSet(data);
     }
 
+    // ── Manual-override storage helpers ───────────────────────────────────────
+    // Override state is held by a trigger-less marker automation (wsc_ovrflag_<slug>):
+    // state 'on' = no override (schedule in control), 'off' = manual override active.
+    // The flag entity_id is deterministic from the config object_id.
+    _overrideFlagEntityId(scheduleEntityId) {
+      return `automation.wsc_ovrflag_${scheduleEntityId.replace('switch.', '')}`;
+    }
+
+    _getOverrideEnabled(scheduleEntityId) {
+      for (const p of this._storageData?.profiles || []) {
+        const link = (p.scheduleLinks || []).find(l => l.id === scheduleEntityId);
+        if (link && 'overrideEnabled' in link) return !!link.overrideEnabled;
+      }
+      return false;
+    }
+
+    _getOverrideFlagId(scheduleEntityId) {
+      for (const p of this._storageData?.profiles || []) {
+        const link = (p.scheduleLinks || []).find(l => l.id === scheduleEntityId);
+        if (link?.overrideFlagAutoId) return link.overrideFlagAutoId;
+      }
+      return null;
+    }
+
+    async _saveOverrideData(scheduleEntityId, enabled, flagId) {
+      const data = this._storageData;
+      for (const p of data.profiles || []) {
+        const link = (p.scheduleLinks || []).find(l => l.id === scheduleEntityId);
+        if (link) {
+          link.overrideEnabled = !!enabled;
+          if (flagId !== undefined) { if (flagId) link.overrideFlagAutoId = flagId; else delete link.overrideFlagAutoId; }
+        }
+      }
+      await this._wsSet(data);
+    }
+
     // ── Extras (preset/fan/swing/hvac) storage helpers ────────────────────────
 
     _getExtras(scheduleEntityId) {
@@ -526,6 +565,7 @@
           if (link.extrasAutoId) deletions.push(link.extrasAutoId);
           if (link.notifyAutoId) deletions.push(link.notifyAutoId);
           if (link.autoOffAutoId) deletions.push(link.autoOffAutoId);
+          if (link.overrideFlagAutoId) deletions.push(link.overrideFlagAutoId);
           if (link.autoChildId) childRemovals.add(link.autoChildId);
           // Also remove from p.schedules
           p.schedules = (p.schedules || []).filter(x => x !== link.id);
@@ -1080,57 +1120,131 @@
       // Build active/inactive actions on the TARGET entity (not on schedule switch)
       const activeActions = ps ? this._buildScheduleActions(ps) : null;
       const inactiveActions = ps ? this._buildStopActions(ps) : null;
-      // Triggers: schedule turn_on + slot start/end + periodic + state change of condition entities (immediate reaction)
+      const notMet = { condition: 'not', conditions: [condBlock] };
+      // Manual-override mode: only when enabled AND there is a target action to gate.
+      const overrideOn = !!(ps && ps.overrideEnabled && activeActions);
+      const flagEnt = this._overrideFlagEntityId(scheduleEntityId);
+      // Triggers: schedule turn_on + slot start/end (id 'slot') + periodic + condition entities (id 'eval').
       const triggers = [
-        { platform: 'state', entity_id: scheduleEntityId, to: 'on' },
-        { platform: 'state', entity_id: scheduleEntityId, attribute: 'current_slot' },
-        { platform: 'time_pattern', minutes: `/${condInterval}` },
+        { platform: 'state', entity_id: scheduleEntityId, to: 'on', id: 'slot' },
+        { platform: 'state', entity_id: scheduleEntityId, attribute: 'current_slot', id: 'slot' },
+        { platform: 'time_pattern', minutes: `/${condInterval}`, id: 'eval' },
       ];
       const condEntityIds = [...new Set(validConds.map(c => c.entity).filter(Boolean))];
-      for (const ce of condEntityIds) triggers.push({ platform: 'state', entity_id: ce });
-      // Action block: if active+inactive both defined, choose/default. If only active, only fire when met.
-      let actionBlock;
-      if (activeActions && inactiveActions) {
-        actionBlock = {
-          choose: [{
-            conditions: [{ condition: 'not', conditions: [condBlock] }],
-            sequence: inactiveActions,
-          }],
-          default: activeActions,
+      for (const ce of condEntityIds) triggers.push({ platform: 'state', entity_id: ce, id: 'eval' });
+
+      let action, mode, topInSlot = true;
+      if (overrideOn) {
+        // Watch the TARGET entity for manual changes.
+        triggers.push({ platform: 'state', entity_id: ps.entityConf.entity, id: 'manual' });
+        const inSlotTpl = { condition: 'template', value_template: `{{ state_attr('${scheduleEntityId}', 'current_slot') != None }}` };
+        const noOverrideTpl = { condition: 'template', value_template: `{{ states('${flagEnt}') != 'off' }}` };
+        // ATTIVA gated on flag (gateActive), SAFETY (not-met → inactive) always.
+        const applyByCond = (gateActive) => {
+          const branches = [];
+          if (inactiveActions) branches.push({ conditions: [notMet], sequence: inactiveActions });
+          branches.push({ conditions: gateActive ? [condBlock, noOverrideTpl] : [condBlock], sequence: activeActions });
+          return { choose: branches };
         };
-      } else if (activeActions) {
-        actionBlock = {
-          choose: [{
-            conditions: [condBlock],
-            sequence: activeActions,
-          }],
-        };
+        action = [{
+          choose: [
+            // 1) manual change of target entity → activate override flag (suspend ATTIVA re-apply)
+            {
+              conditions: [
+                { condition: 'trigger', id: 'manual' },
+                inSlotTpl,
+                { condition: 'template', value_template: `{{ trigger.platform == 'state' and trigger.to_state is not none and trigger.to_state.context.parent_id is none and (now() - states['${scheduleEntityId}'].last_changed).total_seconds() > 5 }}` },
+                noOverrideTpl,
+              ],
+              sequence: [{ service: 'automation.turn_off', target: { entity_id: flagEnt } }],
+            },
+            // 1b) target changed but machine-caused (our own apply / scheduler) → ignore,
+            //     so it does NOT fall through to the eval re-apply below.
+            {
+              conditions: [{ condition: 'trigger', id: 'manual' }],
+              sequence: [],
+            },
+            // 2) slot transition → reset override flag + (re)apply for the (new) slot
+            {
+              conditions: [{ condition: 'trigger', id: 'slot' }],
+              sequence: [
+                { service: 'automation.turn_on', target: { entity_id: flagEnt } },
+                { if: [inSlotTpl], then: [applyByCond(false)] },
+              ],
+            },
+          ],
+          // 3) eval (periodic / condition change): SAFETY always, ATTIVA only if no override
+          default: [{ if: [inSlotTpl], then: [applyByCond(true)] }],
+        }];
+        mode = 'queued';
+        topInSlot = false; // reset branch must also run when current_slot becomes None (slot end)
       } else {
-        // Fallback (no ps): old behaviour — toggle schedule switch
-        actionBlock = {
-          choose: [{
-            conditions: [{ condition: 'not', conditions: [condBlock] }],
-            sequence: [{ service: 'switch.turn_off', target: { entity_id: scheduleEntityId } }],
-          }],
-          default: [{ service: 'switch.turn_on', target: { entity_id: scheduleEntityId } }],
-        };
+        // Original behaviour (no override). active+inactive → choose/default; active-only → met→active.
+        let actionBlock;
+        if (activeActions && inactiveActions) {
+          actionBlock = { choose: [{ conditions: [notMet], sequence: inactiveActions }], default: activeActions };
+        } else if (activeActions) {
+          actionBlock = { choose: [{ conditions: [condBlock], sequence: activeActions }] };
+        } else {
+          // Fallback (no ps): old behaviour — toggle schedule switch
+          actionBlock = {
+            choose: [{ conditions: [notMet], sequence: [{ service: 'switch.turn_off', target: { entity_id: scheduleEntityId } }] }],
+            default: [{ service: 'switch.turn_on', target: { entity_id: scheduleEntityId } }],
+          };
+        }
+        action = [actionBlock];
+        mode = 'single';
       }
+
+      const condList = [
+        { condition: 'not', conditions: [{ condition: 'state', entity_id: scheduleEntityId, state: 'off' }] },
+      ];
+      if (topInSlot) condList.push({ condition: 'template', value_template: `{{ state_attr('${scheduleEntityId}', 'current_slot') != None }}` });
+
       const automationConfig = {
         alias: `WSC Conditions - ${scheduleEntityId}`,
         description: 'Auto-generated by Weekly Schedule Card',
         trigger: triggers,
-        condition: [
-          { condition: 'not', conditions: [{ condition: 'state', entity_id: scheduleEntityId, state: 'off' }] },
-          { condition: 'template', value_template: `{{ state_attr('${scheduleEntityId}', 'current_slot') != None }}` },
-        ],
-        action: [actionBlock],
-        mode: 'single',
+        condition: condList,
+        action,
+        mode,
       };
       try {
         await this._recreateAutomation(targetId, automationConfig);
         await this._saveCondData(scheduleEntityId, targetId, validConds, condCombinator, condInterval);
       } catch (e) {
         console.error('WSC condAuto save failed', e);
+      }
+    }
+
+    // Trigger-less marker automation that holds the manual-override flag.
+    // Only for conditional schedules with override enabled. state 'on' = no override,
+    // 'off' = override active. initial_state:true → override resets at every HA restart.
+    // Must be called AFTER _syncConditionAutomation (depends on condAutoId existing).
+    async _syncOverrideFlag(scheduleEntityId, ps) {
+      const existingId = this._getOverrideFlagId(scheduleEntityId);
+      const enabled = !!(ps && ps.overrideEnabled) && !!this._getCondAutoId(scheduleEntityId);
+      if (!enabled) {
+        if (existingId) {
+          try { await this._hass.callApi('DELETE', `config/automation/config/${existingId}`); } catch (e) { console.error('WSC overrideFlag delete failed', e); }
+        }
+        await this._saveOverrideData(scheduleEntityId, !!(ps && ps.overrideEnabled), null);
+        return;
+      }
+      const targetId = existingId || `wsc_ovrflag_${scheduleEntityId.replace('switch.', '')}`;
+      const automationConfig = {
+        alias: `WSC Override flag - ${scheduleEntityId}`,
+        description: 'Auto-generated by Weekly Schedule Card (manual-override flag: on = no override, off = override active)',
+        trigger: [{ platform: 'template', value_template: '{{ false }}' }],
+        action: [],
+        mode: 'single',
+        initial_state: true,
+      };
+      try {
+        await this._recreateAutomation(targetId, automationConfig);
+        await this._saveOverrideData(scheduleEntityId, true, targetId);
+      } catch (e) {
+        console.error('WSC overrideFlag save failed', e);
       }
     }
 
@@ -1288,6 +1402,26 @@
         rows.push(this._linkRow('mdi:bell-outline', this.t('linked.notify'), ent ? ent.entity_id : notifyId, ent ? ent.state : null,
           [ent ? { label: this.t('linked.open'), act: 'more-info', val: ent.entity_id } : null,
            { label: this.t('linked.edit_yaml'), act: 'edit-auto', val: notifyId }]));
+      }
+      // Manual-override flag (marker automation: state 'on' = no override, 'off' = override active)
+      if (this._getOverrideEnabled(eid) && this._getOverrideFlagId(eid)) {
+        const flagId = this._getOverrideFlagId(eid);
+        const ent = findAuto(flagId);
+        const active = !!ent && ent.state === 'off';
+        const idText = ent ? ent.entity_id : flagId;
+        const badge = !ent
+          ? `<span class="lo-badge missing">${this.t('linked.missing')}</span>`
+          : `<span class="lo-badge ${active ? 'off' : 'on'}">${active ? this.t('override.active') : this.t('override.inactive')}</span>`;
+        const acts = [];
+        if (active) acts.push(`<button class="lo-btn lo-btn-warn" data-act="cancel-override" data-val="${eid}">${this.t('override.cancel')}</button>`);
+        if (ent) acts.push(`<button class="lo-btn" data-act="more-info" data-val="${ent.entity_id}">${this.t('linked.open')}</button>`);
+        acts.push(`<button class="lo-btn" data-act="edit-auto" data-val="${flagId}">${this.t('linked.edit_yaml')}</button>`);
+        rows.push(`<div class="lo-row">
+        <ha-icon class="lo-ic" icon="mdi:hand-back-right-outline"></ha-icon>
+        <div class="lo-meta"><span class="lo-name">${this.t('linked.override_flag')}</span><span class="lo-id">${String(idText).replace(/</g,'&lt;')}</span></div>
+        ${badge}
+        <div class="lo-acts">${acts.join('')}</div>
+      </div>`);
       }
       if (!rows.length) return '';
       return `<div class="linked-section"><div class="linked-hdr">🔧 ${this.t('linked.title')}</div>${rows.join('')}</div>`;
@@ -1763,6 +1897,7 @@
         coverAction: 'close', enablePosition: false, position: 50,
         stopAction: null, stopValue: null,
         conditions: [], condCombinator: 'and', condInterval: 15, _condOpen: false,
+        overrideEnabled: false,
         notifyService: '', notifyMessage: '', notifyMessageEnd: '',
         _defaultNotifyMsg: '', _defaultNotifyMsgEnd: '',
         notifyTrigger: 'start', _notifOpen: false,
@@ -1870,6 +2005,7 @@
         condCombinator: this._getStoredConditions(entityId).condCombinator,
         condInterval: this._getStoredConditions(entityId).condInterval,
         _condOpen: false,
+        overrideEnabled: this._getOverrideEnabled(entityId),
         notifyService: (() => { for (const p of this._storageData?.profiles||[]) { const l=(p.scheduleLinks||[]).find(l=>l.id===entityId); if(l?.notifyService)return l.notifyService; } return ''; })(),
         notifyMessage: (() => { for (const p of this._storageData?.profiles||[]) { const l=(p.scheduleLinks||[]).find(l=>l.id===entityId); if(l?.notifyMessage)return l.notifyMessage; } return ''; })(),
         notifyMessageEnd: (() => { for (const p of this._storageData?.profiles||[]) { const l=(p.scheduleLinks||[]).find(l=>l.id===entityId); if(l?.notifyMessageEnd)return l.notifyMessageEnd; } return ''; })(),
@@ -2102,6 +2238,10 @@
             <option value="60" ${ps.condInterval===60?'selected':''}>60 min</option>
           </select>
         </div>
+        <label class="cond-override-row" style="${ps.conditions.length===0?'opacity:.45':''}">
+          <input type="checkbox" class="cond-override" ${ps.overrideEnabled?'checked':''} ${ps.conditions.length===0?'disabled':''}>
+          <span><b>✋ ${this.t('override.enable')}</b><br><span class="cond-override-hint">${this.t('override.hint')}</span></span>
+        </label>
       </div>` : '';
 
       const dlg = document.createElement('dialog');
@@ -2204,6 +2344,9 @@
         .cond-empty{padding:8px 10px;border-radius:6px;background:color-mix(in srgb,var(--secondary-text-color) 8%,transparent);color:var(--secondary-text-color);font-size:.75em;font-style:italic;line-height:1.4}
         .cond-interval-row{display:flex;align-items:center;gap:8px;padding-top:6px;border-top:1px solid var(--divider-color,#eee);margin-top:4px}
         .cond-interval{padding:3px 6px;border-radius:6px;border:1px solid var(--divider-color,#ccc);background:var(--card-background-color,#fff);color:var(--primary-text-color);font-size:.78em}
+        .cond-override-row{display:flex;align-items:flex-start;gap:8px;padding-top:8px;margin-top:6px;border-top:1px solid var(--divider-color,#eee);font-size:.8em;cursor:pointer}
+        .cond-override-row input{margin-top:2px;flex-shrink:0}
+        .cond-override-hint{font-size:.82em;color:var(--secondary-text-color);line-height:1.3}
         .notif-row{display:flex;flex-direction:column;gap:3px}
         .notif-svc,.notif-msg,.notif-msg-end{padding:6px 8px;border-radius:6px;border:1px solid var(--divider-color,#ccc);background:var(--card-background-color,#fff);color:var(--primary-text-color);font-size:.82em;font-family:inherit}
         .notif-msg,.notif-msg-end{resize:vertical;min-height:80px;line-height:1.4;white-space:pre-wrap;width:100%;box-sizing:border-box}
@@ -2353,7 +2496,7 @@
       dlg.querySelector('.btn-save').addEventListener('click', () => this._saveSchedule());
       dlg.querySelector('.btn-delete')?.addEventListener('click', () => this._deleteSchedule());
 
-      dlg.querySelectorAll('.lo-btn').forEach(btn => btn.addEventListener('click', () => {
+      dlg.querySelectorAll('.lo-btn').forEach(btn => btn.addEventListener('click', async () => {
         const act = btn.dataset.act, val = btn.dataset.val;
         if (act === 'more-info') {
           this._closePopup();
@@ -2362,6 +2505,13 @@
           this._closePopup();
           history.pushState(null, '', `/config/automation/edit/${val}`);
           window.dispatchEvent(new Event('location-changed'));
+        } else if (act === 'cancel-override') {
+          // val = schedule entity id. Reset flag → 'on' (no override) + re-evaluate now.
+          const flagEnt = this._overrideFlagEntityId(val);
+          const condId = this._getCondAutoId(val);
+          try { await this._hass.callService('automation', 'turn_on', { entity_id: flagEnt }); } catch (e) { console.error('WSC cancel-override turn_on failed', e); }
+          if (condId) { try { await this._hass.callService('automation', 'trigger', { entity_id: `automation.${condId}` }); } catch (e) { console.error('WSC cancel-override trigger failed', e); } }
+          this._renderPopup();
         }
       }));
 
@@ -2564,6 +2714,7 @@
       dlg.querySelectorAll('.cond-val').forEach(inp=>inp.addEventListener(inp.tagName==='SELECT'?'change':'input',()=>{ ps.conditions[parseInt(inp.dataset.ci)].value=inp.value; }));
       dlg.querySelectorAll('input[name="comb"]').forEach(r=>r.addEventListener('change',()=>{ ps.condCombinator=r.value; }));
       dlg.querySelector('.cond-interval')?.addEventListener('change', e=>{ ps.condInterval=parseInt(e.target.value); });
+      dlg.querySelector('.cond-override')?.addEventListener('change', e=>{ ps.overrideEnabled=e.target.checked; });
       // Notifications
       dlg.querySelector('#notifToggle')?.addEventListener('click', () => { ps._notifOpen=!ps._notifOpen; this._renderPopup(); });
       dlg.querySelector('.notif-svc')?.addEventListener('change', e=>{ ps.notifyService=e.target.value; });
@@ -2763,6 +2914,7 @@
             saveNotify(newId);
             await this._syncAutoOffAutomation(newId, ps);
             await this._syncConditionAutomation(newId, ps.conditions, ps.condCombinator, ps.condInterval, ps);
+            await this._syncOverrideFlag(newId, ps);
             await this._persistExtras(newId, ps);
             await this._syncExtrasAutomation(newId, ps);
             await this._syncNotifyAutomation(newId, ps);
@@ -2778,6 +2930,7 @@
           saveNotify(ps.entityId);
           await this._syncAutoOffAutomation(ps.entityId, ps);
           await this._syncConditionAutomation(ps.entityId, ps.conditions, ps.condCombinator, ps.condInterval, ps);
+          await this._syncOverrideFlag(ps.entityId, ps);
           await this._persistExtras(ps.entityId, ps);
           await this._syncExtrasAutomation(ps.entityId, ps);
           await this._syncNotifyAutomation(ps.entityId, ps);
@@ -2797,6 +2950,7 @@
       const extrasAutoId = this._getExtrasAutoId(eid);
       const notifyAutoId = this._getNotifyAutoId(eid);
       const autoOffAutoId = this._getAutoOffAutoId(eid);
+      const overrideFlagId = this._getOverrideFlagId(eid);
       const data = this._storageData;
       for (const p of data.profiles || []) {
         p.schedules = (p.schedules || []).filter(x => x !== eid);
@@ -2813,6 +2967,9 @@
       }
       if (autoOffAutoId) {
         try { await this._hass.callApi('DELETE', `config/automation/config/${autoOffAutoId}`); } catch (e) { console.error('WSC autoOff delete failed', e); }
+      }
+      if (overrideFlagId) {
+        try { await this._hass.callApi('DELETE', `config/automation/config/${overrideFlagId}`); } catch (e) { console.error('WSC overrideFlag delete failed', e); }
       }
       if (childId) {
         try { await this._hass.callService('scheduler', 'remove', { entity_id: childId }); } catch {}
@@ -2889,6 +3046,8 @@
             try { await this._hass.callApi('DELETE', `config/automation/config/${link.notifyAutoId}`); } catch (e) { console.error('WSC notifyAuto delete failed', e); }
           if (link.autoOffAutoId)
             try { await this._hass.callApi('DELETE', `config/automation/config/${link.autoOffAutoId}`); } catch (e) { console.error('WSC autoOff delete failed', e); }
+          if (link.overrideFlagAutoId)
+            try { await this._hass.callApi('DELETE', `config/automation/config/${link.overrideFlagAutoId}`); } catch (e) { console.error('WSC overrideFlag delete failed', e); }
           if (link.autoChildId)
             try { await this._hass.callService('scheduler', 'remove', { entity_id: link.autoChildId }); } catch {}
         }
@@ -4157,13 +4316,13 @@
 
       // Tooltip hover
       this.shadowRoot.addEventListener('mouseover', e => {
-        const blk = e.target.closest('.block,.gantt-block,.compact-blk,.focus-blk'); if (!blk) return;
+        const blk = e.target.closest('.block,.gantt-block'); if (!blk) return;
         const id = blk.dataset.entity; if (!id) return;
         this._hideTooltip();
         this._ttTimer = setTimeout(() => this._showTooltip(id, blk.getBoundingClientRect()), 300);
       });
       this.shadowRoot.addEventListener('mouseout', e => {
-        if (e.target.closest('.block,.gantt-block,.compact-blk,.focus-blk')) this._hideTooltip();
+        if (e.target.closest('.block,.gantt-block')) this._hideTooltip();
       });
     }
   }

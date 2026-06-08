@@ -21,13 +21,16 @@ all on top of the [Scheduler Component](https://github.com/nielsfaber/scheduler-
 ## Highlights
 
 - **Two cards from one codebase** — full editor + read-only dashboard view
-- **Four editing layouts**: `columns`, `rows`, `compact`, `focus`
+- **Two editing layouts**: `columns` and `rows`
 - **Profiles** with one-click activation and automatic exclusivity rules
 - **Entity groups** with shared color and bulk management
-- **Auto-off / auto-on** via paired 1-minute child schedules
+- **Auto-off / auto-on** via a generated HA automation (`wsc_autooff_*`)
 - **Conditions** that compile to a generated HA automation (since the
   Scheduler Component does not support `conditions` natively)
-- **Notifications** when a schedule fires (with smart default message)
+- **Manual override** — change a conditional schedule's entity by hand and it
+  stops re-applying until the next slot (safety direction still fires)
+- **Notifications** when a schedule fires — server-side HA automation, works
+  even with every dashboard closed (with smart default message)
 - **Climate, light, switch** domains with per-domain popup controls
 - **i18n**: English, Italian, French (auto-detect from HA locale)
 
@@ -41,9 +44,8 @@ This repository ships **two** Lovelace custom elements built from the same sourc
 
 The full-featured card for creating and managing schedules.
 
-- 4 layouts: `columns` (7-column grid), `rows` (per-day timelines),
-  `compact` (mobile, collapsible days), `focus` (one day expanded with
-  per-entity lanes)
+- 2 layouts: `columns` (7-column grid) and `rows` (per-day timelines);
+  toggle with the header button
 - Click an empty cell → create-schedule popup
 - Click a block → edit-schedule popup
 - Drag to resize time slots, snap configurable via `time_step`
@@ -51,9 +53,18 @@ The full-featured card for creating and managing schedules.
 - Group entities (shared color, entity picker)
 - Inline conditions and notifications per schedule
 
-<p align="center">
-  <img src="docs/images/03-focus.png" alt="Editing card — focus layout" width="520">
-</p>
+<table>
+  <tr>
+    <td align="center">
+      <img src="docs/images/02-column.png" alt="Editing card — columns layout" width="380"><br>
+      <sub><b>Columns (7-column grid)</b></sub>
+    </td>
+    <td align="center">
+      <img src="docs/images/04-rows.png" alt="Editing card — rows layout" width="380"><br>
+      <sub><b>Rows (per-day timelines)</b></sub>
+    </td>
+  </tr>
+</table>
 
 <p align="center">
   <img src="docs/images/07-schedule.png" alt="Create / edit schedule popup" width="420"><br>
@@ -64,8 +75,8 @@ The full-featured card for creating and managing schedules.
 
 Read-only by default, optimized for dashboards and wall displays.
 
-- 3 layouts: `focus` (default), `compact`, `rows`
-- Toggle layout with the header button (cycles `focus → compact → rows`)
+- 2 layouts: `focus` (default) and `compact`
+- Toggle layout with the header button (toggles `focus ↔ compact`)
 - Read profile chips with one-click activate / deactivate
 - Click a block → opens **the same edit popup** as the editing card
 - Hover for tooltip with schedule details
@@ -75,12 +86,12 @@ Read-only by default, optimized for dashboards and wall displays.
 <table>
   <tr>
     <td align="center">
-      <img src="docs/images/02-column.png" alt="View card — vertical timeline columns" width="380"><br>
-      <sub><b>Vertical timeline</b></sub>
+      <img src="docs/images/03-focus.png" alt="View card — focus layout" width="380"><br>
+      <sub><b>Focus (one day expanded)</b></sub>
     </td>
     <td align="center">
-      <img src="docs/images/04-rows.png" alt="View card — rows layout" width="380"><br>
-      <sub><b>Per-day rows</b></sub>
+      <img src="docs/images/01-compact.png" alt="View card — compact layout" width="380"><br>
+      <sub><b>Compact (collapsible days)</b></sub>
     </td>
   </tr>
 </table>
@@ -177,7 +188,7 @@ notifications:
 |------------------------|-----------------|---------------|-------|
 | `title`                | string          | _(none)_      | Header title |
 | `language`             | `en` / `it` / `fr` | auto       | Falls back to HA locale, then browser |
-| `default_view`         | `columns` / `rows` / `compact` / `focus` | `columns` | Initial layout (editing card) |
+| `default_view`         | `columns` / `rows` | `columns` | Initial layout (editing card) |
 | `time_step`            | integer (min)   | `15`          | Snap interval for drag |
 | `entities[]`           | list            | `[]`          | Can also be edited from the card UI |
 | `entities[].entity`    | entity_id       | _required_    | Climate / light / switch |
@@ -202,7 +213,7 @@ entities owned by the [Scheduler Component](https://github.com/nielsfaber/schedu
 | Schedules | Scheduler Component | `switch.schedule_*` entities | `weekdays`, `timeslots`, `entities`, `actions`, `current_slot` |
 | Profiles & groups | this card | `input_text.weekly_schedule_profiles_N` | JSON, chunked at 255 chars/helper, auto-rotated (N = 0, 1, 2, …) |
 | Conditions | this card | `automation.wsc_*` (generated) | One HA automation per conditional schedule, lifecycle-bound to it |
-| Auto-off / auto-on | this card | `switch.schedule_*` (child, tagged) | 1-minute child schedule, `tags: ['weekly_schedule_auto', 'parent:switch.schedule_XXX']` |
+| Auto-off / auto-on | this card | `automation.wsc_autooff_*` (generated) | One HA automation per schedule, fires the end-of-slot action when `current_slot` clears |
 
 **Implication for users**: deleting a `switch.schedule_*` entity from HA
 removes the schedule globally — the card just reflects HA state.
@@ -262,7 +273,7 @@ include them — this card works around the limitation:
 | Missing feature | Workaround built into this card |
 |-----------------|---------------------------------|
 | `conditions` per slot | Generates an HA automation (`automation.wsc_*`) that gates the schedule's actions |
-| `stop_action` per slot | Creates a paired 1-minute child schedule tagged `weekly_schedule_auto` |
+| `stop_action` per slot | Generates an HA automation (`automation.wsc_autooff_*`) that runs the end-of-slot action |
 
 See [Conditions & Notifications](#conditions--notifications) and
 [Auto-off / Auto-on](#auto-off--auto-on) for the full mechanism.
@@ -366,7 +377,7 @@ EN:
 - [ ] Create a schedule (days + slots) → colored block appears
 - [ ] Click on the block opens the edit popup
 - [ ] View card shows the same schedule in `focus` layout
-- [ ] Layout toggle on the view card cycles `focus → compact → rows`
+- [ ] Layout toggle on the view card toggles `focus ↔ compact`
 - [ ] Hover on a block → tooltip
 - [ ] Empty click on the view card → create popup (shared with editing card)
 - [ ] View card status bar shows `Viewing: default · Active`
@@ -378,7 +389,7 @@ IT:
 - [ ] Crea uno schedule (giorni + slot orario) → appare un blocco colorato
 - [ ] Click sul blocco apre il popup di modifica
 - [ ] View card mostra la stessa schedule in vista `focus`
-- [ ] Toggle vista nella view card cicla `focus → compact → rows`
+- [ ] Toggle vista nella view card alterna `focus ↔ compact`
 - [ ] Hover su blocco → tooltip
 - [ ] Click vuoto nella view card → popup di creazione (stesso della editing card)
 - [ ] Status bar view card mostra `Viewing: default · Active`
@@ -421,7 +432,7 @@ automation is created / updated / deleted in lockstep with the schedule.
 Mechanism:
 
 - **Trigger**: state change on the condition entity + `time_pattern` every
-  N minutes (configurable, default 5)
+  N minutes (configurable, default 15)
 - **Condition**: `current_slot != null` on the parent schedule switch +
   user-defined conditions (operator + value)
 - **Action**: `turn_off` the schedule's target entities if conditions fail,
@@ -431,22 +442,59 @@ The schedule switch itself stays `on` — only the downstream actions are
 gated. The popup UI adapts to the selected condition entity (numeric slider
 for sensors, dropdown for selects, etc.).
 
+#### Manual override (conditional schedules)
+
+Enable **Allow manual override** (checkbox in the conditions section) and a
+conditional schedule will **stop fighting you**: if you change the target
+entity by hand during a slot — from the device itself or from HA — the
+schedule stops re-applying its value until the **next slot**, then resumes
+automatically.
+
+- The **safety direction still fires**: if the condition turns *false* (e.g.
+  humidity rises back above threshold) the stop action runs anyway.
+- It only re-applies after a *genuine* condition change, not after your manual
+  action — so it never clobbers what you set by hand.
+- State is held by a tiny trigger-less marker automation
+  (`automation.wsc_ovrflag_*`); the **Linked objects** panel shows whether an
+  override is active and offers a **Cancel override** button (resumes
+  immediately if conditions are met).
+- A Home Assistant **restart clears the override** (the Scheduler re-applies
+  the active slot on boot).
+
+Plain schedules (no conditions) get this behavior **for free** — the Scheduler
+Component already keeps manual mid-slot changes until the next timeslot.
+
 ### Notifications
 
-Optionally fire a notification when a schedule's slot becomes active. The
+Optionally fire a notification when a schedule's slot starts or ends. The
 message defaults to a pre-filled summary (entity, time window, target
 state) which you can customize per schedule.
 
-> ⚠️ Notifications fire from the dashboard client — they only work while a
-> Home Assistant tab is open. For 24/7 delivery, build a regular HA
-> automation instead.
+Notifications are emitted by a **generated HA automation** (`automation.wsc_notify_*`),
+triggered on the schedule's `current_slot` attribute with a `choose` for the
+start/end transition. Because it runs server-side, it fires **24/7 even when
+every dashboard is closed** — there is no longer a "tab must be open"
+limitation.
 
 ### Auto-off / Auto-on
 
-Each schedule can spawn a paired **child schedule** (duration 1 min, tagged
-`weekly_schedule_auto` + `parent:switch.schedule_XXX`) to turn the entity
-off (or on) when the parent slot ends. Children are filtered from the grid,
-follow the parent on updates, and are deleted when the parent is removed.
+When a schedule needs an explicit end-of-slot action (turn off, set back to a
+fallback temperature, close a cover, …), this card generates a **dedicated HA
+automation** (`automation.wsc_autooff_*`):
+
+- **Trigger**: the schedule's `current_slot` attribute clears (slot ended)
+- **Guard**: a short delay + a template check that skips the action if another
+  WSC schedule has already taken over the same entity (avoids fighting the
+  next slot)
+- **Action**: the per-domain end action you configured — `turn_off`,
+  `set_temperature`, `set_hvac/preset/fan/swing_mode`, `set_brightness`,
+  `set_color`, `set_speed`, `set_position` / open / close / stop, etc.
+
+The automation is created / updated / deleted in lockstep with the schedule.
+
+> 🔧 The **Linked objects** panel at the bottom of the edit popup lists every
+> generated object (auto-off, condition, notify automations) with a live
+> status badge and **Open** / **Edit YAML** shortcuts.
 
 ---
 
@@ -458,7 +506,7 @@ follow the parent on updates, and are deleted when the parent is removed.
 | No schedules visible | Install [Scheduler Component](https://github.com/nielsfaber/scheduler-component) (required) |
 | Popup doesn't open on view card | Check console — `_openEditPopup` must be inherited from the editing bundle |
 | Conditions don't trigger | Check the generated `automation.wsc_*` — it must be enabled |
-| Notifications never fire | Dashboard must be open; this is by design |
+| Notifications never fire | Check the generated `automation.wsc_notify_*` is enabled and the notify service exists |
 
 ---
 

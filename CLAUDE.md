@@ -44,6 +44,13 @@ _getDayIndex(weekday)       → stringa → indice 0-6 (0=lun, 6=dom)
 _parseTime(str)             → "HH:MM:SS" → minuti totali
 ```
 
+## ⚠️ Schedule = MONO-ENTITÀ (invariante)
+Ogni `switch.schedule_*` creato da WSC controlla **UNA sola entità** (`ps.entityId`):
+`_buildScheduleActions(ps)` costruisce tutte le azioni su un singolo `eid`, e
+`_getSchedules(entityId)` filtra per singola entità. Il multi-entità esiste **solo**
+a livello di **profili/gruppi**, MAI nel singolo schedule. (Lo Scheduler Component
+supporterebbe più entità per timeslot, ma WSC non lo usa.)
+
 ## Convenzioni CSS critiche
 - Blocchi: `background-color` inline + `background-image` da classe CSS
   → permette overlay pattern `.off` senza conflitti
@@ -93,6 +100,38 @@ Non supportate da Scheduler Component → automazione HA generata:
 // Action: turn_off se condizioni non soddisfatte, turn_on se soddisfatte
 // Storage: { scheduleId, automationId, conditions, interval }
 ```
+
+## Manual override (v1.1.0) — solo schedule CON condizioni
+Toggle per-schedule "Consenti override manuale" (`link.overrideEnabled`), visibile nella
+sezione condizioni del popup (abilitato solo se ≥1 condizione). Mono-entità → per-entità.
+Idea: se l'utente cambia a mano l'entità durante uno slot, lo schedule smette di ri-applicare
+il suo valore (direzione ATTIVA) fino al prossimo slot; la direzione SAFETY (condizione falsa
+→ spegni/stop) resta sempre attiva. Schedule SENZA condizioni: niente (lo Scheduler tiene già
+l'override nativamente — esegue l'azione solo alla transizione, non mid-slot).
+
+**Flag = automazione-segnaposto** (NO input_boolean): `wsc_ovrflag_<slug>`
+(`_syncOverrideFlag`, storage `link.overrideFlagAutoId`), trigger `{{ false }}` (non scatta mai),
+`initial_state:true` → **override azzerato a ogni riavvio HA** (lo Scheduler ri-applica lo slot
+al boot, inutile combatterlo). Stato `'on'` = nessun override · `'off'` = override attivo.
+Letto in Jinja con `states('automation.wsc_ovrflag_<slug>') != 'off'` (unknown/mancante = no-override, fail-safe).
+
+**`_syncConditionAutomation` con `overrideOn`** (= `ps.overrideEnabled && activeActions`):
+trigger con `id` (`slot` = current_slot/turn_on, `eval` = time_pattern+entità cond,
+`manual` = entità target), top-level condition rilassata (solo `state != 'off'`; in-slot per ramo),
+`mode: queued`. Action `choose`:
+- ramo **manual+detect**: in-slot + `trigger.to_state.context.parent_id is none` + guardia 5s
+  (`now() - schedule.last_changed > 5`) + flag non già off → `automation.turn_off` flag.
+- ramo **manual no-op**: ogni altro trigger `manual` (cambio "macchina": nostro o scheduler) → `[]`
+  (evita il fall-through al re-apply del default).
+- ramo **slot**: `automation.turn_on` flag (reset) + se in-slot → met→active / not-met→inactive.
+- **default (eval)**: se in-slot → SAFETY (not-met→inactive) sempre; ATTIVA (met & flag!=off) solo senza override.
+
+**UI/cleanup**: riga "Flag override" in `_linkedObjectsHtml` (badge attivo/nessuno + pulsante
+**Annulla override** = `automation.turn_on` flag + `automation.trigger` cond). DELETE del flag in
+`_deleteSchedule`/`_deleteProfile`/`_cleanupOrphanAutomations`. i18n blocco `override` + `linked.override_flag`.
+
+**Da validare in HA**: `context.parent_id` dell'applicazione scheduler a inizio slot (decide se la
+guardia 5s serve o si toglie); accettazione di `initial_state` + trigger `{{ false }}` via config API.
 
 ## Profili storage
 JSON in chunk 255 char su `input_text.weekly_schedule_profiles_N`.
@@ -168,11 +207,11 @@ notifications:
 
 ## Da fare (prossime sessioni)
 1. ~~Fix condizioni (errore extra keys) → automazioni HA~~ ✅ FATTO
-2. Rivalutazione condizioni periodica (time_pattern ogni N min) — già parte di _syncConditionAutomation
+2. ~~Rivalutazione condizioni periodica (time_pattern ogni N min)~~ ✅ FATTO (`_syncConditionAutomation` con `condInterval` default 15 + dropdown UI + i18n `recheck`)
 3. ~~Dividere in due card~~ ✅ FATTO
-4. Eliminare viste focus/compact/rows da editing card (dead reachable code, ora innocue)
+4. ~~Eliminare viste focus/compact/rows da editing card~~ ✅ FATTO (editing card già limitata a `columns`/`rows`; `_buildFocus/CompactView` restano per la view-card; rimossi 2 selettori morti `.compact-blk,.focus-blk` dai `closest()` della editing card)
 5. ~~Notifica default pre-compilata con info schedule~~ ✅ FATTO
-6. README documentazione completa (parziale, sezione Two cards aggiunta)
+6. ~~README documentazione completa~~ ✅ FATTO (2026-06-08: allineato all'architettura attuale — layout editing 2 / view 2, auto-off come automazione `wsc_autooff_*`, notifiche server-side `wsc_notify_*`, intervallo cond default 15, immagini ricollocate per card, pannello Linked objects)
 7. ~~UI condizioni adattiva all'entità selezionata~~ ✅ FATTO (helper `_getCondFieldSpec` + dispatcher condBodyHtml + listener re-render su entity/attribute change)
 
 8. ~~Logica automazione condizioni → entità target~~ ✅ FATTO (activeActions/inactiveActions tramite `_buildScheduleActions`/`_buildStopActions`, trigger state change su entità condizione, schedule switch resta on)
@@ -205,7 +244,7 @@ notifications:
 
 ## Last modified
 always update last modified date with day an hour Rome utc
-2026-06-05 Rome (v1.0.8)
+2026-06-08 Rome (v1.1.0) — manual override fino al prossimo slot (schedule con condizioni)
 
 ## Fix stato 'triggered' dello switch schedule (2026-06-05, v1.0.8)
 - Scoperta dalla traccia: lo `switch.schedule_*` ha stato `on` (abilitato, fuori slot),
