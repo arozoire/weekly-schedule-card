@@ -148,7 +148,7 @@ class WeeklyScheduleCard extends WeeklyScheduleBase {
     for (let h=0;h<24;h+=2) timeLabels.push({label:`${String(h).padStart(2,'0')}:00`,pct:(h/24)*100});
 
     // Build column-mode grid HTML
-    const _blk = b => `<div class="block ${b.isOff?'off':''}${b.isActive?' active':''}${b.isMuted?' muted':''}" data-entity="${b.entityId}" style="top:${b.startPct}%;height:${b.heightPct}%;background-color:${b.color};min-height:4px${b.isActive?`;--blk-glow:${b.color};--blk-glow-soft:${b.color}80`:''}">${b.heightPct>8?b.label:''}${b.hasStop?'<span class="blk-stop">⏹</span>':''}${b.hasCond?'<span class="blk-stop" style="right:12px">⚡</span>':''}</div>`;
+    const _blk = b => `<div class="block ${b.isOff?'off':''}${b.isActive?' active':''}${b.isMuted?' muted':''}" data-entity="${b.entityId}" style="top:${b.startPct}%;height:${b.heightPct}%;background-color:${b.color};color:${this._textColorFor(b.color)};min-height:4px${b.isActive?`;--blk-glow:${b.color};--blk-glow-soft:${b.color}80`:''}">${b.heightPct>8?b.label:''}${b.hasStop?'<span class="blk-stop">⏹</span>':''}${b.hasCond?'<span class="blk-stop" style="right:12px">⚡</span>':''}</div>`;
     let colGrid = '';
     if (!isGroup) {
       colGrid = DAYS.map((_,di)=>{
@@ -204,7 +204,7 @@ class WeeklyScheduleCard extends WeeklyScheduleBase {
                       const temp=s.attributes.actions?.[0]?.data?.temperature??null;
                       const lbl=this._detectDomain(ec.entity)==='climate'&&temp!=null?`${temp}°`:s.attributes.friendly_name;
                       const glowStyle=isActive?`;--blk-glow:${color};--blk-glow-soft:${color}80`:'';
-                      return `<div class="gantt-block ${isOff?'off':''}${isActive?' active':''}${isMuted?' muted':''}" data-entity="${s.entity_id}" style="left:${this._minutesToPercent(sMin)}%;width:${this._minutesToPercent(eMin-sMin)}%;background-color:${color}${glowStyle}">${(eMin-sMin)>60?lbl:''}${hasStop?'<span class="blk-stop">⏹</span>':''}${hasCond?'<span class="blk-stop" style="right:12px">⚡</span>':''}</div>`;
+                      return `<div class="gantt-block ${isOff?'off':''}${isActive?' active':''}${isMuted?' muted':''}" data-entity="${s.entity_id}" style="left:${this._minutesToPercent(sMin)}%;width:${this._minutesToPercent(eMin-sMin)}%;background-color:${color};color:${this._textColorFor(color)}${glowStyle}">${(eMin-sMin)>60?lbl:''}${hasStop?'<span class="blk-stop">⏹</span>':''}${hasCond?'<span class="blk-stop" style="right:12px">⚡</span>':''}</div>`;
                     })).join('')}
                     <div class="gantt-add">+</div>
                   </div>

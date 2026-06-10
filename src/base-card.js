@@ -1688,6 +1688,24 @@ export default class WeeklyScheduleBase extends HTMLElement {
     return `rgb(${Math.round(33 + ratio * 211)},${Math.round(150 - ratio * 83)},${Math.round(243 - ratio * 189)})`;
   }
 
+  // Contrast: black/white text over a block color (luminance 0.299R+0.587G+0.114B, threshold 150).
+  // Parses #RGB / #RRGGBB / rgb(r,g,b); falls back to white for anything non-parsable (transparent, var(), …).
+  _textColorFor(color) {
+    if (!color || typeof color !== 'string') return '#fff';
+    let r, g, b;
+    const hex = color.trim().replace(/^#/, '');
+    if (/^[0-9a-fA-F]{3}$/.test(hex)) {
+      r = parseInt(hex[0] + hex[0], 16); g = parseInt(hex[1] + hex[1], 16); b = parseInt(hex[2] + hex[2], 16);
+    } else if (/^[0-9a-fA-F]{6}$/.test(hex)) {
+      r = parseInt(hex.slice(0, 2), 16); g = parseInt(hex.slice(2, 4), 16); b = parseInt(hex.slice(4, 6), 16);
+    } else {
+      const m = color.match(/rgba?\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)/i);
+      if (!m) return '#fff';
+      r = +m[1]; g = +m[2]; b = +m[3];
+    }
+    return (0.299 * r + 0.587 * g + 0.114 * b) > 150 ? '#000' : '#fff';
+  }
+
   _parseTime(t) { const [h, m] = t.split(':').map(Number); return h * 60 + (m || 0); }
   _minutesToPercent(m) { return (m / 1440) * 100; }
   _minutesToTime(m) { return `${String(Math.floor(m / 60) % 24).padStart(2, '0')}:${String(m % 60).padStart(2, '0')}`; }
@@ -2389,7 +2407,7 @@ export default class WeeklyScheduleBase extends HTMLElement {
           <div class="timebar">
             ${bgBlocks.map(b=>`<div class="tb-bg" style="left:${b.left}%;width:${b.width}%;background:${b.color};opacity:.45"></div>`).join('')}
             ${magnetPoints.map(pt=>`<div class="tb-magnet" data-min="${pt}" style="left:${this._minutesToPercent(pt)}%"></div>`).join('')}
-            <div class="tb-edit" style="left:${editLeft}%;width:${editWidth}%;background:${editColor}">
+            <div class="tb-edit" style="left:${editLeft}%;width:${editWidth}%;background:${editColor};color:${this._textColorFor(editColor)}">
               <div class="tb-handle tb-handle-l"></div>
               <span class="tb-label">${timeLabel}</span>
               <div class="tb-handle tb-handle-r"></div>
@@ -2618,7 +2636,7 @@ export default class WeeklyScheduleBase extends HTMLElement {
           ? `<span class="temp-msg-range">Range dispositivo: ${haMin}° → ${haMax}°</span>` : '';
         const msgArea = dlg.querySelector('.temp-msg-area');
         if (msgArea) msgArea.innerHTML = warn + deviceRange;
-        if (eb) eb.style.backgroundColor = this._tempToColor(v);
+        if (eb) { const c = this._tempToColor(v); eb.style.backgroundColor = c; eb.style.color = this._textColorFor(c); }
       };
       if (ct && ts && ti) {
         ct.addEventListener('change', () => {
@@ -3162,8 +3180,8 @@ export default class WeeklyScheduleBase extends HTMLElement {
         const blocksHtml = blocks.map(b => {
           const glowStyle = b.isActive ? `;--cblk-glow:${b.color};--cblk-glow-soft:${b.color}80` : '';
           const showContent = b.heightPct > 4;
-          return `<div class="compact-blk${b.isOff?' off':''}${b.isActive?' active':''}${b.isMuted?' muted':''}" data-entity="${b.entityId}" data-day="${di}" style="left:${b.startPct}%;width:${b.heightPct}%;background-color:${b.color}${glowStyle}">` +
-            (showContent ? `<ha-icon icon="${icon}" style="--mdi-icon-size:10px;color:white;opacity:.9;flex-shrink:0"></ha-icon><span class="compact-blk-val">${b.label||''}</span>` : '') +
+          return `<div class="compact-blk${b.isOff?' off':''}${b.isActive?' active':''}${b.isMuted?' muted':''}" data-entity="${b.entityId}" data-day="${di}" style="left:${b.startPct}%;width:${b.heightPct}%;background-color:${b.color};color:${this._textColorFor(b.color)}${glowStyle}">` +
+            (showContent ? `<ha-icon icon="${icon}" style="--mdi-icon-size:10px;color:inherit;opacity:.9;flex-shrink:0"></ha-icon><span class="compact-blk-val">${b.label||''}</span>` : '') +
             `</div>`;
         }).join('');
 
@@ -3255,18 +3273,18 @@ export default class WeeklyScheduleBase extends HTMLElement {
         : `left:4px;right:4px`;
       const glowStyle = b.isActive ? `;--fblk-glow:${b.color};--fblk-glow-soft:${b.color}80` : '';
       const content = b.heightPct >= minForFull
-        ? `<ha-icon icon="${b.icon}" style="--mdi-icon-size:14px;color:white;opacity:.9;flex-shrink:0"></ha-icon>` +
+        ? `<ha-icon icon="${b.icon}" style="--mdi-icon-size:14px;color:inherit;opacity:.9;flex-shrink:0"></ha-icon>` +
           `<div class="focus-blk-info">` +
             `<span class="focus-blk-name">${(b.entityName).replace(/</g,'&lt;')}</span>` +
             `<span class="focus-blk-val">${(b.label||'').replace(/</g,'&lt;')}</span>` +
           `</div>`
         : b.heightPct >= minForContent
-          ? `<ha-icon icon="${b.icon}" style="--mdi-icon-size:14px;color:white;opacity:.9;flex-shrink:0"></ha-icon>` +
+          ? `<ha-icon icon="${b.icon}" style="--mdi-icon-size:14px;color:inherit;opacity:.9;flex-shrink:0"></ha-icon>` +
             `<span class="focus-blk-val">${(b.label||'').replace(/</g,'&lt;')}</span>`
           : b.heightPct >= minForValue
             ? `<span class="focus-blk-val">${(b.label||'').replace(/</g,'&lt;')}</span>`
             : '';
-      return `<div class="focus-blk${b.isOff?' off':''}${b.isActive?' active':''}${b.isMuted?' muted':''}" data-entity="${b.entityId}" style="top:${b.startPct}%;height:${b.heightPct}%;background-color:${b.color}${glowStyle};min-height:20px;${posStyle}">${content}</div>`;
+      return `<div class="focus-blk${b.isOff?' off':''}${b.isActive?' active':''}${b.isMuted?' muted':''}" data-entity="${b.entityId}" style="top:${b.startPct}%;height:${b.heightPct}%;background-color:${b.color};color:${this._textColorFor(b.color)}${glowStyle};min-height:20px;${posStyle}">${content}</div>`;
     }).join('');
 
     // CSS grid column template: axis fixed, focus day gets max 45%, slims share rest equally
