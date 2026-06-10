@@ -202,7 +202,7 @@ export default class WeeklyScheduleBase extends HTMLElement {
     this._compactExpanded = new Set([todayIdx]);
   }
 
-  t(key) {
+  t(key, vars) {
     if (!this._lang) {
       const cfg = (this._config?.language || '').toLowerCase().slice(0, 2);
       const ha  = (this._hass?.language || '').toLowerCase().slice(0, 2);
@@ -213,10 +213,16 @@ export default class WeeklyScheduleBase extends HTMLElement {
     const parts = key.split('.');
     let obj = LOCALES[this._lang];
     for (const p of parts) { if (obj == null) break; obj = obj[p]; }
-    if (obj != null && typeof obj === 'string') return obj;
-    let en = LOCALES.en;
-    for (const p of parts) { if (en == null) break; en = en[p]; }
-    return (en != null && typeof en === 'string') ? en : key;
+    let str;
+    if (obj != null && typeof obj === 'string') str = obj;
+    else {
+      let en = LOCALES.en;
+      for (const p of parts) { if (en == null) break; en = en[p]; }
+      str = (en != null && typeof en === 'string') ? en : key;
+    }
+    // Interpolazione placeholder {nome} → vars.nome (lascia intatto se assente)
+    if (vars) str = str.replace(/\{(\w+)\}/g, (m, k) => (k in vars ? String(vars[k]) : m));
+    return str;
   }
 
   getCardSize() { return 7; }
