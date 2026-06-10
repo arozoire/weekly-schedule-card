@@ -252,6 +252,7 @@ notifications:
 
 ## Last modified
 always update last modified date with day an hour Rome utc
+2026-06-10 10:54 Rome (perf/security) — fix listener tooltip duplicati (bind once, no memory leak), mini card con debounce+diff (_scheduleMiniRender/_miniHassChanged), escaping HTML sistematico anti-XSS (`_esc`/`_escAttr` statici+istanza in base; mini card via `WeeklyScheduleBase._esc`), memoizzazione per-render (`_getRenderCache` token-based: `schedulesByEntity`+`linksById`, invalidata in `_wsSet`). Mono-entità invariato.
 2026-06-10 09:59 Rome (v1.1.2) — UI/build quick wins: contrasto testo blocchi (luminanza→nero/bianco), minificazione terser + check robusto, deploy cross-platform (scripts/deploy.js), prefers-reduced-motion, emoji→ha-icon mdi, badge dark-mode (var --success/--error-color), leggibilità etichette (font-size/tabular-nums/soglia label colonne)
 2026-06-08 Rome (v1.1.1) — fix override: entity_id automazione-flag da alias slugificato (non object_id)
 
