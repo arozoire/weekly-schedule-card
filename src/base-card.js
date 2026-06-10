@@ -73,6 +73,18 @@ export default class WeeklyScheduleBase extends HTMLElement {
     this._prevHass = null;
   }
 
+  // ── HTML escaping (XSS) ───────────────────────────────────────────────────
+  // _esc: contenuto testo (& < >). _escAttr: valori di attributo (anche " ').
+  // Statici (usabili anche dalla mini card che non estende la base) + delega d'istanza.
+  static _esc(s) {
+    return String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  }
+  static _escAttr(s) {
+    return WeeklyScheduleBase._esc(s).replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+  }
+  _esc(s) { return WeeklyScheduleBase._esc(s); }
+  _escAttr(s) { return WeeklyScheduleBase._escAttr(s); }
+
   set hass(hass) {
     const prev = this._prevHass;
     this._prevHass = hass;
@@ -1419,7 +1431,7 @@ export default class WeeklyScheduleBase extends HTMLElement {
       acts.push(`<button class="lo-btn" data-act="edit-auto" data-val="${flagId}">${this.t('linked.edit_yaml')}</button>`);
       rows.push(`<div class="lo-row">
         <ha-icon class="lo-ic" icon="mdi:hand-back-right-outline"></ha-icon>
-        <div class="lo-meta"><span class="lo-name">${this.t('linked.override_flag')}</span><span class="lo-id">${String(idText).replace(/</g,'&lt;')}</span></div>
+        <div class="lo-meta"><span class="lo-name">${this.t('linked.override_flag')}</span><span class="lo-id">${this._esc(idText)}</span></div>
         ${badge}
         <div class="lo-acts">${acts.join('')}</div>
       </div>`);
@@ -1430,13 +1442,13 @@ export default class WeeklyScheduleBase extends HTMLElement {
 
   _linkRow(icon, name, idText, state, actions) {
     const acts = (actions || []).filter(Boolean).map(a =>
-      `<button class="lo-btn" data-act="${a.act}" data-val="${String(a.val).replace(/"/g, '&quot;')}">${a.label}</button>`).join('');
+      `<button class="lo-btn" data-act="${a.act}" data-val="${this._escAttr(a.val)}">${a.label}</button>`).join('');
     const badge = state
       ? `<span class="lo-badge ${state === 'on' ? 'on' : 'off'}">${state}</span>`
       : `<span class="lo-badge missing">${this.t('linked.missing')}</span>`;
     return `<div class="lo-row">
       <ha-icon class="lo-ic" icon="${icon}"></ha-icon>
-      <div class="lo-meta"><span class="lo-name">${name}</span><span class="lo-id">${String(idText).replace(/</g, '&lt;')}</span></div>
+      <div class="lo-meta"><span class="lo-name">${name}</span><span class="lo-id">${this._esc(idText)}</span></div>
       ${badge}
       <div class="lo-acts">${acts}</div>
     </div>`;
@@ -1486,7 +1498,7 @@ export default class WeeklyScheduleBase extends HTMLElement {
   _alert(message, { okLabel } = {}) {
     const ok = okLabel || this.t('popup.ok') || 'OK';
     const body = `
-      <div class="wsc-modal-msg">${String(message).replace(/</g,'&lt;')}</div>
+      <div class="wsc-modal-msg">${this._esc(message)}</div>
       <div class="wsc-modal-footer">
         <button class="wsc-modal-btn wsc-modal-ok">${ok}</button>
       </div>`;
@@ -1505,7 +1517,7 @@ export default class WeeklyScheduleBase extends HTMLElement {
     const ok = okLabel || this.t('popup.ok') || 'OK';
     const cancel = cancelLabel || this.t('popup.cancel') || 'Cancel';
     const body = `
-      <div class="wsc-modal-msg">${String(message).replace(/</g,'&lt;')}</div>
+      <div class="wsc-modal-msg">${this._esc(message)}</div>
       <div class="wsc-modal-footer">
         <button class="wsc-modal-btn wsc-modal-cancel">${cancel}</button>
         <button class="wsc-modal-btn wsc-modal-ok">${ok}</button>
@@ -1526,8 +1538,8 @@ export default class WeeklyScheduleBase extends HTMLElement {
     const ok = okLabel || this.t('popup.ok') || 'OK';
     const cancel = cancelLabel || this.t('popup.cancel') || 'Cancel';
     const body = `
-      <div class="wsc-modal-label">${String(label).replace(/</g,'&lt;')}</div>
-      <input class="wsc-modal-inp" type="text" value="${String(defaultValue).replace(/"/g,'&quot;')}">
+      <div class="wsc-modal-label">${this._esc(label)}</div>
+      <input class="wsc-modal-inp" type="text" value="${this._escAttr(defaultValue)}">
       <div class="wsc-modal-footer">
         <button class="wsc-modal-btn wsc-modal-cancel">${cancel}</button>
         <button class="wsc-modal-btn wsc-modal-ok">${ok}</button>
@@ -1875,7 +1887,7 @@ export default class WeeklyScheduleBase extends HTMLElement {
     const state = s.state==='off'?' (disattivo)':'';
     const el = document.createElement('div');
     el.className = 'sched-tooltip';
-    el.innerHTML = `<div class="tt-name">${(s.attributes.friendly_name||entityId).replace(/</g,'&lt;')}${state}</div><div class="tt-row">🕐 ${slots}</div>${actionText?`<div class="tt-row">${actionText}</div>`:''}${days?`<div class="tt-row">📅 ${days}</div>`:''}`;
+    el.innerHTML = `<div class="tt-name">${this._esc(s.attributes.friendly_name||entityId)}${state}</div><div class="tt-row">🕐 ${slots}</div>${actionText?`<div class="tt-row">${actionText}</div>`:''}${days?`<div class="tt-row">📅 ${days}</div>`:''}`;
     this.shadowRoot.appendChild(el); this._ttEl = el;
     const W=el.offsetWidth, H2=el.offsetHeight;
     let left=rect.left+rect.width/2-W/2, top=rect.top-H2-12;
@@ -2204,7 +2216,7 @@ export default class WeeklyScheduleBase extends HTMLElement {
         </div>
         ${ps.conditions.map((c,i)=>{
           const hasEntity = !!c.entity;
-          const entityInput = `<input class="cond-entity" list="cond-ents-${i}" placeholder="${this.t('cond.entity')}" value="${(c.entity||'').replace(/"/g,'&quot;')}" data-ci="${i}">
+          const entityInput = `<input class="cond-entity" list="cond-ents-${i}" placeholder="${this.t('cond.entity')}" value="${this._escAttr(c.entity||'')}" data-ci="${i}">
             <datalist id="cond-ents-${i}">${condEnts.map(eid=>`<option value="${eid}">`).join('')}</datalist>`;
           if (!hasEntity) {
             // Wait for entity selection before showing operator/value pickers
@@ -2226,15 +2238,15 @@ export default class WeeklyScheduleBase extends HTMLElement {
             const minAttr = spec.min!=null ? ` min="${spec.min}"` : '';
             const maxAttr = spec.max!=null ? ` max="${spec.max}"` : '';
             const unitHtml = spec.unit ? `<span class="cond-unit">${spec.unit}</span>` : '';
-            valHtml = `<input class="cond-val" type="number"${stepAttr}${minAttr}${maxAttr} data-ci="${i}" placeholder="${this.t('cond.value')}" value="${(c.value||'').replace(/"/g,'&quot;')}">${unitHtml}`;
+            valHtml = `<input class="cond-val" type="number"${stepAttr}${minAttr}${maxAttr} data-ci="${i}" placeholder="${this.t('cond.value')}" value="${this._escAttr(c.value||'')}">${unitHtml}`;
           } else if (spec.kind === 'boolean' || spec.kind === 'select') {
             const opts = spec.options || [];
-            valHtml = `<select class="cond-val" data-ci="${i}"><option value="">--</option>${opts.map(o=>`<option value="${o}" ${c.value===o?'selected':''}>${o}</option>`).join('')}</select>`;
+            valHtml = `<select class="cond-val" data-ci="${i}"><option value="">--</option>${opts.map(o=>`<option value="${this._escAttr(o)}" ${c.value===o?'selected':''}>${this._esc(o)}</option>`).join('')}</select>`;
           } else if (spec.kind === 'climate-picker') {
             // attribute not yet selected
             valHtml = `<span class="cond-hint">${this.t('cond.choose_attribute')||'⬅ Scegli un attributo'}</span>`;
           } else {
-            valHtml = `<input class="cond-val" type="text" data-ci="${i}" placeholder="${this.t('cond.value')}" value="${(c.value||'').replace(/"/g,'&quot;')}">`;
+            valHtml = `<input class="cond-val" type="text" data-ci="${i}" placeholder="${this.t('cond.value')}" value="${this._escAttr(c.value||'')}">`;
           }
           return `
           <div class="cond-row">
@@ -2468,7 +2480,7 @@ export default class WeeklyScheduleBase extends HTMLElement {
                 const notifySvcs = Object.keys(this._hass?.services?.notify || {}).sort().map(s => `notify.${s}`);
                 const current = ps.notifyService || '';
                 const inList = notifySvcs.includes(current);
-                const extra = (current && !inList) ? `<option value="${current.replace(/"/g,'&quot;')}" selected>${current} ⚠</option>` : '';
+                const extra = (current && !inList) ? `<option value="${this._escAttr(current)}" selected>${this._esc(current)} ⚠</option>` : '';
                 const opts = notifySvcs.map(svc => `<option value="${svc}" ${current === svc ? 'selected' : ''}>${svc}</option>`).join('');
                 return `<select class="notif-svc"><option value="">-- ${this._lang==='it'?'seleziona':this._lang==='fr'?'sélectionner':'select'} --</option>${extra}${opts}</select>`;
               })()}
@@ -2484,12 +2496,12 @@ export default class WeeklyScheduleBase extends HTMLElement {
             </div>
             <div class="notif-row notif-msg-start-row" style="${(ps.notifyTrigger==='start' || ps.notifyTrigger==='both') ? '' : 'display:none'}">
               <label class="section-label" style="margin:0 0 3px">${ps.notifyTrigger==='both' ? (this.t('notify.msg_start_label') || 'Messaggio inizio') : (this.t('popup.notify_message_label') || 'Messaggio')}</label>
-              <textarea class="notif-msg" rows="5" placeholder="${this.t('notify.default_start')}">${(ps.notifyMessage||'').replace(/</g,'&lt;')}</textarea>
+              <textarea class="notif-msg" rows="5" placeholder="${this.t('notify.default_start')}">${this._esc(ps.notifyMessage||'')}</textarea>
               <button class="notif-restore" style="${(ps.notifyMessage && ps.notifyMessage !== ps._defaultNotifyMsg) ? '' : 'display:none'}">↺ ${this.t('notify.restore_auto') || 'Ripristina testo automatico'}</button>
             </div>
             <div class="notif-row notif-msg-end-row" style="${(ps.notifyTrigger==='end' || ps.notifyTrigger==='both') ? '' : 'display:none'}">
               <label class="section-label" style="margin:0 0 3px">${ps.notifyTrigger==='both' ? (this.t('notify.msg_end_label') || 'Messaggio fine') : (this.t('popup.notify_message_label') || 'Messaggio')}</label>
-              <textarea class="notif-msg-end" rows="5" placeholder="${this.t('notify.default_end')}">${(ps.notifyMessageEnd||'').replace(/</g,'&lt;')}</textarea>
+              <textarea class="notif-msg-end" rows="5" placeholder="${this.t('notify.default_end')}">${this._esc(ps.notifyMessageEnd||'')}</textarea>
               <button class="notif-restore-end" style="${(ps.notifyMessageEnd && ps.notifyMessageEnd !== ps._defaultNotifyMsgEnd) ? '' : 'display:none'}">↺ ${this.t('notify.restore_auto') || 'Ripristina testo automatico'}</button>
             </div>
           </div>`:''}
@@ -3190,7 +3202,7 @@ export default class WeeklyScheduleBase extends HTMLElement {
           <div class="compact-ent-icon" style="background:${color}26">
             <ha-icon icon="${icon}" style="--mdi-icon-size:18px;color:${color}E6"></ha-icon>
           </div>
-          <span class="compact-ent-name">${(ec.name||ec.entity).replace(/</g,'&lt;')}</span>
+          <span class="compact-ent-name">${this._esc(ec.name||ec.entity)}</span>
           <div class="compact-bar" data-day="${di}" data-ei="${ei}" data-entity-id="${ec.entity}" style="position:relative;flex:1;height:32px;background:var(--divider-color,#e0e0e0);border-radius:6px;overflow:hidden;cursor:pointer">
             ${blocksHtml}
           </div>
@@ -3259,7 +3271,7 @@ export default class WeeklyScheduleBase extends HTMLElement {
           const ec = ents[ei];
           const [, defColor] = this._domainIconMdi(ec.entity);
           const color = ec.color || defColor;
-          const name = (ec.name || ec.entity).replace(/</g,'&lt;');
+          const name = this._esc(ec.name || ec.entity);
           const label = name.length > 8 ? name.slice(0,7) + '…' : name;
           return `<div class="focus-lane-hdr" style="left:${li * 100 / numLanes}%;width:${100 / numLanes}%">` +
             `<div class="focus-lane-dot" style="background:${color}"></div><span>${label}</span></div>`;
@@ -3276,14 +3288,14 @@ export default class WeeklyScheduleBase extends HTMLElement {
       const content = b.heightPct >= minForFull
         ? `<ha-icon icon="${b.icon}" style="--mdi-icon-size:14px;color:inherit;opacity:.9;flex-shrink:0"></ha-icon>` +
           `<div class="focus-blk-info">` +
-            `<span class="focus-blk-name">${(b.entityName).replace(/</g,'&lt;')}</span>` +
-            `<span class="focus-blk-val">${(b.label||'').replace(/</g,'&lt;')}</span>` +
+            `<span class="focus-blk-name">${this._esc(b.entityName)}</span>` +
+            `<span class="focus-blk-val">${this._esc(b.label||'')}</span>` +
           `</div>`
         : b.heightPct >= minForContent
           ? `<ha-icon icon="${b.icon}" style="--mdi-icon-size:14px;color:inherit;opacity:.9;flex-shrink:0"></ha-icon>` +
-            `<span class="focus-blk-val">${(b.label||'').replace(/</g,'&lt;')}</span>`
+            `<span class="focus-blk-val">${this._esc(b.label||'')}</span>`
           : b.heightPct >= minForValue
-            ? `<span class="focus-blk-val">${(b.label||'').replace(/</g,'&lt;')}</span>`
+            ? `<span class="focus-blk-val">${this._esc(b.label||'')}</span>`
             : '';
       const mutedIco = b.isMuted ? `<ha-icon class="blk-muted-ico" icon="mdi:volume-off"></ha-icon>` : '';
       return `<div class="focus-blk${b.isOff?' off':''}${b.isActive?' active':''}${b.isMuted?' muted':''}" data-entity="${b.entityId}" style="top:${b.startPct}%;height:${b.heightPct}%;background-color:${b.color};color:${this._textColorFor(b.color)}${glowStyle};min-height:20px;${posStyle}">${mutedIco}${content}</div>`;
@@ -3405,9 +3417,9 @@ export default class WeeklyScheduleBase extends HTMLElement {
     this._setStyles('group-edit', S);
     const root = this._ensureRoot();
     root.innerHTML=`<ha-card>
-      <div class="card-header"><span class="card-title">Edit: ${group.name.replace(/</g,'&lt;')}</span><button class="btn-back">← Back</button></div>
+      <div class="card-header"><span class="card-title">Edit: ${this._esc(group.name)}</span><button class="btn-back">← Back</button></div>
       <div class="form">
-        <div class="form-row"><div class="form-label">${this.t('group.name')}</div><input type="text" class="form-input grp-name-inp" value="${group.name.replace(/"/g,'&quot;')}"></div>
+        <div class="form-row"><div class="form-label">${this.t('group.name')}</div><input type="text" class="form-input grp-name-inp" value="${this._escAttr(group.name)}"></div>
         <div class="form-row">
           <span class="color-lbl">Tab color</span>
           ${this._colorPickerHTML(group.color||'#9C27B0','group-pal')}
@@ -3422,12 +3434,12 @@ export default class WeeklyScheduleBase extends HTMLElement {
           <div class="ent-list">
             ${availableEnts.map(e=>{
               const pre=(group.entities||[]).find(x=>x.entity===e.entity_id);
-              return `<div class="ent-item${pre?' sel':''}" data-entity="${e.entity_id}" data-domain="${e.domain}" data-name="${e.friendly_name.toLowerCase().replace(/"/g,'')}">
+              return `<div class="ent-item${pre?' sel':''}" data-entity="${e.entity_id}" data-domain="${e.domain}" data-name="${this._escAttr(e.friendly_name.toLowerCase())}">
                 <div class="ent-row-top">
                   <input type="checkbox" class="ent-chk" data-entity="${e.entity_id}"${pre?' checked':''}>
                   <span class="dom-badge dom-${e.domain}">${e.domain}</span>
-                  <span class="ent-name">${e.friendly_name}</span>
-                  <input type="text" class="ent-label-inp" data-entity="${e.entity_id}" placeholder="Label" value="${pre?.name||e.friendly_name}">
+                  <span class="ent-name">${this._esc(e.friendly_name)}</span>
+                  <input type="text" class="ent-label-inp" data-entity="${e.entity_id}" placeholder="Label" value="${this._escAttr(pre?.name||e.friendly_name)}">
                 </div>
                 ${this._colorPickerHTML(pre?.color||'#9E9E9E')}
               </div>`;
@@ -3554,8 +3566,8 @@ export default class WeeklyScheduleBase extends HTMLElement {
       <div class="group-list">
         ${groups.length?groups.map(g=>`
           <div class="group-card">
-            <div class="group-hd"><span class="dot" style="background:${g.color||'#9E9E9E'}"></span><span class="group-name">${g.name}</span></div>
-            <div class="tags">${(g.entities||[]).map(ec=>`<div class="tag"><span class="tag-dot" style="background:${ec.color||'#9E9E9E'}"></span>${ec.name||ec.entity}</div>`).join('')}</div>
+            <div class="group-hd"><span class="dot" style="background:${g.color||'#9E9E9E'}"></span><span class="group-name">${this._esc(g.name)}</span></div>
+            <div class="tags">${(g.entities||[]).map(ec=>`<div class="tag"><span class="tag-dot" style="background:${ec.color||'#9E9E9E'}"></span>${this._esc(ec.name||ec.entity)}</div>`).join('')}</div>
             <div class="group-footer"><button class="btn-edit-grp" data-id="${g.id}">Edit</button><button class="btn-del" data-id="${g.id}">Delete</button></div>
           </div>`).join(''):'<div class="empty">No groups yet.</div>'}
       </div>
@@ -3576,12 +3588,12 @@ export default class WeeklyScheduleBase extends HTMLElement {
           <div class="ent-list">
             ${availableEnts.map(e=>{
               const pre=yamlMap[e.entity_id];
-              return `<div class="ent-item${pre?' sel':''}" data-entity="${e.entity_id}" data-domain="${e.domain}" data-name="${e.friendly_name.toLowerCase().replace(/"/g,'')}">
+              return `<div class="ent-item${pre?' sel':''}" data-entity="${e.entity_id}" data-domain="${e.domain}" data-name="${this._escAttr(e.friendly_name.toLowerCase())}">
                 <div class="ent-row-top">
                   <input type="checkbox" class="ent-chk" data-entity="${e.entity_id}"${pre?' checked':''}>
                   <span class="dom-badge dom-${e.domain}">${e.domain}</span>
-                  <span class="ent-name">${e.friendly_name}</span>
-                  <input type="text" class="ent-label-inp" data-entity="${e.entity_id}" placeholder="Label" value="${pre?.name||e.friendly_name}">
+                  <span class="ent-name">${this._esc(e.friendly_name)}</span>
+                  <input type="text" class="ent-label-inp" data-entity="${e.entity_id}" placeholder="Label" value="${this._escAttr(pre?.name||e.friendly_name)}">
                 </div>
                 ${this._colorPickerHTML(pre?.color||'#9E9E9E')}
               </div>`;

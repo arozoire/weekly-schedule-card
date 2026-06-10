@@ -152,7 +152,7 @@ class WeeklyScheduleCard extends WeeklyScheduleBase {
 
     // Build column-mode grid HTML
     const lblMin = (40 / H) * 100; // soglia px-based come la focus view: niente label sui blocchi troppo bassi (evita testo troncato)
-    const _blk = b => `<div class="block ${b.isOff?'off':''}${b.isActive?' active':''}${b.isMuted?' muted':''}" data-entity="${b.entityId}" style="top:${b.startPct}%;height:${b.heightPct}%;background-color:${b.color};color:${this._textColorFor(b.color)};min-height:4px${b.isActive?`;--blk-glow:${b.color};--blk-glow-soft:${b.color}80`:''}">${b.heightPct>=lblMin?b.label:''}${b.isMuted?'<ha-icon class="blk-muted-ico" icon="mdi:volume-off"></ha-icon>':''}${b.hasStop?'<ha-icon class="blk-stop" icon="mdi:stop"></ha-icon>':''}${b.hasCond?'<ha-icon class="blk-stop" icon="mdi:flash" style="right:12px"></ha-icon>':''}</div>`;
+    const _blk = b => `<div class="block ${b.isOff?'off':''}${b.isActive?' active':''}${b.isMuted?' muted':''}" data-entity="${b.entityId}" style="top:${b.startPct}%;height:${b.heightPct}%;background-color:${b.color};color:${this._textColorFor(b.color)};min-height:4px${b.isActive?`;--blk-glow:${b.color};--blk-glow-soft:${b.color}80`:''}">${b.heightPct>=lblMin?this._esc(b.label):''}${b.isMuted?'<ha-icon class="blk-muted-ico" icon="mdi:volume-off"></ha-icon>':''}${b.hasStop?'<ha-icon class="blk-stop" icon="mdi:stop"></ha-icon>':''}${b.hasCond?'<ha-icon class="blk-stop" icon="mdi:flash" style="right:12px"></ha-icon>':''}</div>`;
     let colGrid = '';
     if (!isGroup) {
       colGrid = DAYS.map((_,di)=>{
@@ -193,7 +193,7 @@ class WeeklyScheduleCard extends WeeklyScheduleBase {
             <div class="gantt-rows">
               ${(tab.entities || (tab.entity ? [tab] : [])).map((ec,ei)=>`
                 <div class="gantt-row" data-day="${di}" data-ei="${ei}" style="border-left:3px solid ${ec.color||'#9E9E9E'};border-top:3px solid ${ec.color||'#9E9E9E'}">
-                  <div class="gantt-ent-lbl">${ec.name||ec.entity}</div>
+                  <div class="gantt-ent-lbl">${this._esc(ec.name||ec.entity)}</div>
                   <div class="gantt-area">
                     ${[0,6,12,18,24].map(h=>`<div class="gantt-vline" style="left:${(h/24)*100}%"></div>`).join('')}
                     ${this._getProfileSchedules(ec.entity).filter(s=>this._appliesToDay(s.attributes.weekdays||[],di)).flatMap(s=>(s.attributes.timeslots||[]).map(slot=>{
@@ -208,7 +208,7 @@ class WeeklyScheduleCard extends WeeklyScheduleBase {
                       const temp=s.attributes.actions?.[0]?.data?.temperature??null;
                       const lbl=this._detectDomain(ec.entity)==='climate'&&temp!=null?`${temp}°`:s.attributes.friendly_name;
                       const glowStyle=isActive?`;--blk-glow:${color};--blk-glow-soft:${color}80`:'';
-                      return `<div class="gantt-block ${isOff?'off':''}${isActive?' active':''}${isMuted?' muted':''}" data-entity="${s.entity_id}" style="left:${this._minutesToPercent(sMin)}%;width:${this._minutesToPercent(eMin-sMin)}%;background-color:${color};color:${this._textColorFor(color)}${glowStyle}">${(eMin-sMin)>60?lbl:''}${isMuted?'<ha-icon class="blk-muted-ico" icon="mdi:volume-off"></ha-icon>':''}${hasStop?'<ha-icon class="blk-stop" icon="mdi:stop"></ha-icon>':''}${hasCond?'<ha-icon class="blk-stop" icon="mdi:flash" style="right:12px"></ha-icon>':''}</div>`;
+                      return `<div class="gantt-block ${isOff?'off':''}${isActive?' active':''}${isMuted?' muted':''}" data-entity="${s.entity_id}" style="left:${this._minutesToPercent(sMin)}%;width:${this._minutesToPercent(eMin-sMin)}%;background-color:${color};color:${this._textColorFor(color)}${glowStyle}">${(eMin-sMin)>60?this._esc(lbl):''}${isMuted?'<ha-icon class="blk-muted-ico" icon="mdi:volume-off"></ha-icon>':''}${hasStop?'<ha-icon class="blk-stop" icon="mdi:stop"></ha-icon>':''}${hasCond?'<ha-icon class="blk-stop" icon="mdi:flash" style="right:12px"></ha-icon>':''}</div>`;
                     })).join('')}
                     <div class="gantt-add">+</div>
                   </div>
@@ -219,10 +219,10 @@ class WeeklyScheduleCard extends WeeklyScheduleBase {
 
     // Legend
     const legend = isGroup
-      ? `<div class="ent-legend">${(tab.entities||[]).map(ec=>'<div class="ent-legend-item"><div class="ent-legend-dot" style="background:' + (ec.color||'#9E9E9E') + '"></div><span>' + (ec.name||ec.entity) + '</span></div>').join('')}</div>`
+      ? `<div class="ent-legend">${(tab.entities||[]).map(ec=>'<div class="ent-legend-item"><div class="ent-legend-dot" style="background:' + (ec.color||'#9E9E9E') + '"></div><span>' + this._esc(ec.name||ec.entity) + '</span></div>').join('')}</div>`
       : `<div class="legend">${this._getProfileSchedules(tab.entity).map(s=>{
           const color=this._blockColor(s,tab),isOff=s.state==='off',temp=s.attributes.actions?.[0]?.data?.temperature??null;
-          return `<div class="legend-item" data-entity="${s.entity_id}" style="${isOff?'opacity:.55':''}"><div class="legend-dot" style="background-color:${color}"></div><span>${s.attributes.friendly_name||s.entity_id}${this._detectDomain(tab.entity)==='climate'&&temp!=null?` — ${temp}°`:''}${isOff?' (off)':''}</span></div>`;
+          return `<div class="legend-item" data-entity="${s.entity_id}" style="${isOff?'opacity:.55':''}"><div class="legend-dot" style="background-color:${color}"></div><span>${this._esc(s.attributes.friendly_name||s.entity_id)}${this._detectDomain(tab.entity)==='climate'&&temp!=null?` — ${temp}°`:''}${isOff?' (off)':''}</span></div>`;
         }).join('')}</div>`;
 
     this._setStyles('main', this._mainStyles(H));
@@ -233,7 +233,7 @@ class WeeklyScheduleCard extends WeeklyScheduleBase {
         ${inNewProfile ? `
         <div class="card-header">
           <div class="hdr-row1">
-            <span class="card-title">${(editingProfile?.name||this.t('profile.new_profile')).replace(/</g,'&lt;')} <span style="font-size:.68em;font-weight:400;opacity:.55">— ${this.t('profile.new_profile_mode')}</span></span>
+            <span class="card-title">${this._esc(editingProfile?.name||this.t('profile.new_profile'))} <span style="font-size:.68em;font-weight:400;opacity:.55">— ${this.t('profile.new_profile_mode')}</span></span>
             <div class="hdr-icons">
               <button class="btn-hdr btn-profile-cancel">${this.t('popup.cancel')}</button>
               <button class="btn-hdr btn-profile-save" style="background:var(--primary-color,#03a9f4);color:white;border-color:var(--primary-color,#03a9f4)">${this.t('popup.save')}</button>
@@ -256,7 +256,7 @@ class WeeklyScheduleCard extends WeeklyScheduleBase {
                 + '<div class="profile-chip' + (viewed?' viewed':'') + (active?' active-op':'') + '" data-pid="' + p.id + '" style="--pchip-color:' + pcolor + '">'
                 + '<ha-icon class="chip-lock" icon="' + (excl?'mdi:lock':'mdi:lock-open-variant') + '" style="--mdi-icon-size:11px"></ha-icon>'
                 + (active?'<span class="chip-act-dot"></span>':'')
-                + '<span class="chip-name">' + p.name + '</span>'
+                + '<span class="chip-name">' + this._esc(p.name) + '</span>'
                 + '<button class="chip-activate' + (active?' on':'') + '" data-pid="' + p.id + '" title="' + (active?this.t('profile.deactivate'):this.t('profile.activate')) + '"><ha-icon icon="' + (active?'mdi:pause':'mdi:play') + '" style="--mdi-icon-size:14px"></ha-icon></button>'
                 + '<button class="chip-menu" data-pid="' + p.id + '"><ha-icon icon="mdi:dots-vertical" style="--mdi-icon-size:14px"></ha-icon></button>'
                 + '</div>'
@@ -274,7 +274,7 @@ class WeeklyScheduleCard extends WeeklyScheduleBase {
           const vp=profiles.find(x=>x.id===this._selectedProfileId)||profiles[0];
           if(!vp) return '';
           const isAct=this._isProfileActive(vp);
-          return '<div class="profile-status-bar">' + this.t('profile.viewing') + ': <strong>' + vp.name + '</strong>'
+          return '<div class="profile-status-bar">' + this.t('profile.viewing') + ': <strong>' + this._esc(vp.name) + '</strong>'
             + (isAct ? ' <span class="psb-active">● ' + this.t('profile.active') + '</span>'
                      : ' <span>○ </span><button class="psb-activate-btn" data-pid="' + vp.id + '">' + this.t('profile.activate') + '</button>')
             + '</div>';
@@ -282,7 +282,7 @@ class WeeklyScheduleCard extends WeeklyScheduleBase {
 
         ${allTabs.length>1?`<div class="tab-bar">${allTabs.map((t,i)=>{
           const dot=t.color||(t.entities?.[0]?.color)||null;
-          return `<div class="tab ${i===this._activeTab?'active':''}" data-tab="${i}">${dot?`<span class="tab-dot" style="background-color:${dot}"></span>`:''}${t.name||t.entity}</div>`;
+          return `<div class="tab ${i===this._activeTab?'active':''}" data-tab="${i}">${dot?`<span class="tab-dot" style="background-color:${dot}"></span>`:''}${this._esc(t.name||t.entity)}</div>`;
         }).join('')}</div>`:''}
 
         ${this._layout === 'rows' ? gantt : `
@@ -579,7 +579,7 @@ class WeeklyScheduleMiniCard extends HTMLElement {
       const ents=s.attributes.entities||[];
       const firstEnt=typeof ents[0]==='string'?ents[0]:ents[0]?.entity_id||'';
       const icon=this._domainIcon(firstEnt);
-      const name=(s.attributes.friendly_name||s.entity_id).replace(/</g,'&lt;');
+      const name=WeeklyScheduleBase._esc(s.attributes.friendly_name||s.entity_id);
       const action=this._actionLabel(s,firstEnt);
       return `<div class="mini-row">
         <div class="mini-icon-wrap">${icon}</div>
@@ -606,7 +606,7 @@ class WeeklyScheduleMiniCard extends HTMLElement {
       groups.get(firstEnt).items.push(rowHtml(s,badge));
     }
     const othersHtml=[...groups.values()].map(g=>`
-      <div class="mini-group-hdr">${g.name.replace(/</g,'&lt;')}</div>
+      <div class="mini-group-hdr">${WeeklyScheduleBase._esc(g.name)}</div>
       ${g.items.join('')}
     `).join('');
 
@@ -615,7 +615,7 @@ class WeeklyScheduleMiniCard extends HTMLElement {
     const collapseLbl=lang==='it'?'Nascondi':lang==='fr'?'Masquer':'Hide';
 
     const defTitle=lang==='it'?'Schedule attivi':lang==='fr'?'Plannings actifs':'Active schedules';
-    const title=(this._config?.title||defTitle).replace(/</g,'&lt;');
+    const title=WeeklyScheduleBase._esc(this._config?.title||defTitle);
     const emptyActive=lang==='it'?'Nessuno schedule attivo ora':lang==='fr'?'Aucun planning actif':'No schedule active now';
     const mutedLbl=lang==='it'?'Attivi ma in pausa (condizione non soddisfatta)':lang==='fr'?'Actifs mais en pause (condition non satisfaite)':'Active but muted (condition not met)';
     this.shadowRoot.innerHTML=`

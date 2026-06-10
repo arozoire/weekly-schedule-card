@@ -137,13 +137,13 @@ class WeeklyScheduleViewCard extends WeeklyScheduleBase {
       const style = active ? `background:${color}1F;border-color:${color};color:${color}` : '';
       const actLbl = active ? (this.t('profile.deactivate') || 'Disattiva') : (this.t('profile.activate') || 'Attiva');
       const actColor = active ? 'var(--secondary-text-color)' : '#4CAF50';
-      return `<div class="${cls.join(' ')}" data-pid="${p.id}" style="${style}"><span class="chip-name">${p.name}</span><button class="chip-activate" data-pid="${p.id}" title="${actLbl}" style="color:${actColor}">${active ? '⏸' : '▶'}</button></div>`;
+      return `<div class="${cls.join(' ')}" data-pid="${p.id}" style="${style}"><span class="chip-name">${this._esc(p.name)}</span><button class="chip-activate" data-pid="${p.id}" title="${actLbl}" style="color:${actColor}">${active ? '⏸' : '▶'}</button></div>`;
     }).join('');
 
     const tabs = this._getAllTabs();
     const activeTabIdx = Math.min(this._activeTab, tabs.length - 1);
     const tabsHtml = tabs.length > 1 ? tabs.map((t, i) => {
-      const name = t.name || t.entity || '?';
+      const name = this._esc(t.name || t.entity || '?');
       return `<div class="tab-chip${i === activeTabIdx ? ' active' : ''}" data-ti="${i}">${name}</div>`;
     }).join('') : '';
 
@@ -165,13 +165,13 @@ class WeeklyScheduleViewCard extends WeeklyScheduleBase {
         ${body}
         <div class="status">${(() => {
           const sel = this._getSelectedProfile();
-          if (!sel) return tab.name || tab.entity || '';
+          if (!sel) return this._esc(tab.name || tab.entity || '');
           const isAct = this._isProfileActive(sel);
           const color = isAct ? 'var(--success-color,#4CAF50)' : 'var(--secondary-text-color)';
           const dot = isAct ? '●' : '○';
           const lbl = isAct ? this.t('profile.active') || 'Attivo' : this.t('profile.activate') || 'Attiva...';
           const tabName = tab.name || tab.entity || '';
-          return `<span>${this.t('profile.viewing') || 'Stai visualizzando'}: <b>${sel.name}</b></span> <span class="status-sep">·</span> <span class="status-prof" data-pid="${sel.id}" style="color:${color};cursor:${isAct ? 'default' : 'pointer'}">${dot} ${lbl}</span>${tabName ? ` <span class="status-sep">·</span> <span>${tabName}</span>` : ''}`;
+          return `<span>${this.t('profile.viewing') || 'Stai visualizzando'}: <b>${this._esc(sel.name)}</b></span> <span class="status-sep">·</span> <span class="status-prof" data-pid="${sel.id}" style="color:${color};cursor:${isAct ? 'default' : 'pointer'}">${dot} ${lbl}</span>${tabName ? ` <span class="status-sep">·</span> <span>${this._esc(tabName)}</span>` : ''}`;
         })()}</div>
       </ha-card>
     `;
