@@ -1,3 +1,5 @@
+import terser from '@rollup/plugin-terser';
+
 export default [
   {
     input: 'src/weekly-schedule-card.js',
@@ -5,7 +7,8 @@ export default [
       file: 'dist/weekly-schedule-card.js',
       format: 'iife',
       name: 'WeeklyScheduleCard'
-    }
+    },
+    plugins: [terser()]
   },
   {
     input: 'src/weekly-schedule-view-card.js',
@@ -13,6 +16,7 @@ export default [
       file: 'dist/weekly-schedule-view-card.js',
       format: 'iife',
       name: 'WeeklyScheduleViewCard'
-    }
+    },
+    plugins: [terser()]
   }
 ];
