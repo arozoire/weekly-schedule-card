@@ -2381,9 +2381,9 @@ export default class WeeklyScheduleBase extends HTMLElement {
         .lo-name{font-size:.76em;font-weight:600;color:var(--primary-text-color)}
         .lo-id{font-size:.66em;color:var(--secondary-text-color);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-family:monospace}
         .lo-badge{font-size:.6em;font-weight:700;padding:1px 6px;border-radius:6px;flex-shrink:0;text-transform:uppercase}
-        .lo-badge.on{background:color-mix(in srgb,#4CAF50 22%,transparent);color:#2e7d32}
+        .lo-badge.on{background:color-mix(in srgb,var(--success-color,#4CAF50) 22%,transparent);color:var(--success-color,#4CAF50)}
         .lo-badge.off{background:color-mix(in srgb,var(--secondary-text-color) 18%,transparent);color:var(--secondary-text-color)}
-        .lo-badge.missing{background:color-mix(in srgb,#f44336 18%,transparent);color:#f44336}
+        .lo-badge.missing{background:color-mix(in srgb,var(--error-color,#f44336) 18%,transparent);color:var(--error-color,#f44336)}
         .lo-acts{display:flex;gap:4px;flex-shrink:0}
         .lo-btn{padding:3px 8px;border-radius:7px;border:1px solid var(--primary-color,#03a9f4);background:none;color:var(--primary-color,#03a9f4);cursor:pointer;font-size:.68em;white-space:nowrap}
         .lo-btn:hover{background:color-mix(in srgb,var(--primary-color,#03a9f4) 10%,transparent)}
