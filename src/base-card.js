@@ -258,6 +258,7 @@ export default class WeeklyScheduleBase extends HTMLElement {
 
   async _wsSet(data) {
     this._storageData = data;
+    this._renderCache = null; // invalida la cache (lo storage può essere mutato in place, stessa ref)
     await this._hass.connection.sendMessagePromise({
       type: 'frontend/set_user_data',
       key: 'weekly_schedule_card',
@@ -342,11 +343,7 @@ export default class WeeklyScheduleBase extends HTMLElement {
   // ── Auto-child helpers ────────────────────────────────────────────────────
 
   _getAutoChildId(parentEntityId) {
-    for (const p of this._storageData?.profiles || []) {
-      const link = (p.scheduleLinks || []).find(l => l.id === parentEntityId);
-      if (link?.autoChildId) return link.autoChildId;
-    }
-    return null;
+    return this._linksFor(parentEntityId).find(l => l.autoChildId)?.autoChildId || null;
   }
 
   _hasAutoChild(entityId) { return !!this._getAutoChildId(entityId); }
@@ -381,11 +378,8 @@ export default class WeeklyScheduleBase extends HTMLElement {
 
   // Stored end-of-slot action ({stopAction, stopValue}) or null if not persisted.
   _getStoredStop(scheduleEntityId) {
-    for (const p of this._storageData?.profiles || []) {
-      const link = (p.scheduleLinks || []).find(l => l.id === scheduleEntityId);
-      if (link && 'stopAction' in link) return { stopAction: link.stopAction || null, stopValue: link.stopValue ?? null };
-    }
-    return null;
+    const link = this._linksFor(scheduleEntityId).find(l => 'stopAction' in l);
+    return link ? { stopAction: link.stopAction || null, stopValue: link.stopValue ?? null } : null;
   }
 
   _hasEndAction(scheduleEntityId) {
@@ -395,10 +389,8 @@ export default class WeeklyScheduleBase extends HTMLElement {
   // ── Condition storage helpers ─────────────────────────────────────────────
 
   _getStoredConditions(scheduleEntityId) {
-    for (const p of this._storageData?.profiles || []) {
-      const link = (p.scheduleLinks || []).find(l => l.id === scheduleEntityId);
-      if (link?.conditions) return { conditions: link.conditions, condCombinator: link.condCombinator || 'and', condInterval: link.condInterval || 15 };
-    }
+    const link = this._linksFor(scheduleEntityId).find(l => l.conditions);
+    if (link) return { conditions: link.conditions, condCombinator: link.condCombinator || 'and', condInterval: link.condInterval || 15 };
     return { conditions: [], condCombinator: 'and', condInterval: 15 };
   }
 
@@ -1668,12 +1660,67 @@ export default class WeeklyScheduleBase extends HTMLElement {
 
   // ── Helpers ───────────────────────────────────────────────────────────────
 
+  // ── Per-render memoization ────────────────────────────────────────────────
+  // render() invoca _getSchedules ~7gg × N entità (+ legenda) → ~30 scansioni complete di
+  // hass.states; i link-helper rifanno il loop profili×scheduleLinks per ogni blocco. Cache
+  // token-based: ricostruita solo quando cambia il riferimento di _hass o _storageData,
+  // quindi una sola scansione O(stati) per passata di render (e auto-invalidata fuori render).
+  _getRenderCache() {
+    const c = this._renderCache;
+    if (!c || c._hass !== this._hass || c._storage !== this._storageData) {
+      this._renderCache = this._buildRenderCache();
+    }
+    return this._renderCache;
+  }
+
+  _buildRenderCache() {
+    // schedulesByEntity: stessa semantica di _getSchedules (.includes su entry stringa).
+    const schedulesByEntity = new Map();
+    const states = this._hass?.states;
+    if (states) {
+      for (const s of Object.values(states)) {
+        if (!s.entity_id.startsWith('switch.schedule_')) continue;
+        const ents = s.attributes?.entities;
+        if (!Array.isArray(ents)) continue;
+        const seenEid = new Set(); // come .filter: ogni schedule al più una volta per entità
+        for (const e of ents) {
+          if (typeof e !== 'string' || seenEid.has(e)) continue;
+          seenEid.add(e);
+          let arr = schedulesByEntity.get(e);
+          if (!arr) schedulesByEntity.set(e, arr = []);
+          arr.push(s);
+        }
+      }
+    }
+    // linksById: primo link per profilo per id, in ordine di profilo (come fa .find() per-profilo).
+    const linksById = new Map();
+    for (const p of this._storageData?.profiles || []) {
+      const seen = new Set();
+      for (const l of p.scheduleLinks || []) {
+        if (!l?.id || seen.has(l.id)) continue;
+        seen.add(l.id);
+        let arr = linksById.get(l.id);
+        if (!arr) linksById.set(l.id, arr = []);
+        arr.push(l);
+      }
+    }
+    return { _hass: this._hass, _storage: this._storageData, schedulesByEntity, linksById };
+  }
+
+  // Tutti i link (uno per profilo, in ordine) che corrispondono allo schedule id.
+  _linksFor(scheduleEntityId) {
+    if (this._storageData && this._hass) return this._getRenderCache().linksById.get(scheduleEntityId) || [];
+    const out = [];
+    for (const p of this._storageData?.profiles || []) {
+      const l = (p.scheduleLinks || []).find(x => x.id === scheduleEntityId);
+      if (l) out.push(l);
+    }
+    return out;
+  }
+
   _getSchedules(entityId) {
     if (!this._hass || !entityId) return [];
-    return Object.values(this._hass.states).filter(s =>
-      s.entity_id.startsWith('switch.schedule_') &&
-      s.attributes.entities?.includes(entityId)
-    );
+    return this._getRenderCache().schedulesByEntity.get(entityId) || [];
   }
 
   _detectDomain(entityId) {
