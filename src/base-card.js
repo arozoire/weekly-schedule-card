@@ -1425,7 +1425,7 @@ export default class WeeklyScheduleBase extends HTMLElement {
       </div>`);
     }
     if (!rows.length) return '';
-    return `<div class="linked-section"><div class="linked-hdr">🔧 ${this.t('linked.title')}</div>${rows.join('')}</div>`;
+    return `<div class="linked-section"><div class="linked-hdr"><ha-icon icon="mdi:wrench" style="--mdi-icon-size:16px;vertical-align:middle;margin-right:4px"></ha-icon>${this.t('linked.title')}</div>${rows.join('')}</div>`;
   }
 
   _linkRow(icon, name, idText, state, actions) {
@@ -2259,7 +2259,7 @@ export default class WeeklyScheduleBase extends HTMLElement {
         </div>
         <label class="cond-override-row" style="${ps.conditions.length===0?'opacity:.45':''}">
           <input type="checkbox" class="cond-override" ${ps.overrideEnabled?'checked':''} ${ps.conditions.length===0?'disabled':''}>
-          <span><b>✋ ${this.t('override.enable')}</b><br><span class="cond-override-hint">${this.t('override.hint')}</span></span>
+          <span><b><ha-icon icon="mdi:hand-back-right-outline" style="--mdi-icon-size:16px;vertical-align:middle;margin-right:4px"></ha-icon>${this.t('override.enable')}</b><br><span class="cond-override-hint">${this.t('override.hint')}</span></span>
         </label>
       </div>` : '';
 
@@ -2450,14 +2450,14 @@ export default class WeeklyScheduleBase extends HTMLElement {
         </div>
         <div class="cond-section">
           <div class="cond-hdr" id="condToggle">
-            <span>⚡ ${this.t('popup.conditions')}${ps.conditions.length?` (${ps.conditions.length})`:''}</span>
+            <span><ha-icon icon="mdi:flash" style="--mdi-icon-size:16px;vertical-align:middle;margin-right:4px"></ha-icon>${this.t('popup.conditions')}${ps.conditions.length?` (${ps.conditions.length})`:''}</span>
             <span>${ps._condOpen?'▾':'▸'}</span>
           </div>
           ${condBodyHtml}
         </div>
         <div class="notif-section">
           <div class="notif-hdr" id="notifToggle">
-            <span>🔔 ${this.t('popup.notifications')}${ps.notifyService?' ✓':''}</span>
+            <span><ha-icon icon="mdi:bell-outline" style="--mdi-icon-size:16px;vertical-align:middle;margin-right:4px"></ha-icon>${this.t('popup.notifications')}${ps.notifyService?' ✓':''}</span>
             <span>${ps._notifOpen?'▾':'▸'}</span>
           </div>
           ${ps._notifOpen?`
@@ -3181,6 +3181,7 @@ export default class WeeklyScheduleBase extends HTMLElement {
           const glowStyle = b.isActive ? `;--cblk-glow:${b.color};--cblk-glow-soft:${b.color}80` : '';
           const showContent = b.heightPct > 4;
           return `<div class="compact-blk${b.isOff?' off':''}${b.isActive?' active':''}${b.isMuted?' muted':''}" data-entity="${b.entityId}" data-day="${di}" style="left:${b.startPct}%;width:${b.heightPct}%;background-color:${b.color};color:${this._textColorFor(b.color)}${glowStyle}">` +
+            (b.isMuted ? `<ha-icon class="blk-muted-ico" icon="mdi:volume-off"></ha-icon>` : '') +
             (showContent ? `<ha-icon icon="${icon}" style="--mdi-icon-size:10px;color:inherit;opacity:.9;flex-shrink:0"></ha-icon><span class="compact-blk-val">${b.label||''}</span>` : '') +
             `</div>`;
         }).join('');
@@ -3284,7 +3285,8 @@ export default class WeeklyScheduleBase extends HTMLElement {
           : b.heightPct >= minForValue
             ? `<span class="focus-blk-val">${(b.label||'').replace(/</g,'&lt;')}</span>`
             : '';
-      return `<div class="focus-blk${b.isOff?' off':''}${b.isActive?' active':''}${b.isMuted?' muted':''}" data-entity="${b.entityId}" style="top:${b.startPct}%;height:${b.heightPct}%;background-color:${b.color};color:${this._textColorFor(b.color)}${glowStyle};min-height:20px;${posStyle}">${content}</div>`;
+      const mutedIco = b.isMuted ? `<ha-icon class="blk-muted-ico" icon="mdi:volume-off"></ha-icon>` : '';
+      return `<div class="focus-blk${b.isOff?' off':''}${b.isActive?' active':''}${b.isMuted?' muted':''}" data-entity="${b.entityId}" style="top:${b.startPct}%;height:${b.heightPct}%;background-color:${b.color};color:${this._textColorFor(b.color)}${glowStyle};min-height:20px;${posStyle}">${mutedIco}${content}</div>`;
     }).join('');
 
     // CSS grid column template: axis fixed, focus day gets max 45%, slims share rest equally

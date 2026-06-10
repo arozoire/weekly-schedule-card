@@ -76,7 +76,7 @@ class WeeklyScheduleViewCard extends WeeklyScheduleBase {
         .compact-blk.active{animation:compact-pulse 2s infinite ease-in-out;opacity:1!important;z-index:2}
         .compact-blk.off{opacity:.5;background-image:repeating-linear-gradient(45deg,transparent,transparent 4px,rgba(255,255,255,.15) 4px,rgba(255,255,255,.15) 6px)}
         .compact-blk.muted,.focus-blk.muted{background-image:repeating-linear-gradient(45deg,transparent,transparent 4px,rgba(255,152,0,.5) 4px,rgba(255,152,0,.5) 8px)!important;outline:2px dashed #FF9800;outline-offset:-2px;animation:none!important;opacity:.85!important}
-        .compact-blk.muted::after,.focus-blk.muted::after{content:'🔇';position:absolute;top:1px;left:3px;font-size:.7em;z-index:3;text-shadow:0 1px 2px rgba(0,0,0,.5);pointer-events:none}
+        .blk-muted-ico{position:absolute;top:1px;left:2px;--mdi-icon-size:13px;color:#FF9800;z-index:3;pointer-events:none;filter:drop-shadow(0 1px 1px rgba(0,0,0,.5))}
         .compact-blk-val{white-space:nowrap;overflow:hidden;max-width:40px}
         .compact-ticks{position:relative;height:14px;margin-top:2px}
         .compact-tick{position:absolute;font-size:.55em;color:var(--secondary-text-color);opacity:.6;transform:translateX(-50%)}

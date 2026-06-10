@@ -52,8 +52,8 @@ class WeeklyScheduleCard extends WeeklyScheduleBase {
         .block.active{animation:block-pulse 2s infinite ease-in-out;opacity:1!important;z-index:2}
         .block.off{opacity:.5;background-image:repeating-linear-gradient(45deg,transparent,transparent 4px,rgba(255,255,255,.15) 4px,rgba(255,255,255,.15) 6px)}
         .block.muted,.gantt-block.muted{background-image:repeating-linear-gradient(45deg,transparent,transparent 4px,rgba(255,152,0,.5) 4px,rgba(255,152,0,.5) 8px)!important;outline:2px dashed #FF9800;outline-offset:-2px;animation:none!important;opacity:.85!important}
-        .block.muted::after,.gantt-block.muted::after{content:'🔇';position:absolute;top:1px;left:3px;font-size:.7em;z-index:3;text-shadow:0 1px 2px rgba(0,0,0,.5);pointer-events:none}
-        .blk-stop{position:absolute;bottom:2px;right:2px;font-size:.5em;opacity:.75;pointer-events:none;line-height:1}
+        .blk-muted-ico{position:absolute;top:1px;left:2px;--mdi-icon-size:13px;color:#FF9800;z-index:3;pointer-events:none;filter:drop-shadow(0 1px 1px rgba(0,0,0,.5))}
+        .blk-stop{position:absolute;bottom:2px;right:2px;--mdi-icon-size:12px;color:inherit;opacity:.85;pointer-events:none;line-height:1}
         .add-hint{position:absolute;bottom:6px;right:0;left:0;text-align:center;font-size:1.1em;color:var(--secondary-text-color);opacity:0;pointer-events:none;transition:opacity .15s}
         .day-column:hover .add-hint,.sub-col:hover .add-hint{opacity:.5}
         .gantt{display:flex;flex-direction:column}
@@ -151,7 +151,7 @@ class WeeklyScheduleCard extends WeeklyScheduleBase {
     for (let h=0;h<24;h+=2) timeLabels.push({label:`${String(h).padStart(2,'0')}:00`,pct:(h/24)*100});
 
     // Build column-mode grid HTML
-    const _blk = b => `<div class="block ${b.isOff?'off':''}${b.isActive?' active':''}${b.isMuted?' muted':''}" data-entity="${b.entityId}" style="top:${b.startPct}%;height:${b.heightPct}%;background-color:${b.color};color:${this._textColorFor(b.color)};min-height:4px${b.isActive?`;--blk-glow:${b.color};--blk-glow-soft:${b.color}80`:''}">${b.heightPct>8?b.label:''}${b.hasStop?'<span class="blk-stop">⏹</span>':''}${b.hasCond?'<span class="blk-stop" style="right:12px">⚡</span>':''}</div>`;
+    const _blk = b => `<div class="block ${b.isOff?'off':''}${b.isActive?' active':''}${b.isMuted?' muted':''}" data-entity="${b.entityId}" style="top:${b.startPct}%;height:${b.heightPct}%;background-color:${b.color};color:${this._textColorFor(b.color)};min-height:4px${b.isActive?`;--blk-glow:${b.color};--blk-glow-soft:${b.color}80`:''}">${b.heightPct>8?b.label:''}${b.isMuted?'<ha-icon class="blk-muted-ico" icon="mdi:volume-off"></ha-icon>':''}${b.hasStop?'<ha-icon class="blk-stop" icon="mdi:stop"></ha-icon>':''}${b.hasCond?'<ha-icon class="blk-stop" icon="mdi:flash" style="right:12px"></ha-icon>':''}</div>`;
     let colGrid = '';
     if (!isGroup) {
       colGrid = DAYS.map((_,di)=>{
@@ -207,7 +207,7 @@ class WeeklyScheduleCard extends WeeklyScheduleBase {
                       const temp=s.attributes.actions?.[0]?.data?.temperature??null;
                       const lbl=this._detectDomain(ec.entity)==='climate'&&temp!=null?`${temp}°`:s.attributes.friendly_name;
                       const glowStyle=isActive?`;--blk-glow:${color};--blk-glow-soft:${color}80`:'';
-                      return `<div class="gantt-block ${isOff?'off':''}${isActive?' active':''}${isMuted?' muted':''}" data-entity="${s.entity_id}" style="left:${this._minutesToPercent(sMin)}%;width:${this._minutesToPercent(eMin-sMin)}%;background-color:${color};color:${this._textColorFor(color)}${glowStyle}">${(eMin-sMin)>60?lbl:''}${hasStop?'<span class="blk-stop">⏹</span>':''}${hasCond?'<span class="blk-stop" style="right:12px">⚡</span>':''}</div>`;
+                      return `<div class="gantt-block ${isOff?'off':''}${isActive?' active':''}${isMuted?' muted':''}" data-entity="${s.entity_id}" style="left:${this._minutesToPercent(sMin)}%;width:${this._minutesToPercent(eMin-sMin)}%;background-color:${color};color:${this._textColorFor(color)}${glowStyle}">${(eMin-sMin)>60?lbl:''}${isMuted?'<ha-icon class="blk-muted-ico" icon="mdi:volume-off"></ha-icon>':''}${hasStop?'<ha-icon class="blk-stop" icon="mdi:stop"></ha-icon>':''}${hasCond?'<ha-icon class="blk-stop" icon="mdi:flash" style="right:12px"></ha-icon>':''}</div>`;
                     })).join('')}
                     <div class="gantt-add">+</div>
                   </div>
@@ -545,7 +545,7 @@ class WeeklyScheduleMiniCard extends HTMLElement {
       </div>`;
     };
     const activeRows=running.map(s=>rowHtml(s,'')).join('');
-    const mutedRows=muted.map(s=>rowHtml(s,'🔇')).join('');
+    const mutedRows=muted.map(s=>rowHtml(s,'<ha-icon icon="mdi:volume-off" style="--mdi-icon-size:14px;vertical-align:middle"></ha-icon>')).join('');
 
     // Group others by primary entity
     const groups=new Map();
@@ -597,7 +597,7 @@ class WeeklyScheduleMiniCard extends HTMLElement {
       <ha-card>
         <div class="mini-title">${title}</div>
         ${activeRows||(muted.length?'':`<div class="mini-empty">📅 ${emptyActive}</div>`)}
-        ${muted.length?`<div class="mini-muted-hdr">🔇 ${mutedLbl}</div>${mutedRows.replace(/class="mini-row"/g,'class="mini-row muted-row"')}`:''}
+        ${muted.length?`<div class="mini-muted-hdr"><ha-icon icon="mdi:volume-off" style="--mdi-icon-size:14px;vertical-align:-2px;margin-right:2px"></ha-icon>${mutedLbl}</div>${mutedRows.replace(/class="mini-row"/g,'class="mini-row muted-row"')}`:''}
         ${others.length?`
           <button class="mini-expand">
             <span>${expanded?collapseLbl:expandLbl}</span>
