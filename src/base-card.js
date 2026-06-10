@@ -71,6 +71,8 @@ export default class WeeklyScheduleBase extends HTMLElement {
     this._ttEl = null;
     this._lang = null;
     this._prevHass = null;
+    this._txDepth = 0;   // profondità transazione storage (batching _wsSet)
+    this._txDirty = false;
   }
 
   // ── HTML escaping (XSS) ───────────────────────────────────────────────────
@@ -259,15 +261,36 @@ export default class WeeklyScheduleBase extends HTMLElement {
   async _wsSet(data) {
     this._storageData = data;
     this._renderCache = null; // invalida la cache (lo storage può essere mutato in place, stessa ref)
+    if (this._txDepth > 0) { this._txDirty = true; return; } // dentro una transazione → scrittura differita
+    return this._wsSetNow(data);
+  }
+
+  // Scrittura reale dello storage + notifica alle altre card. Usata da _wsSet (fuori transazione)
+  // o una sola volta a fine transazione (_withTx). NON aggiorna _storageData (già fatto da _wsSet).
+  async _wsSetNow(data) {
     await this._hass.connection.sendMessagePromise({
       type: 'frontend/set_user_data',
       key: 'weekly_schedule_card',
       value: data,
     });
-    // Notify other card instances on the same page
     try {
       window.dispatchEvent(new CustomEvent('wsc-storage-changed', { detail: { source: this, data } }));
     } catch {}
+  }
+
+  // Batching delle scritture storage: dentro fn ogni _wsSet aggiorna solo _storageData in memoria
+  // e marca dirty; UNA sola scrittura+evento avviene a fine transazione, sullo stato raggiunto
+  // (best-effort: il finally scrive anche se fn lancia). _txDepth → transazioni annidate sicure.
+  async _withTx(fn) {
+    this._txDepth = (this._txDepth || 0) + 1;
+    try {
+      return await fn();
+    } finally {
+      if (--this._txDepth === 0 && this._txDirty) {
+        this._txDirty = false;
+        try { await this._wsSetNow(this._storageData); } catch {}
+      }
+    }
   }
 
   // ── Profile bootstrap ─────────────────────────────────────────────────────
