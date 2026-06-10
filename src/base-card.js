@@ -2284,7 +2284,7 @@ export default class WeeklyScheduleBase extends HTMLElement {
         .section-label { font-size:0.72em;font-weight:600;letter-spacing:.03em;color:var(--secondary-text-color);margin-bottom:6px; }
         .timebar { position:relative;height:48px;background:var(--secondary-background-color,#f5f5f5);border-radius:8px;overflow:hidden;touch-action:none;user-select:none; }
         .tb-bg { position:absolute;top:6px;height:calc(100% - 12px);border-radius:6px;opacity:.6;pointer-events:none; }
-        .tb-edit { position:absolute;top:0;height:100%;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:.65em;font-weight:700;color:white;text-shadow:0 1px 3px rgba(0,0,0,.45);cursor:grab;box-sizing:border-box;touch-action:none;overflow:hidden;box-shadow:0 2px 8px rgba(var(--rgb-primary-color,3,169,244),.3); }
+        .tb-edit { position:absolute;top:0;height:100%;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:.65em;font-variant-numeric:tabular-nums;font-weight:700;color:white;text-shadow:0 1px 3px rgba(0,0,0,.45);cursor:grab;box-sizing:border-box;touch-action:none;overflow:hidden;box-shadow:0 2px 8px rgba(var(--rgb-primary-color,3,169,244),.3); }
         .tb-edit:active { cursor:grabbing; }
         .tb-handle { position:absolute;top:0;height:100%;width:20px;cursor:ew-resize;display:flex;align-items:center;justify-content:center;flex-shrink:0; }
         .tb-handle::after { content:'';display:block;width:20px;height:20px;border-radius:50%;background:white;box-shadow:0 1px 6px rgba(0,0,0,.25);border:2px solid var(--primary-color,#03a9f4);transition:background .15s; }
