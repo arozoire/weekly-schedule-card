@@ -74,6 +74,9 @@ class WeeklyScheduleCard extends WeeklyScheduleBase {
         .gantt-block{position:absolute;top:3px;bottom:3px;border-radius:5px;display:flex;align-items:center;justify-content:center;font-size:.58em;font-weight:600;color:white;text-shadow:0 1px 2px rgba(0,0,0,.4);cursor:pointer;overflow:hidden;min-width:4px;border-left:3px solid rgba(255,255,255,.4);box-sizing:border-box;opacity:.88}
         .gantt-block:hover{filter:brightness(.84);opacity:1}
         .gantt-block.active{animation:block-pulse 2s infinite ease-in-out;opacity:1!important;z-index:2}
+        @media (prefers-reduced-motion: reduce){
+          .block.active,.gantt-block.active{animation:none!important;box-shadow:0 0 0 2px var(--blk-glow,var(--primary-color,#03a9f4)),0 0 6px var(--blk-glow-soft,transparent)}
+        }
         .gantt-block.off{opacity:.5;background-image:repeating-linear-gradient(45deg,transparent,transparent 4px,rgba(255,255,255,.15) 4px,rgba(255,255,255,.15) 6px)}
         .gantt-add{position:absolute;right:4px;top:50%;transform:translateY(-50%);font-size:.9em;color:var(--secondary-text-color);opacity:0;pointer-events:none}
         .gantt-row:hover .gantt-add{opacity:.5}

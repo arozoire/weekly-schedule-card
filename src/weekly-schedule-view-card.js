@@ -97,6 +97,10 @@ class WeeklyScheduleViewCard extends WeeklyScheduleBase {
         .focus-blk:hover{filter:brightness(.84);opacity:1}
         .focus-blk.active{animation:focus-pulse 2s infinite ease-in-out;border:2px solid rgba(255,255,255,.75);opacity:1!important;z-index:2}
         .focus-blk.off{opacity:.5;background-image:repeating-linear-gradient(45deg,transparent,transparent 4px,rgba(255,255,255,.15) 4px,rgba(255,255,255,.15) 6px)}
+        @media (prefers-reduced-motion: reduce){
+          .compact-blk.active{animation:none!important;box-shadow:0 0 0 2px var(--cblk-glow,var(--primary-color,#03a9f4))}
+          .focus-blk.active{animation:none!important;box-shadow:0 0 0 2px var(--fblk-glow,var(--primary-color,#03a9f4))}
+        }
         .focus-blk-info{display:flex;flex-direction:column;min-width:0;overflow:hidden;gap:1px}
         .focus-blk-name{font-size:.72em;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.2}
         .focus-blk-val{font-size:.68em;opacity:.9;white-space:nowrap;overflow:hidden;line-height:1.2}
