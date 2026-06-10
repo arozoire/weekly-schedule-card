@@ -402,16 +402,20 @@ class WeeklyScheduleCard extends WeeklyScheduleBase {
     this._startTimeInterval();
     this._updateTimeLine();
 
-    // Tooltip hover
-    this.shadowRoot.addEventListener('mouseover', e => {
-      const blk = e.target.closest('.block,.gantt-block'); if (!blk) return;
-      const id = blk.dataset.entity; if (!id) return;
-      this._hideTooltip();
-      this._ttTimer = setTimeout(() => this._showTooltip(id, blk.getBoundingClientRect()), 300);
-    });
-    this.shadowRoot.addEventListener('mouseout', e => {
-      if (e.target.closest('.block,.gantt-block')) this._hideTooltip();
-    });
+    // Tooltip hover — bind once: lo shadowRoot persiste tra i render, altrimenti i listener
+    // si accumulano a ogni render (memory leak + N timer per hover).
+    if (!this._tooltipListenersBound) {
+      this._tooltipListenersBound = true;
+      this.shadowRoot.addEventListener('mouseover', e => {
+        const blk = e.target.closest('.block,.gantt-block'); if (!blk) return;
+        const id = blk.dataset.entity; if (!id) return;
+        this._hideTooltip();
+        this._ttTimer = setTimeout(() => this._showTooltip(id, blk.getBoundingClientRect()), 300);
+      });
+      this.shadowRoot.addEventListener('mouseout', e => {
+        if (e.target.closest('.block,.gantt-block')) this._hideTooltip();
+      });
+    }
   }
 }
 
