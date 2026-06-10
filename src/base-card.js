@@ -579,6 +579,7 @@ export default class WeeklyScheduleBase extends HTMLElement {
     this._orphanCleanupDone = true;
     const data = this._storageData;
     if (!data?.profiles) return;
+    await this._withTx(async () => {
     let dirty = false;
     const deletions = [];
     const childRemovals = new Set();
@@ -622,6 +623,7 @@ export default class WeeklyScheduleBase extends HTMLElement {
     if (dirty) await this._wsSet(data).catch(() => {});
     if (deletions.length || childRemovals.size)
       console.log(`[WSC] Cleaned up ${deletions.length} orphan automation(s), ${childRemovals.size} orphan child schedule(s)`);
+    });
   }
 
   // ── Auto-off automation (end-of-slot action; replaces the old child schedule) ──
@@ -1654,6 +1656,7 @@ export default class WeeklyScheduleBase extends HTMLElement {
     if (!pe) return;
     this._profileEditMode = null;
     this._selectedProfileId = pe.previousSelectedId;
+    await this._withTx(async () => {
     const data = this._storageData;
     const p = (data.profiles || []).find(x => x.id === pe.profileId);
     if (p) {
@@ -1663,6 +1666,7 @@ export default class WeeklyScheduleBase extends HTMLElement {
     const profiles = (data.profiles || []).filter(x => x.id !== pe.profileId);
     const activeProfiles = (data.activeProfiles || []).filter(x => x !== pe.profileId);
     await this._wsSet({ ...data, profiles, activeProfiles });
+    });
     this._activeTab = 0;
     this.render();
   }
@@ -3006,6 +3010,8 @@ export default class WeeklyScheduleBase extends HTMLElement {
       link.stopValue = ps.stopValue;
     };
 
+    let ok = true;
+    await this._withTx(async () => {
     try {
       if (ps.mode === 'create') {
         const beforeIds = new Set(Object.keys(this._hass.states).filter(k => k.startsWith('switch.schedule_')));
@@ -3039,15 +3045,17 @@ export default class WeeklyScheduleBase extends HTMLElement {
         await this._syncExtrasAutomation(ps.entityId, ps);
         await this._syncNotifyAutomation(ps.entityId, ps);
       }
-    } catch (e) { await this._alert(`${this.t('errors.save_failed')}: ${e.message || e}`); return; }
+    } catch (e) { ok = false; await this._alert(`${this.t('errors.save_failed')}: ${e.message || e}`); return; }
     await this._wsSet(this._storageData).catch(() => {});
-    this._closePopup();
+    });
+    if (ok) this._closePopup();
   }
 
   async _deleteSchedule() {
     const ps = this._popupState;
     if (!ps || ps.mode !== 'edit') return;
     if (!await this._confirm(this.t('errors.delete_confirm'))) return;
+    await this._withTx(async () => {
     const eid = ps.entityId;
     const childId = this._getAutoChildId(eid);
     const condAutoId = this._getCondAutoId(eid);
@@ -3080,6 +3088,7 @@ export default class WeeklyScheduleBase extends HTMLElement {
     }
     try { await this._hass.callService('scheduler', 'remove', { entity_id: eid }); } catch (e) { console.error(e); }
     await this._wsSet(data);
+    });
     this._closePopup();
   }
 
@@ -3098,6 +3107,7 @@ export default class WeeklyScheduleBase extends HTMLElement {
     const profiles = data.profiles || [];
     const p = profiles.find(x => x.id === id);
     if (!p) return;
+    await this._withTx(async () => {
     let activeProfiles = [...(data.activeProfiles || [])];
     if (p.exclusive !== false) {
       for (const cp of profiles.filter(x => x.id !== id && x.exclusive !== false && activeProfiles.includes(x.id))) {
@@ -3120,6 +3130,7 @@ export default class WeeklyScheduleBase extends HTMLElement {
         try { await this._hass.callService('switch', 'turn_on', { entity_id: link.autoChildId }); } catch {}
     if (!activeProfiles.includes(id)) activeProfiles.push(id);
     await this._wsSet({ ...data, activeProfiles });
+    });
     this.render();
   }
 
@@ -3137,6 +3148,7 @@ export default class WeeklyScheduleBase extends HTMLElement {
   async _deleteProfile(id) {
     if (id === 'default') return;
     if (!await this._confirm(this.t('errors.delete_profile_confirm'))) return;
+    await this._withTx(async () => {
     const data = this._storageData;
     const p = (data.profiles || []).find(x => x.id === id);
     if (p) {
@@ -3163,6 +3175,7 @@ export default class WeeklyScheduleBase extends HTMLElement {
     if (this._selectedProfileId === id)
       this._selectedProfileId = activeProfiles[0] || profiles[0]?.id || null;
     await this._wsSet({ ...data, profiles, activeProfiles });
+    });
     this.render();
   }
 
@@ -3180,6 +3193,7 @@ export default class WeeklyScheduleBase extends HTMLElement {
     if (!src) return;
     const name = await this._prompt(this.t('profile.duplicate'), `${src.name} (copy)`);
     if (!name?.trim()) return;
+    await this._withTx(async () => {
     const newId = `prf_${Date.now()}`;
     const newProfile = {
       id: newId, name: name.trim(), exclusive: src.exclusive,
@@ -3204,6 +3218,7 @@ export default class WeeklyScheduleBase extends HTMLElement {
       } catch (e) { console.error('Duplicate schedule failed', schedId, e); }
     }
     this._selectedProfileId = prevSelectedId;
+    });
     this.render();
   }
 
