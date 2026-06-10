@@ -435,17 +435,56 @@ class WeeklyScheduleMiniCard extends HTMLElement {
   }
 
   set hass(hass) {
+    const prev = this._prevHass;
+    this._prevHass = hass;
     this._hass = hass;
     if (!this._storageData && !this._loadingStorage) {
       this._loadingStorage = true;
       hass.connection.sendMessagePromise({ type:'frontend/get_user_data', key:'weekly_schedule_card' })
         .then(r => { this._storageData = r?.value || { profiles: [] }; this._loadingStorage = false; this._render(); })
         .catch(() => { this._storageData = { profiles: [] }; this._loadingStorage = false; this._render(); });
+      this._render(); // primo paint immediato; la .then ri-renderizza con lo storage
+      return;
     }
-    this._render();
+    // Debounce + diff: evita il full innerHTML rebuild a ogni update di hass (più volte/sec)
+    this._scheduleMiniRender(prev);
   }
   setConfig(config) { this._config = config; }
   getCardSize() { return 2; }
+
+  _scheduleMiniRender(prev) {
+    if (this._renderTimer) return;
+    this._pendingPrev = this._pendingPrev || prev;
+    this._renderTimer = setTimeout(() => {
+      this._renderTimer = null;
+      const p = this._pendingPrev; this._pendingPrev = null;
+      if (this._miniHassChanged(p, this._hass)) this._render();
+    }, 100);
+  }
+
+  // Re-render solo se è cambiato state/last_changed di uno switch.schedule_* o di un'entità
+  // referenziata nelle condizioni (da storage). Stessa filosofia di _hassChangedRelevant base.
+  _miniHassChanged(prev, curr) {
+    if (!prev || !curr) return true;
+    const watched = new Set();
+    for (const p of this._storageData?.profiles || [])
+      for (const link of p.scheduleLinks || [])
+        for (const c of link.conditions || [])
+          if (c?.entity) watched.add(c.entity);
+    for (const eid of watched) {
+      const s = curr.states[eid], ps = prev.states[eid];
+      if (!s || !ps) { if (s !== ps) return true; continue; }
+      if (ps.state !== s.state || ps.last_changed !== s.last_changed) return true;
+    }
+    for (const s of Object.values(curr.states)) {
+      if (!s.entity_id.startsWith('switch.schedule_')) continue;
+      const ps = prev.states[s.entity_id];
+      if (!ps || ps.state !== s.state || ps.last_changed !== s.last_changed) return true;
+    }
+    for (const k in prev.states) // schedule rimosso
+      if (k.startsWith('switch.schedule_') && !curr.states[k]) return true;
+    return false;
+  }
 
   _parseTime(t) { const [h,m]=t.split(':').map(Number); return h*60+(m||0); }
 
@@ -633,6 +672,7 @@ class WeeklyScheduleMiniCard extends HTMLElement {
 
   disconnectedCallback() {
     if(this._interval){clearInterval(this._interval);this._interval=null;}
+    if(this._renderTimer){clearTimeout(this._renderTimer);this._renderTimer=null;}
     if(this._storageListener){
       window.removeEventListener('wsc-storage-changed', this._storageListener);
       this._storageListener = null;
