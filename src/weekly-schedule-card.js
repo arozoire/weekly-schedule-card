@@ -14,6 +14,7 @@ class WeeklyScheduleCard extends WeeklyScheduleBase {
   // doesn't re-parse it on every state change — see _setStyles in base-card).
   _mainStyles(H) {
     return `
+        [role="button"]:focus-visible{outline:2px solid var(--primary-color,#03a9f4);outline-offset:2px;border-radius:6px}
         :host{display:block;font-family:var(--primary-font-family,sans-serif)}
         ha-card{padding:14px 16px 8px}
         .card-header{display:flex;flex-direction:column;gap:0;margin-bottom:0}
