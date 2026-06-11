@@ -222,7 +222,7 @@ class WeeklyScheduleCard extends WeeklyScheduleBase {
       ? `<div class="ent-legend">${(tab.entities||[]).map(ec=>'<div class="ent-legend-item"><div class="ent-legend-dot" style="background:' + (ec.color||'#9E9E9E') + '"></div><span>' + this._esc(ec.name||ec.entity) + '</span></div>').join('')}</div>`
       : `<div class="legend">${this._getProfileSchedules(tab.entity).map(s=>{
           const color=this._blockColor(s,tab),isOff=s.state==='off',temp=s.attributes.actions?.[0]?.data?.temperature??null;
-          return `<div class="legend-item" data-entity="${s.entity_id}" style="${isOff?'opacity:.55':''}"><div class="legend-dot" style="background-color:${color}"></div><span>${this._esc(s.attributes.friendly_name||s.entity_id)}${this._detectDomain(tab.entity)==='climate'&&temp!=null?` — ${temp}°`:''}${isOff?' (off)':''}</span></div>`;
+          return `<div class="legend-item" data-entity="${s.entity_id}" role="button" tabindex="0" style="${isOff?'opacity:.55':''}"><div class="legend-dot" style="background-color:${color}"></div><span>${this._esc(s.attributes.friendly_name||s.entity_id)}${this._detectDomain(tab.entity)==='climate'&&temp!=null?` — ${temp}°`:''}${isOff?' (off)':''}</span></div>`;
         }).join('')}</div>`;
 
     this._setStyles('main', this._mainStyles(H));
@@ -253,7 +253,7 @@ class WeeklyScheduleCard extends WeeklyScheduleBase {
               const active=this._isProfileActive(p),viewed=p.id===this._selectedProfileId,excl=p.exclusive!==false,isDef=p.id==='default';
               const pcolor=this._getProfileColor(p);
               return '<div class="chip-wrap">'
-                + '<div class="profile-chip' + (viewed?' viewed':'') + (active?' active-op':'') + '" data-pid="' + p.id + '" style="--pchip-color:' + pcolor + '">'
+                + '<div class="profile-chip' + (viewed?' viewed':'') + (active?' active-op':'') + '" role="button" tabindex="0" data-pid="' + p.id + '" style="--pchip-color:' + pcolor + '">'
                 + '<ha-icon class="chip-lock" icon="' + (excl?'mdi:lock':'mdi:lock-open-variant') + '" style="--mdi-icon-size:11px"></ha-icon>'
                 + (active?'<span class="chip-act-dot"></span>':'')
                 + '<span class="chip-name">' + this._esc(p.name) + '</span>'
@@ -282,7 +282,7 @@ class WeeklyScheduleCard extends WeeklyScheduleBase {
 
         ${allTabs.length>1?`<div class="tab-bar">${allTabs.map((t,i)=>{
           const dot=t.color||(t.entities?.[0]?.color)||null;
-          return `<div class="tab ${i===this._activeTab?'active':''}" data-tab="${i}">${dot?`<span class="tab-dot" style="background-color:${dot}"></span>`:''}${this._esc(t.name||t.entity)}</div>`;
+          return `<div class="tab ${i===this._activeTab?'active':''}" data-tab="${i}" role="button" tabindex="0">${dot?`<span class="tab-dot" style="background-color:${dot}"></span>`:''}${this._esc(t.name||t.entity)}</div>`;
         }).join('')}</div>`:''}
 
         ${this._layout === 'rows' ? gantt : `

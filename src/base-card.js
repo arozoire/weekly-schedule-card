@@ -1889,6 +1889,22 @@ export default class WeeklyScheduleBase extends HTMLElement {
       };
       window.addEventListener('wsc-storage-changed', this._storageListener);
     }
+    // a11y: attivazione da tastiera dei controlli role="button" (div cliccabili). Bind una sola
+    // volta sullo shadowRoot persistente → copre render principale, popup <dialog> e view.
+    if (!this._kbdBound) {
+      this._kbdBound = true;
+      this.shadowRoot.addEventListener('keydown', e => this._onActivationKeydown(e));
+    }
+  }
+
+  // Enter/Spazio su un elemento role="button" → click sintetico (i click handler sono delegati
+  // via closest()). Input/checkbox/textarea/button nativi non hanno role=button → non intercettati.
+  _onActivationKeydown(e) {
+    if (e.key !== 'Enter' && e.key !== ' ' && e.key !== 'Spacebar') return;
+    const el = e.target;
+    if (!el || typeof el.click !== 'function' || el.getAttribute?.('role') !== 'button') return;
+    e.preventDefault();
+    el.click();
   }
 
   disconnectedCallback() {
