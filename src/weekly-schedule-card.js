@@ -47,10 +47,10 @@ class WeeklyScheduleCard extends WeeklyScheduleBase {
         .sub-col{position:absolute;top:0;bottom:0}
         .sub-col:hover{background:rgba(255,255,255,.08)}
         .sub-divider{position:absolute;top:0;left:0;width:1px;height:100%;background:rgba(255,255,255,.35);z-index:1;pointer-events:none}
-        @keyframes block-pulse{0%,100%{box-shadow:0 0 4px var(--blk-glow),0 0 8px var(--blk-glow)}50%{box-shadow:0 0 8px var(--blk-glow),0 0 16px var(--blk-glow),0 0 24px var(--blk-glow-soft)}}
-        .block{position:absolute;left:0;right:0;display:flex;align-items:center;justify-content:center;font-size:.65em;font-variant-numeric:tabular-nums;font-weight:600;color:white;text-shadow:0 1px 2px rgba(0,0,0,.4);cursor:pointer;transition:filter .15s;overflow:hidden;border-radius:4px;border-left:3px solid rgba(255,255,255,.4);box-sizing:border-box;opacity:.88}
+        @keyframes block-pulse{0%,100%{box-shadow:inset 0 0 0 1px var(--blk-glow-soft)}50%{box-shadow:inset 0 0 0 2px var(--blk-glow-soft),0 0 6px var(--blk-glow-soft)}}
+        .block{position:absolute;left:0;right:0;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:filter .15s;overflow:hidden;border-radius:4px;border-left:3px solid rgba(255,255,255,.35);box-sizing:border-box;opacity:.72}
         .block:hover{filter:brightness(.84);opacity:1}
-        .block.active{animation:block-pulse 2s infinite ease-in-out;opacity:1!important;z-index:2}
+        .block.active{animation:block-pulse 2s infinite ease-in-out;opacity:.9!important;z-index:2}
         .block.off{opacity:.5;background-image:repeating-linear-gradient(45deg,transparent,transparent 4px,rgba(255,255,255,.15) 4px,rgba(255,255,255,.15) 6px)}
         .block.muted,.gantt-block.muted{background-image:repeating-linear-gradient(45deg,transparent,transparent 4px,rgba(255,152,0,.5) 4px,rgba(255,152,0,.5) 8px)!important;outline:2px dashed #FF9800;outline-offset:-2px;animation:none!important;opacity:.85!important}
         .blk-muted-ico{position:absolute;top:1px;left:2px;--mdi-icon-size:13px;color:#FF9800;z-index:3;pointer-events:none;filter:drop-shadow(0 1px 1px rgba(0,0,0,.5))}
@@ -152,8 +152,9 @@ class WeeklyScheduleCard extends WeeklyScheduleBase {
     for (let h=0;h<24;h+=2) timeLabels.push({label:`${String(h).padStart(2,'0')}:00`,pct:(h/24)*100});
 
     // Build column-mode grid HTML
-    const lblMin = (40 / H) * 100; // soglia px-based come la focus view: niente label sui blocchi troppo bassi (evita testo troncato)
-    const _blk = b => `<div class="block ${b.isOff?'off':''}${b.isActive?' active':''}${b.isMuted?' muted':''}" data-entity="${b.entityId}" style="top:${b.startPct}%;height:${b.heightPct}%;background-color:${b.color};color:${this._textColorFor(b.color)};min-height:4px${b.isActive?`;--blk-glow:${b.color};--blk-glow-soft:${b.color}80`:''}">${b.heightPct>=lblMin?this._esc(b.label):''}${b.isMuted?'<ha-icon class="blk-muted-ico" icon="mdi:volume-off"></ha-icon>':''}${b.hasStop?'<ha-icon class="blk-stop" icon="mdi:stop"></ha-icon>':''}${b.hasCond?'<ha-icon class="blk-stop" icon="mdi:flash" style="right:12px"></ha-icon>':''}</div>`;
+    // Colonne strette: nessuna etichetta né icone-indicatore (illeggibili/clutter).
+    // I dettagli (azione, condizioni, stop) restano nel tooltip all'hover e nella vista righe.
+    const _blk = b => `<div class="block ${b.isOff?'off':''}${b.isActive?' active':''}${b.isMuted?' muted':''}" data-entity="${b.entityId}" style="top:${b.startPct}%;height:${b.heightPct}%;background-color:${b.color};min-height:4px${b.isActive?`;--blk-glow:${b.color};--blk-glow-soft:${b.color}80`:''}"></div>`;
     let colGrid = '';
     if (!isGroup) {
       colGrid = DAYS.map((_,di)=>{
