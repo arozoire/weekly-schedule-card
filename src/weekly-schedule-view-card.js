@@ -1,3 +1,6 @@
+// src/weekly-schedule-view-card.js
+// Last modified: 2026-06-11 Rome (v1.1.4)
+
 import WeeklyScheduleBase from './base-card.js';
 
 class WeeklyScheduleViewCard extends WeeklyScheduleBase {

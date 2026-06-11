@@ -1,4 +1,5 @@
-// Last modified: 2026-05-28 14:30 CEST
+// src/weekly-schedule-card.js
+// Last modified: 2026-06-11 Rome (v1.1.4)
 
 import WeeklyScheduleBase from './base-card.js';
 import './weekly-schedule-view-card.js';
