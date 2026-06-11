@@ -137,14 +137,14 @@ class WeeklyScheduleViewCard extends WeeklyScheduleBase {
       const style = active ? `background:${color}1F;border-color:${color};color:${color}` : '';
       const actLbl = active ? (this.t('profile.deactivate') || 'Disattiva') : (this.t('profile.activate') || 'Attiva');
       const actColor = active ? 'var(--secondary-text-color)' : '#4CAF50';
-      return `<div class="${cls.join(' ')}" data-pid="${p.id}" style="${style}"><span class="chip-name">${this._esc(p.name)}</span><button class="chip-activate" data-pid="${p.id}" title="${actLbl}" style="color:${actColor}">${active ? '⏸' : '▶'}</button></div>`;
+      return `<div class="${cls.join(' ')}" role="button" tabindex="0" data-pid="${p.id}" style="${style}"><span class="chip-name">${this._esc(p.name)}</span><button class="chip-activate" data-pid="${p.id}" title="${actLbl}" style="color:${actColor}">${active ? '⏸' : '▶'}</button></div>`;
     }).join('');
 
     const tabs = this._getAllTabs();
     const activeTabIdx = Math.min(this._activeTab, tabs.length - 1);
     const tabsHtml = tabs.length > 1 ? tabs.map((t, i) => {
       const name = this._esc(t.name || t.entity || '?');
-      return `<div class="tab-chip${i === activeTabIdx ? ' active' : ''}" data-ti="${i}">${name}</div>`;
+      return `<div class="tab-chip${i === activeTabIdx ? ' active' : ''}" data-ti="${i}" role="button" tabindex="0">${name}</div>`;
     }).join('') : '';
 
     this._setStyles('main', this._mainStyles());

@@ -2543,7 +2543,7 @@ export default class WeeklyScheduleBase extends HTMLElement {
             <button class="shortcut-btn" data-shortcut="weekend">${this.t('days.weekend')}</button>
           </div>
           <div class="day-chips">
-            ${DAY_NAMES.map((d,i)=>`<div class="day-chip ${ps.days.includes(i)?'on':''}" data-day="${i}">${d.slice(0,2)}</div>`).join('')}
+            ${DAY_NAMES.map((d,i)=>`<div class="day-chip ${ps.days.includes(i)?'on':''}" data-day="${i}" role="button" tabindex="0" aria-pressed="${ps.days.includes(i)}">${d.slice(0,2)}</div>`).join('')}
           </div>
         </div>
         ${domainSection}
@@ -2686,6 +2686,7 @@ export default class WeeklyScheduleBase extends HTMLElement {
         const d = parseInt(chip.dataset.day);
         ps.days = ps.days.includes(d) ? ps.days.filter(x => x !== d) : [...ps.days, d].sort((a,b)=>a-b);
         chip.classList.toggle('on', ps.days.includes(d));
+        chip.setAttribute('aria-pressed', String(ps.days.includes(d)));
       })
     );
 
@@ -2693,7 +2694,7 @@ export default class WeeklyScheduleBase extends HTMLElement {
       btn.addEventListener('click', () => {
         const s = btn.dataset.shortcut;
         ps.days = s==='all'?[0,1,2,3,4,5,6]:s==='workdays'?[0,1,2,3,4]:[5,6];
-        dlg.querySelectorAll('.day-chip').forEach(c => c.classList.toggle('on', ps.days.includes(parseInt(c.dataset.day))));
+        dlg.querySelectorAll('.day-chip').forEach(c => { const on = ps.days.includes(parseInt(c.dataset.day)); c.classList.toggle('on', on); c.setAttribute('aria-pressed', String(on)); });
         dlg.querySelectorAll('.shortcut-btn').forEach(b => b.classList.toggle('active', b === btn));
       })
     );
@@ -3275,7 +3276,7 @@ export default class WeeklyScheduleBase extends HTMLElement {
       const barColor = isToday ? 'var(--primary-color,#03a9f4)' : 'var(--divider-color,#e0e0e0)';
       const nameColor = isToday ? 'var(--primary-text-color)' : 'var(--secondary-text-color)';
 
-      const hdr = `<div class="compact-day-hdr" data-day="${di}">
+      const hdr = `<div class="compact-day-hdr" data-day="${di}" role="button" tabindex="0" aria-expanded="${expanded}">
         <div class="compact-day-bar" style="background:${barColor}"></div>
         <span class="compact-day-name" style="color:${nameColor}">${dayName.toUpperCase().slice(0,3)}</span>
         <div class="compact-mini-timeline">${miniBars}</div>
@@ -3447,7 +3448,7 @@ export default class WeeklyScheduleBase extends HTMLElement {
 
       const nameColor = isToday ? 'var(--primary-color,#03a9f4)' : 'var(--secondary-text-color)';
       const shortName = dayName.slice(0,2);
-      return `<div class="focus-slim" data-day="${di}">
+      return `<div class="focus-slim" data-day="${di}" role="button" tabindex="0">
         <div class="focus-slim-hdr" style="color:${nameColor}">${shortName}</div>
         <div class="focus-slim-body">${barsHtml}</div>
       </div>`;
@@ -3538,7 +3539,7 @@ export default class WeeklyScheduleBase extends HTMLElement {
             ${availableEnts.map(e=>{
               const pre=(group.entities||[]).find(x=>x.entity===e.entity_id);
               return `<div class="ent-item${pre?' sel':''}" data-entity="${e.entity_id}" data-domain="${e.domain}" data-name="${this._escAttr(e.friendly_name.toLowerCase())}">
-                <div class="ent-row-top">
+                <div class="ent-row-top" role="button" tabindex="0">
                   <input type="checkbox" class="ent-chk" data-entity="${e.entity_id}"${pre?' checked':''}>
                   <span class="dom-badge dom-${e.domain}">${e.domain}</span>
                   <span class="ent-name">${this._esc(e.friendly_name)}</span>
@@ -3692,7 +3693,7 @@ export default class WeeklyScheduleBase extends HTMLElement {
             ${availableEnts.map(e=>{
               const pre=yamlMap[e.entity_id];
               return `<div class="ent-item${pre?' sel':''}" data-entity="${e.entity_id}" data-domain="${e.domain}" data-name="${this._escAttr(e.friendly_name.toLowerCase())}">
-                <div class="ent-row-top">
+                <div class="ent-row-top" role="button" tabindex="0">
                   <input type="checkbox" class="ent-chk" data-entity="${e.entity_id}"${pre?' checked':''}>
                   <span class="dom-badge dom-${e.domain}">${e.domain}</span>
                   <span class="ent-name">${this._esc(e.friendly_name)}</span>
