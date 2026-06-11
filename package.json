@@ -1,6 +1,6 @@
 {
   "name": "weekly-schedule-card",
-  "version": "1.1.2",
+  "version": "1.1.3",
   "description": "Visual weekly schedule card for Home Assistant",
   "main": "dist/weekly-schedule-card.js",
   "scripts": {
