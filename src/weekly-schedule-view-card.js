@@ -35,6 +35,7 @@ class WeeklyScheduleViewCard extends WeeklyScheduleBase {
   // re-parsed on every state change — see _setStyles in base-card).
   _mainStyles() {
     return `
+        [role="button"]:focus-visible{outline:2px solid var(--primary-color,#03a9f4);outline-offset:2px;border-radius:6px}
         :host { display: block; }
         ha-card { padding: 12px; }
         .header { display:flex; align-items:center; gap:8px; margin-bottom:8px; }
@@ -76,7 +77,7 @@ class WeeklyScheduleViewCard extends WeeklyScheduleBase {
         .compact-blk.active{animation:compact-pulse 2s infinite ease-in-out;opacity:1!important;z-index:2}
         .compact-blk.off{opacity:.5;background-image:repeating-linear-gradient(45deg,transparent,transparent 4px,rgba(255,255,255,.15) 4px,rgba(255,255,255,.15) 6px)}
         .compact-blk.muted,.focus-blk.muted{background-image:repeating-linear-gradient(45deg,transparent,transparent 4px,rgba(255,152,0,.5) 4px,rgba(255,152,0,.5) 8px)!important;outline:2px dashed #FF9800;outline-offset:-2px;animation:none!important;opacity:.85!important}
-        .compact-blk.muted::after,.focus-blk.muted::after{content:'🔇';position:absolute;top:1px;left:3px;font-size:.7em;z-index:3;text-shadow:0 1px 2px rgba(0,0,0,.5);pointer-events:none}
+        .blk-muted-ico{position:absolute;top:1px;left:2px;--mdi-icon-size:13px;color:#FF9800;z-index:3;pointer-events:none;filter:drop-shadow(0 1px 1px rgba(0,0,0,.5))}
         .compact-blk-val{white-space:nowrap;overflow:hidden;max-width:40px}
         .compact-ticks{position:relative;height:14px;margin-top:2px}
         .compact-tick{position:absolute;font-size:.55em;color:var(--secondary-text-color);opacity:.6;transform:translateX(-50%)}
@@ -97,6 +98,10 @@ class WeeklyScheduleViewCard extends WeeklyScheduleBase {
         .focus-blk:hover{filter:brightness(.84);opacity:1}
         .focus-blk.active{animation:focus-pulse 2s infinite ease-in-out;border:2px solid rgba(255,255,255,.75);opacity:1!important;z-index:2}
         .focus-blk.off{opacity:.5;background-image:repeating-linear-gradient(45deg,transparent,transparent 4px,rgba(255,255,255,.15) 4px,rgba(255,255,255,.15) 6px)}
+        @media (prefers-reduced-motion: reduce){
+          .compact-blk.active{animation:none!important;box-shadow:0 0 0 2px var(--cblk-glow,var(--primary-color,#03a9f4))}
+          .focus-blk.active{animation:none!important;box-shadow:0 0 0 2px var(--fblk-glow,var(--primary-color,#03a9f4))}
+        }
         .focus-blk-info{display:flex;flex-direction:column;min-width:0;overflow:hidden;gap:1px}
         .focus-blk-name{font-size:.72em;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.2}
         .focus-blk-val{font-size:.68em;opacity:.9;white-space:nowrap;overflow:hidden;line-height:1.2}
@@ -133,14 +138,14 @@ class WeeklyScheduleViewCard extends WeeklyScheduleBase {
       const style = active ? `background:${color}1F;border-color:${color};color:${color}` : '';
       const actLbl = active ? (this.t('profile.deactivate') || 'Disattiva') : (this.t('profile.activate') || 'Attiva');
       const actColor = active ? 'var(--secondary-text-color)' : '#4CAF50';
-      return `<div class="${cls.join(' ')}" data-pid="${p.id}" style="${style}"><span class="chip-name">${p.name}</span><button class="chip-activate" data-pid="${p.id}" title="${actLbl}" style="color:${actColor}">${active ? '⏸' : '▶'}</button></div>`;
+      return `<div class="${cls.join(' ')}" role="button" tabindex="0" data-pid="${p.id}" style="${style}"><span class="chip-name">${this._esc(p.name)}</span><button class="chip-activate" data-pid="${p.id}" title="${actLbl}" style="color:${actColor}">${active ? '⏸' : '▶'}</button></div>`;
     }).join('');
 
     const tabs = this._getAllTabs();
     const activeTabIdx = Math.min(this._activeTab, tabs.length - 1);
     const tabsHtml = tabs.length > 1 ? tabs.map((t, i) => {
-      const name = t.name || t.entity || '?';
-      return `<div class="tab-chip${i === activeTabIdx ? ' active' : ''}" data-ti="${i}">${name}</div>`;
+      const name = this._esc(t.name || t.entity || '?');
+      return `<div class="tab-chip${i === activeTabIdx ? ' active' : ''}" data-ti="${i}" role="button" tabindex="0">${name}</div>`;
     }).join('') : '';
 
     this._setStyles('main', this._mainStyles());
@@ -161,13 +166,13 @@ class WeeklyScheduleViewCard extends WeeklyScheduleBase {
         ${body}
         <div class="status">${(() => {
           const sel = this._getSelectedProfile();
-          if (!sel) return tab.name || tab.entity || '';
+          if (!sel) return this._esc(tab.name || tab.entity || '');
           const isAct = this._isProfileActive(sel);
           const color = isAct ? 'var(--success-color,#4CAF50)' : 'var(--secondary-text-color)';
           const dot = isAct ? '●' : '○';
           const lbl = isAct ? this.t('profile.active') || 'Attivo' : this.t('profile.activate') || 'Attiva...';
           const tabName = tab.name || tab.entity || '';
-          return `<span>${this.t('profile.viewing') || 'Stai visualizzando'}: <b>${sel.name}</b></span> <span class="status-sep">·</span> <span class="status-prof" data-pid="${sel.id}" style="color:${color};cursor:${isAct ? 'default' : 'pointer'}">${dot} ${lbl}</span>${tabName ? ` <span class="status-sep">·</span> <span>${tabName}</span>` : ''}`;
+          return `<span>${this.t('profile.viewing') || 'Stai visualizzando'}: <b>${this._esc(sel.name)}</b></span> <span class="status-sep">·</span> <span class="status-prof" data-pid="${sel.id}" style="color:${color};cursor:${isAct ? 'default' : 'pointer'}">${dot} ${lbl}</span>${tabName ? ` <span class="status-sep">·</span> <span>${this._esc(tabName)}</span>` : ''}`;
         })()}</div>
       </ha-card>
     `;

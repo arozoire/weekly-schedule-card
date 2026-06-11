@@ -142,19 +142,46 @@ template/turn_off puntano a un'entità inesistente e l'override non scatta mai. 
 guardia 5s serve o si toglie).
 
 ## Profili storage
-JSON in chunk 255 char su `input_text.weekly_schedule_profiles_N`.
+Persistenza via **hass websocket** `frontend/get_user_data` / `set_user_data`, chiave
+`weekly_schedule_card` (NON più `input_text` a chunk). Helper: `_wsGet()` / `_wsSet(data)`.
+Schema reale:
 ```javascript
 {
+  groups: [],                 // legacy: migrato dentro profiles[].groups da _ensureDefaultProfile
   profiles: [{
-    id, name, exclusive, active,
-    groups: [{ id, name, color, entities[] }],
-    schedules: ['switch.schedule_XXX'],
-    conditionAutomations: { 'switch.schedule_XXX': 'automation.wsc_XXX' }
+    id, name, exclusive, groups: [{ id, name, color, entities[] }],
+    schedules: ['switch.schedule_XXX'],   // mono-entità ciascuno
+    scheduleLinks: [{
+      id: 'switch.schedule_XXX',          // chiave = entity_id dello schedule
+      // condizioni
+      conditions: [{ entity, attribute?, operator, value }], condCombinator: 'and'|'or', condInterval,
+      condAutoId,                         // automation.wsc_cond_*
+      // override manuale
+      overrideEnabled, overrideFlagAutoId,
+      // extras (preset/fan/swing/hvac)
+      extras, extrasAutoId,
+      // notifiche
+      notifyService, notifyMessage, notifyMessageEnd, notifyTrigger, notifyAutoId,
+      // azione di fine slot
+      autoOffAutoId, stopAction, stopValue,
+      autoChildId                         // LEGACY (vecchio child auto-off, rimosso al salvataggio)
+    }]
   }],
   activeProfiles: ['profile_id']
 }
 ```
 Regola esclusività: profili con entità in comune → esclusivi tra loro.
+
+## Storage transazionale (batching scritture)
+Per evitare N scritture+eventi per una singola operazione utente:
+- `_wsSet(data)` aggiorna `_storageData` + invalida la render-cache; se è dentro una transazione
+  (`_txDepth>0`) marca solo `_txDirty` e rinvia, altrimenti scrive subito via `_wsSetNow`.
+- `_wsSetNow(data)`: scrittura reale (`set_user_data`) + evento `wsc-storage-changed`.
+- `_withTx(async fn)`: conta la profondità (nesting sicuro); a fine transazione UNA sola
+  `_wsSetNow` sullo stato raggiunto (best-effort anche se `fn` lancia).
+- Avvolte in `_withTx`: `_saveSchedule`, `_deleteSchedule`, `_deleteProfile`, `_activateProfile`,
+  `_duplicateProfile`, `_cancelNewProfile`, `_cleanupOrphanAutomations`. Le `_wsSet` FUORI
+  transazione restano scritture immediate (rename profilo, gruppi, `_ensureDefaultProfile`, ecc.).
 
 ## Popup domini
 ```
@@ -166,28 +193,30 @@ switch  → on/off
 Toggle on/off in popup chiama `switch.turn_on/off` immediatamente.
 Save chiama `scheduler.edit` con azioni aggiornate.
 
-## Viste disponibili (weekly-schedule-card)
+## Viste disponibili (weekly-schedule-card — editing)
 ```
-columns  → griglia 7 colonne, editing principale
-rows     → righe per giorno
-compact  → giorni collassabili, mobile-first
-focus    → giorno espanso + colonne slim, corsie per entità multiple
+columns  → griglia 7 colonne, editing principale (default)
+rows     → righe per giorno (gantt)
 ```
-Toggle ciclico: columns → rows → compact → focus → columns
+Toggle ciclico: **columns ↔ rows** (solo queste due). I builder `_buildCompactView` /
+`_buildFocusView` esistono in base-card ma sono usati SOLO dalla view-card.
 
-## Viste disponibili (weekly-schedule-view-card)
+## Viste disponibili (weekly-schedule-view-card — sola lettura)
 ```
-focus    → solo visualizzazione, default
+focus    → giorno espanso + colonne slim (default)
 compact  → giorni collassabili
 rows     → righe per giorno
 ```
-Nessun editing, nessun profilo, nessun gruppo.
+Toggle ciclico tra focus / compact / rows. Nessun editing, nessun profilo, nessun gruppo.
 Click blocco → more-info switch.schedule_*.
 
 ## I18n
 Lingue: en, it, fr.
 Rilevamento: config.language → hass.language → navigator.language → 'en'.
-File: `src/locales/en.json`, `it.json`, `fr.json`.
+Stringhe **inline** nell'oggetto `LOCALES` (en/it/fr) in `src/base-card.js` (NON in file
+`src/locales/*.json`). Accesso via `t(key)`; `t(key, vars)` interpola i placeholder `{nome}`
+(es. `t('notify.from_to', {start:'08:00', end:'22:00'})`). Le stringhe dei messaggi notifica e
+del nome di default sono nei blocchi `notify.*` e `sched_name.*`.
 
 ## Bug noti / limitazioni
 - Scheduler Component non supporta `conditions` nei timeslots
@@ -252,6 +281,10 @@ notifications:
 
 ## Last modified
 always update last modified date with day an hour Rome utc
+2026-06-11 08:56 Rome (UX cover) — azione tenda: posizione come 4° radio (open/close/stop/position, mutuamente esclusivi; rimosso `enablePosition`, `coverAction` unica fonte). Slider posizione con etichette Chiuso/Aperto e track a gradiente nero→giallo sole (chiuso 0% → aperto 100%). Semantica HA invariata (`set_cover_position`).
+2026-06-11 08:35 Rome (refactor storage/i18n/a11y) — storage transazionale (`_withTx`/`_wsSetNow`/`_wsSet` differito): 1 sola scrittura+evento per operazione utente (save/delete/activate/duplicate/cancel/cleanup); i18n: stringhe di `_buildDefaultNotifyMessage`/`_buildDefaultScheduleName` spostate in LOCALES (`notify.*`/`sched_name.*`) con `t(key, vars)` interpolato (output verificato byte-identico nelle 3 lingue); CLAUDE.md aggiornato (storage reale via get/set_user_data, i18n inline, viste); a11y tastiera (role/tabindex/keydown Enter-Spazio condiviso, aria-pressed/expanded, `:focus-visible`). Mono-entità invariato.
+2026-06-10 10:54 Rome (perf/security) — fix listener tooltip duplicati (bind once, no memory leak), mini card con debounce+diff (_scheduleMiniRender/_miniHassChanged), escaping HTML sistematico anti-XSS (`_esc`/`_escAttr` statici+istanza in base; mini card via `WeeklyScheduleBase._esc`), memoizzazione per-render (`_getRenderCache` token-based: `schedulesByEntity`+`linksById`, invalidata in `_wsSet`). Mono-entità invariato.
+2026-06-10 09:59 Rome (v1.1.2) — UI/build quick wins: contrasto testo blocchi (luminanza→nero/bianco), minificazione terser + check robusto, deploy cross-platform (scripts/deploy.js), prefers-reduced-motion, emoji→ha-icon mdi, badge dark-mode (var --success/--error-color), leggibilità etichette (font-size/tabular-nums/soglia label colonne)
 2026-06-08 Rome (v1.1.1) — fix override: entity_id automazione-flag da alias slugificato (non object_id)
 
 ## Fix stato 'triggered' dello switch schedule (2026-06-05, v1.0.8)

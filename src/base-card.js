@@ -13,7 +13,8 @@ const LOCALES = {
     errors:{ no_days:'Please select at least one day.',delete_confirm:'Delete this schedule?',delete_profile_confirm:'Delete this profile and all its schedules?',save_failed:'Failed',overlap:'Overlap with existing schedule in this profile' },
     warnings:{ temp_unusual:'⚠️ Unusual value — check device compatibility',temp_very_high:'🔴 Warning: very high temperature',out_of_slider_range:'Outside typical range for this entity' },
     cond:{ add:'Add condition',entity:'Entity',operator:'Operator',value:'Value',and_all:'All (AND)',or_any:'Any (OR)',recheck:'Re-check interval' },
-    notify:{ restore_auto:'Restore auto text',trigger_label:'When to notify',trigger_none:'Never',trigger_start:'On start',trigger_end:'On end',trigger_both:'Start + end',msg_start_label:'Start message',msg_end_label:'End message',default_start:'Schedule started',default_end:'Schedule ended' },
+    notify:{ restore_auto:'Restore auto text',trigger_label:'When to notify',trigger_none:'Never',trigger_start:'On start',trigger_end:'On end',trigger_both:'Start + end',msg_start_label:'Start message',msg_end_label:'End message',default_start:'Schedule started',default_end:'Schedule ended',on:'on',off:'off',from_to:'From {start} to {end}',was_active:'Was active {start}–{end}',end_off:'auto turn off',end_on:'auto turn on',end_temp:'set {value}°C',end_none:'no action',conditions_label:'Conditions',recheck:'Recheck every {n} min',at_end:'At end: {action}',completed:'schedule completed',set_to:'set to',brightness:'brightness' },
+    sched_name:{ all_day:'all-day',workdays_abbr:'wd' },
     linked:{ title:'Linked objects',auto_off:'Auto-off automation',cond_auto:'Condition automation',extras_auto:'Extras automation',notify:'Notification',override_flag:'Override flag',open:'Open',edit_yaml:'Edit YAML',missing:'missing' },
     endact:{ brightness:'Set brightness',color:'Set color',color_temp:'Set color temp',speed:'Set speed',position:'Set position',open:'Open',close:'Close',stop:'Stop' },
     override:{ enable:'Allow manual override',hint:'If you change the entity by hand during a slot, the schedule stops re-applying its value until the next slot (conditional schedules only).',active:'Manual override active',inactive:'No override',cancel:'Cancel override now' }
@@ -27,7 +28,8 @@ const LOCALES = {
     errors:{ no_days:'Seleziona almeno un giorno.',delete_confirm:'Eliminare questo schedule?',delete_profile_confirm:'Eliminare questo profilo e tutti i suoi schedule?',save_failed:'Errore',overlap:'Sovrapposizione con schedule esistente in questo profilo' },
     warnings:{ temp_unusual:'⚠️ Valore insolito — verifica compatibilità con il tuo dispositivo',temp_very_high:'🔴 Attenzione: temperatura molto alta',out_of_slider_range:'Fuori dal range tipico per questa entità' },
     cond:{ add:'Aggiungi condizione',entity:'Entità',operator:'Operatore',value:'Valore',and_all:'Tutte (AND)',or_any:'Una qualsiasi (OR)',recheck:'Intervallo rivalutazione' },
-    notify:{ restore_auto:'Ripristina testo automatico',trigger_label:'Quando notificare',trigger_none:'Mai',trigger_start:"All'inizio",trigger_end:'Alla fine',trigger_both:'Inizio + fine',msg_start_label:'Messaggio inizio',msg_end_label:'Messaggio fine',default_start:'Schedule attivato',default_end:'Schedule terminato' },
+    notify:{ restore_auto:'Ripristina testo automatico',trigger_label:'Quando notificare',trigger_none:'Mai',trigger_start:"All'inizio",trigger_end:'Alla fine',trigger_both:'Inizio + fine',msg_start_label:'Messaggio inizio',msg_end_label:'Messaggio fine',default_start:'Schedule attivato',default_end:'Schedule terminato',on:'acceso',off:'spento',from_to:'Dalle {start} alle {end}',was_active:'Era attivo {start}–{end}',end_off:'spegnimento automatico',end_on:'accensione automatica',end_temp:'imposta {value}°C',end_none:'nessuna azione',conditions_label:'Condizioni',recheck:'Controllo ogni {n} min',at_end:'Alla fine: {action}',completed:'schedule completato',set_to:'impostato a',brightness:'luminosità' },
+    sched_name:{ all_day:'tutto-gg',workdays_abbr:'fer' },
     linked:{ title:'Oggetti collegati',auto_off:'Automazione auto-off',cond_auto:'Automazione condizioni',extras_auto:'Automazione extra',notify:'Notifica',override_flag:'Flag override',open:'Apri',edit_yaml:'Modifica YAML',missing:'mancante' },
     endact:{ brightness:'Imposta luminosità',color:'Imposta colore',color_temp:'Imposta temp. colore',speed:'Imposta velocità',position:'Imposta posizione',open:'Apri',close:'Chiudi',stop:'Ferma' },
     override:{ enable:'Consenti override manuale',hint:'Se cambi l\'entità a mano durante uno slot, lo schedule smette di ri-applicare il suo valore fino al prossimo slot (solo schedule con condizioni).',active:'Override manuale attivo',inactive:'Nessun override',cancel:'Annulla override adesso' }
@@ -41,7 +43,8 @@ const LOCALES = {
     errors:{ no_days:'Sélectionnez au moins un jour.',delete_confirm:'Supprimer ce schedule ?',delete_profile_confirm:'Supprimer ce profil et tous ses schedules ?',save_failed:'Échec',overlap:'Chevauchement avec un planning existant dans ce profil' },
     warnings:{ temp_unusual:"⚠️ Valeur inhabituelle — vérifiez la compatibilité avec votre appareil",temp_very_high:"🔴 Attention : température très élevée",out_of_slider_range:'Hors de la plage typique pour cette entité' },
     cond:{ add:'Ajouter condition',entity:'Entité',operator:'Opérateur',value:'Valeur',and_all:'Toutes (AND)',or_any:"N'importe laquelle (OR)",recheck:'Intervalle de réévaluation' },
-    notify:{ restore_auto:'Restaurer texte auto',trigger_label:'Quand notifier',trigger_none:'Jamais',trigger_start:'Au début',trigger_end:'À la fin',trigger_both:'Début + fin',msg_start_label:'Message début',msg_end_label:'Message fin',default_start:'Schedule démarré',default_end:'Schedule terminé' },
+    notify:{ restore_auto:'Restaurer texte auto',trigger_label:'Quand notifier',trigger_none:'Jamais',trigger_start:'Au début',trigger_end:'À la fin',trigger_both:'Début + fin',msg_start_label:'Message début',msg_end_label:'Message fin',default_start:'Schedule démarré',default_end:'Schedule terminé',on:'allumé',off:'éteint',from_to:'De {start} à {end}',was_active:'Était actif {start}–{end}',end_off:'extinction automatique',end_on:'allumage automatique',end_temp:'régler {value}°C',end_none:'aucune action',conditions_label:'Conditions',recheck:'Revérification chaque {n} min',at_end:'À la fin: {action}',completed:'planification terminée',set_to:'réglé à',brightness:'luminosité' },
+    sched_name:{ all_day:'tt-jour',workdays_abbr:'jo' },
     linked:{ title:'Objets liés',auto_off:'Automatisation auto-off',cond_auto:'Automatisation conditions',extras_auto:'Automatisation extra',notify:'Notification',override_flag:'Indicateur surcharge',open:'Ouvrir',edit_yaml:'Modifier YAML',missing:'manquant' },
     endact:{ brightness:'Définir luminosité',color:'Définir couleur',color_temp:'Définir temp. couleur',speed:'Définir vitesse',position:'Définir position',open:'Ouvrir',close:'Fermer',stop:'Arrêter' },
     override:{ enable:'Autoriser la commande manuelle',hint:'Si vous changez l\'entité à la main pendant un créneau, le planning cesse de réappliquer sa valeur jusqu\'au prochain créneau (plannings avec conditions uniquement).',active:'Commande manuelle active',inactive:'Aucune surcharge',cancel:'Annuler la surcharge' }
@@ -71,7 +74,21 @@ export default class WeeklyScheduleBase extends HTMLElement {
     this._ttEl = null;
     this._lang = null;
     this._prevHass = null;
+    this._txDepth = 0;   // profondità transazione storage (batching _wsSet)
+    this._txDirty = false;
   }
+
+  // ── HTML escaping (XSS) ───────────────────────────────────────────────────
+  // _esc: contenuto testo (& < >). _escAttr: valori di attributo (anche " ').
+  // Statici (usabili anche dalla mini card che non estende la base) + delega d'istanza.
+  static _esc(s) {
+    return String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  }
+  static _escAttr(s) {
+    return WeeklyScheduleBase._esc(s).replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+  }
+  _esc(s) { return WeeklyScheduleBase._esc(s); }
+  _escAttr(s) { return WeeklyScheduleBase._escAttr(s); }
 
   set hass(hass) {
     const prev = this._prevHass;
@@ -188,7 +205,7 @@ export default class WeeklyScheduleBase extends HTMLElement {
     this._compactExpanded = new Set([todayIdx]);
   }
 
-  t(key) {
+  t(key, vars) {
     if (!this._lang) {
       const cfg = (this._config?.language || '').toLowerCase().slice(0, 2);
       const ha  = (this._hass?.language || '').toLowerCase().slice(0, 2);
@@ -199,10 +216,16 @@ export default class WeeklyScheduleBase extends HTMLElement {
     const parts = key.split('.');
     let obj = LOCALES[this._lang];
     for (const p of parts) { if (obj == null) break; obj = obj[p]; }
-    if (obj != null && typeof obj === 'string') return obj;
-    let en = LOCALES.en;
-    for (const p of parts) { if (en == null) break; en = en[p]; }
-    return (en != null && typeof en === 'string') ? en : key;
+    let str;
+    if (obj != null && typeof obj === 'string') str = obj;
+    else {
+      let en = LOCALES.en;
+      for (const p of parts) { if (en == null) break; en = en[p]; }
+      str = (en != null && typeof en === 'string') ? en : key;
+    }
+    // Interpolazione placeholder {nome} → vars.nome (lascia intatto se assente)
+    if (vars) str = str.replace(/\{(\w+)\}/g, (m, k) => (k in vars ? String(vars[k]) : m));
+    return str;
   }
 
   getCardSize() { return 7; }
@@ -246,15 +269,37 @@ export default class WeeklyScheduleBase extends HTMLElement {
 
   async _wsSet(data) {
     this._storageData = data;
+    this._renderCache = null; // invalida la cache (lo storage può essere mutato in place, stessa ref)
+    if (this._txDepth > 0) { this._txDirty = true; return; } // dentro una transazione → scrittura differita
+    return this._wsSetNow(data);
+  }
+
+  // Scrittura reale dello storage + notifica alle altre card. Usata da _wsSet (fuori transazione)
+  // o una sola volta a fine transazione (_withTx). NON aggiorna _storageData (già fatto da _wsSet).
+  async _wsSetNow(data) {
     await this._hass.connection.sendMessagePromise({
       type: 'frontend/set_user_data',
       key: 'weekly_schedule_card',
       value: data,
     });
-    // Notify other card instances on the same page
     try {
       window.dispatchEvent(new CustomEvent('wsc-storage-changed', { detail: { source: this, data } }));
     } catch {}
+  }
+
+  // Batching delle scritture storage: dentro fn ogni _wsSet aggiorna solo _storageData in memoria
+  // e marca dirty; UNA sola scrittura+evento avviene a fine transazione, sullo stato raggiunto
+  // (best-effort: il finally scrive anche se fn lancia). _txDepth → transazioni annidate sicure.
+  async _withTx(fn) {
+    this._txDepth = (this._txDepth || 0) + 1;
+    try {
+      return await fn();
+    } finally {
+      if (--this._txDepth === 0 && this._txDirty) {
+        this._txDirty = false;
+        try { await this._wsSetNow(this._storageData); } catch {}
+      }
+    }
   }
 
   // ── Profile bootstrap ─────────────────────────────────────────────────────
@@ -330,11 +375,7 @@ export default class WeeklyScheduleBase extends HTMLElement {
   // ── Auto-child helpers ────────────────────────────────────────────────────
 
   _getAutoChildId(parentEntityId) {
-    for (const p of this._storageData?.profiles || []) {
-      const link = (p.scheduleLinks || []).find(l => l.id === parentEntityId);
-      if (link?.autoChildId) return link.autoChildId;
-    }
-    return null;
+    return this._linksFor(parentEntityId).find(l => l.autoChildId)?.autoChildId || null;
   }
 
   _hasAutoChild(entityId) { return !!this._getAutoChildId(entityId); }
@@ -369,11 +410,8 @@ export default class WeeklyScheduleBase extends HTMLElement {
 
   // Stored end-of-slot action ({stopAction, stopValue}) or null if not persisted.
   _getStoredStop(scheduleEntityId) {
-    for (const p of this._storageData?.profiles || []) {
-      const link = (p.scheduleLinks || []).find(l => l.id === scheduleEntityId);
-      if (link && 'stopAction' in link) return { stopAction: link.stopAction || null, stopValue: link.stopValue ?? null };
-    }
-    return null;
+    const link = this._linksFor(scheduleEntityId).find(l => 'stopAction' in l);
+    return link ? { stopAction: link.stopAction || null, stopValue: link.stopValue ?? null } : null;
   }
 
   _hasEndAction(scheduleEntityId) {
@@ -383,10 +421,8 @@ export default class WeeklyScheduleBase extends HTMLElement {
   // ── Condition storage helpers ─────────────────────────────────────────────
 
   _getStoredConditions(scheduleEntityId) {
-    for (const p of this._storageData?.profiles || []) {
-      const link = (p.scheduleLinks || []).find(l => l.id === scheduleEntityId);
-      if (link?.conditions) return { conditions: link.conditions, condCombinator: link.condCombinator || 'and', condInterval: link.condInterval || 15 };
-    }
+    const link = this._linksFor(scheduleEntityId).find(l => l.conditions);
+    if (link) return { conditions: link.conditions, condCombinator: link.condCombinator || 'and', condInterval: link.condInterval || 15 };
     return { conditions: [], condCombinator: 'and', condInterval: 15 };
   }
 
@@ -552,6 +588,7 @@ export default class WeeklyScheduleBase extends HTMLElement {
     this._orphanCleanupDone = true;
     const data = this._storageData;
     if (!data?.profiles) return;
+    await this._withTx(async () => {
     let dirty = false;
     const deletions = [];
     const childRemovals = new Set();
@@ -595,6 +632,7 @@ export default class WeeklyScheduleBase extends HTMLElement {
     if (dirty) await this._wsSet(data).catch(() => {});
     if (deletions.length || childRemovals.size)
       console.log(`[WSC] Cleaned up ${deletions.length} orphan automation(s), ${childRemovals.size} orphan child schedule(s)`);
+    });
   }
 
   // ── Auto-off automation (end-of-slot action; replaces the old child schedule) ──
@@ -644,51 +682,46 @@ export default class WeeklyScheduleBase extends HTMLElement {
 
   _buildDefaultNotifyMessage(ps, kind = 'start') {
     if (!ps) return '';
-    const lang = this._lang || 'it';
     const ec = ps.entityConf || {};
     const entityName = this._hass?.states?.[ec.entity]?.attributes?.friendly_name || ec.name || ec.entity || '';
     const startTime = this._minutesToTime(ps.startMin);
     const endTime = this._minutesToTime(ps.endMin === 1440 ? 0 : ps.endMin);
-    const onLbl = lang === 'en' ? 'on' : lang === 'fr' ? 'allumé' : 'acceso';
-    const offLbl = lang === 'en' ? 'off' : lang === 'fr' ? 'éteint' : 'spento';
-    const fromTo = lang === 'en' ? `From ${startTime} to ${endTime}` : lang === 'fr' ? `De ${startTime} à ${endTime}` : `Dalle ${startTime} alle ${endTime}`;
+    const onLbl = this.t('notify.on');
+    const offLbl = this.t('notify.off');
+    const fromTo = this.t('notify.from_to', { start: startTime, end: endTime });
     // weekdays
     const ds = [...(ps.days || [])].sort((a,b)=>a-b);
     let daysText;
-    if (ds.length === 7) daysText = this.t('days.all') || (lang==='en'?'every day':lang==='fr'?'tous les jours':'tutti i giorni');
-    else if (ds.length === 5 && ds.every((v,i)=>v===i)) daysText = this.t('days.workdays') || (lang==='en'?'workdays':lang==='fr'?'jours ouvrés':'feriali');
-    else if (ds.length === 2 && ds[0]===5 && ds[1]===6) daysText = this.t('days.weekend') || (lang==='en'?'weekend':'weekend');
+    if (ds.length === 7) daysText = this.t('days.all');
+    else if (ds.length === 5 && ds.every((v,i)=>v===i)) daysText = this.t('days.workdays');
+    else if (ds.length === 2 && ds[0]===5 && ds[1]===6) daysText = this.t('days.weekend');
     else daysText = ds.map(i => this.t(`days.${this._getDayKey(i)}`) || this._getDayKey(i)).join(', ');
     // end action
     let endAction;
-    if (ps.stopAction === 'turn_off') endAction = lang==='en'?'auto turn off':lang==='fr'?'extinction automatique':'spegnimento automatico';
-    else if (ps.stopAction === 'turn_on') endAction = lang==='en'?'auto turn on':lang==='fr'?'allumage automatique':'accensione automatica';
-    else if (ps.stopAction === 'set_temperature') endAction = lang==='en'?`set ${ps.stopValue}°C`:lang==='fr'?`régler ${ps.stopValue}°C`:`imposta ${ps.stopValue}°C`;
-    else endAction = lang==='en'?'no action':lang==='fr'?'aucune action':'nessuna azione';
+    if (ps.stopAction === 'turn_off') endAction = this.t('notify.end_off');
+    else if (ps.stopAction === 'turn_on') endAction = this.t('notify.end_on');
+    else if (ps.stopAction === 'set_temperature') endAction = this.t('notify.end_temp', { value: ps.stopValue });
+    else endAction = this.t('notify.end_none');
     // condition line
     let condLine = '';
     const validConds = (ps.conditions || []).filter(c => c.entity && c.value);
     if (validConds.length) {
       const condTxt = validConds.map(c => `${c.entity} ${c.operator} ${c.value}`).join(ps.condCombinator === 'or' ? ' OR ' : ' AND ');
-      const condLbl = lang==='en'?'Conditions':lang==='fr'?'Conditions':'Condizioni';
-      const recheckLbl = lang==='en'?`Recheck every ${ps.condInterval} min`:lang==='fr'?`Revérification chaque ${ps.condInterval} min`:`Controllo ogni ${ps.condInterval} min`;
-      condLine = `\n🔍 ${condLbl}: ${condTxt}\n🔄 ${recheckLbl}`;
+      condLine = `\n🔍 ${this.t('notify.conditions_label')}: ${condTxt}\n🔄 ${this.t('notify.recheck', { n: ps.condInterval })}`;
     }
     const daysLbl = `📅 ${daysText}`;
-    const endLbl = lang==='en'?`🔚 At end: ${endAction}`:lang==='fr'?`🔚 À la fin: ${endAction}`:`🔚 Alla fine: ${endAction}`;
+    const endLbl = `🔚 ${this.t('notify.at_end', { action: endAction })}`;
     let firstLine;
     if (kind === 'end') {
       // End-of-slot message: schedule completed, optionally mentions auto-action
-      const endedLbl = lang==='en'?'schedule completed':lang==='fr'?'planification terminée':'schedule completato';
-      firstLine = `⏹️ ${entityName} — ${endedLbl}`;
-      const wasFromTo = lang==='en'?`Was active ${startTime}–${endTime}`:lang==='fr'?`Était actif ${startTime}–${endTime}`:`Era attivo ${startTime}–${endTime}`;
+      firstLine = `⏹️ ${entityName} — ${this.t('notify.completed')}`;
+      const wasFromTo = this.t('notify.was_active', { start: startTime, end: endTime });
       return `${firstLine}\n⏰ ${wasFromTo}\n${daysLbl}\n${endLbl}`;
     }
     // Start message (default)
     if (ps.domain === 'climate') {
       if (ps.enableTemp) {
-        const setLbl = lang==='en'?'set to':lang==='fr'?'réglé à':'impostato a';
-        firstLine = `🌡️ ${entityName} ${setLbl} ${ps.temp}°C`;
+        firstLine = `🌡️ ${entityName} ${this.t('notify.set_to')} ${ps.temp}°C`;
       } else if (ps.enableHvac && ps.hvacMode) {
         firstLine = `❄️ ${entityName}: ${ps.hvacMode}`;
       } else {
@@ -698,8 +731,7 @@ export default class WeeklyScheduleBase extends HTMLElement {
       const stateLbl = ps.turnOn ? onLbl : offLbl;
       let bLine = '';
       if (ps.turnOn && ps.enableBrightness) {
-        const brLbl = lang==='en'?'brightness':lang==='fr'?'luminosité':'luminosità';
-        bLine = ` (${brLbl} ${ps.brightness}%)`;
+        bLine = ` (${this.t('notify.brightness')} ${ps.brightness}%)`;
       }
       firstLine = `💡 ${entityName} ${stateLbl}${bLine}`;
     } else {
@@ -712,7 +744,6 @@ export default class WeeklyScheduleBase extends HTMLElement {
   // Pattern: "<Entity> <Action> <Time> [<Days>]" — max ~40 chars.
   _buildDefaultScheduleName(ps) {
     if (!ps) return '';
-    const lang = this._lang || 'en';
     const ec = ps.entityConf || {};
     let entName = ec.name || this._hass?.states?.[ec.entity]?.attributes?.friendly_name || ec.entity || '';
     if (entName.length > 12) entName = entName.slice(0, 11) + '…';
@@ -733,7 +764,7 @@ export default class WeeklyScheduleBase extends HTMLElement {
     const allDay = ps.startMin === 0 && ps.endMin === 1440;
     let timeStr;
     if (allDay) {
-      timeStr = lang==='it'?'tutto-gg':lang==='fr'?'tt-jour':'all-day';
+      timeStr = this.t('sched_name.all_day');
     } else {
       const sM = ps.startMin % 60, eM = ps.endMin % 60;
       if (sM === 0 && eM === 0) {
@@ -747,7 +778,7 @@ export default class WeeklyScheduleBase extends HTMLElement {
     const ds = [...(ps.days || [])].sort((a,b)=>a-b);
     let daysStr = '';
     if (ds.length === 7 || ds.length === 0) daysStr = '';
-    else if (ds.length === 5 && ds.every((v,i)=>v===i)) daysStr = lang==='it'?'fer':lang==='fr'?'jo':'wd';
+    else if (ds.length === 5 && ds.every((v,i)=>v===i)) daysStr = this.t('sched_name.workdays_abbr');
     else if (ds.length === 2 && ds[0]===5 && ds[1]===6) daysStr = 'we';
     else if (ds.length <= 3) daysStr = ds.map(i => (this.t(`days.${this._getDayKey(i)}`)||'').slice(0,3)).join(',');
     return [entName, act, timeStr, daysStr].filter(Boolean).join(' ').slice(0, 40);
@@ -932,7 +963,7 @@ export default class WeeklyScheduleBase extends HTMLElement {
         out.push({ service: 'fan.turn_off', target: { entity_id: eid } });
       }
     } else if (dom === 'cover') {
-      if (ps.enablePosition) {
+      if (ps.coverAction === 'position') {
         out.push({ service: 'cover.set_cover_position', target: { entity_id: eid }, data: { position: ps.position } });
       } else {
         const map = { open: 'open_cover', close: 'close_cover', stop: 'stop_cover' };
@@ -1419,24 +1450,24 @@ export default class WeeklyScheduleBase extends HTMLElement {
       acts.push(`<button class="lo-btn" data-act="edit-auto" data-val="${flagId}">${this.t('linked.edit_yaml')}</button>`);
       rows.push(`<div class="lo-row">
         <ha-icon class="lo-ic" icon="mdi:hand-back-right-outline"></ha-icon>
-        <div class="lo-meta"><span class="lo-name">${this.t('linked.override_flag')}</span><span class="lo-id">${String(idText).replace(/</g,'&lt;')}</span></div>
+        <div class="lo-meta"><span class="lo-name">${this.t('linked.override_flag')}</span><span class="lo-id">${this._esc(idText)}</span></div>
         ${badge}
         <div class="lo-acts">${acts.join('')}</div>
       </div>`);
     }
     if (!rows.length) return '';
-    return `<div class="linked-section"><div class="linked-hdr">🔧 ${this.t('linked.title')}</div>${rows.join('')}</div>`;
+    return `<div class="linked-section"><div class="linked-hdr"><ha-icon icon="mdi:wrench" style="--mdi-icon-size:16px;vertical-align:middle;margin-right:4px"></ha-icon>${this.t('linked.title')}</div>${rows.join('')}</div>`;
   }
 
   _linkRow(icon, name, idText, state, actions) {
     const acts = (actions || []).filter(Boolean).map(a =>
-      `<button class="lo-btn" data-act="${a.act}" data-val="${String(a.val).replace(/"/g, '&quot;')}">${a.label}</button>`).join('');
+      `<button class="lo-btn" data-act="${a.act}" data-val="${this._escAttr(a.val)}">${a.label}</button>`).join('');
     const badge = state
       ? `<span class="lo-badge ${state === 'on' ? 'on' : 'off'}">${state}</span>`
       : `<span class="lo-badge missing">${this.t('linked.missing')}</span>`;
     return `<div class="lo-row">
       <ha-icon class="lo-ic" icon="${icon}"></ha-icon>
-      <div class="lo-meta"><span class="lo-name">${name}</span><span class="lo-id">${String(idText).replace(/</g, '&lt;')}</span></div>
+      <div class="lo-meta"><span class="lo-name">${name}</span><span class="lo-id">${this._esc(idText)}</span></div>
       ${badge}
       <div class="lo-acts">${acts}</div>
     </div>`;
@@ -1486,7 +1517,7 @@ export default class WeeklyScheduleBase extends HTMLElement {
   _alert(message, { okLabel } = {}) {
     const ok = okLabel || this.t('popup.ok') || 'OK';
     const body = `
-      <div class="wsc-modal-msg">${String(message).replace(/</g,'&lt;')}</div>
+      <div class="wsc-modal-msg">${this._esc(message)}</div>
       <div class="wsc-modal-footer">
         <button class="wsc-modal-btn wsc-modal-ok">${ok}</button>
       </div>`;
@@ -1505,7 +1536,7 @@ export default class WeeklyScheduleBase extends HTMLElement {
     const ok = okLabel || this.t('popup.ok') || 'OK';
     const cancel = cancelLabel || this.t('popup.cancel') || 'Cancel';
     const body = `
-      <div class="wsc-modal-msg">${String(message).replace(/</g,'&lt;')}</div>
+      <div class="wsc-modal-msg">${this._esc(message)}</div>
       <div class="wsc-modal-footer">
         <button class="wsc-modal-btn wsc-modal-cancel">${cancel}</button>
         <button class="wsc-modal-btn wsc-modal-ok">${ok}</button>
@@ -1526,8 +1557,8 @@ export default class WeeklyScheduleBase extends HTMLElement {
     const ok = okLabel || this.t('popup.ok') || 'OK';
     const cancel = cancelLabel || this.t('popup.cancel') || 'Cancel';
     const body = `
-      <div class="wsc-modal-label">${String(label).replace(/</g,'&lt;')}</div>
-      <input class="wsc-modal-inp" type="text" value="${String(defaultValue).replace(/"/g,'&quot;')}">
+      <div class="wsc-modal-label">${this._esc(label)}</div>
+      <input class="wsc-modal-inp" type="text" value="${this._escAttr(defaultValue)}">
       <div class="wsc-modal-footer">
         <button class="wsc-modal-btn wsc-modal-cancel">${cancel}</button>
         <button class="wsc-modal-btn wsc-modal-ok">${ok}</button>
@@ -1627,6 +1658,7 @@ export default class WeeklyScheduleBase extends HTMLElement {
     if (!pe) return;
     this._profileEditMode = null;
     this._selectedProfileId = pe.previousSelectedId;
+    await this._withTx(async () => {
     const data = this._storageData;
     const p = (data.profiles || []).find(x => x.id === pe.profileId);
     if (p) {
@@ -1636,6 +1668,7 @@ export default class WeeklyScheduleBase extends HTMLElement {
     const profiles = (data.profiles || []).filter(x => x.id !== pe.profileId);
     const activeProfiles = (data.activeProfiles || []).filter(x => x !== pe.profileId);
     await this._wsSet({ ...data, profiles, activeProfiles });
+    });
     this._activeTab = 0;
     this.render();
   }
@@ -1656,12 +1689,67 @@ export default class WeeklyScheduleBase extends HTMLElement {
 
   // ── Helpers ───────────────────────────────────────────────────────────────
 
+  // ── Per-render memoization ────────────────────────────────────────────────
+  // render() invoca _getSchedules ~7gg × N entità (+ legenda) → ~30 scansioni complete di
+  // hass.states; i link-helper rifanno il loop profili×scheduleLinks per ogni blocco. Cache
+  // token-based: ricostruita solo quando cambia il riferimento di _hass o _storageData,
+  // quindi una sola scansione O(stati) per passata di render (e auto-invalidata fuori render).
+  _getRenderCache() {
+    const c = this._renderCache;
+    if (!c || c._hass !== this._hass || c._storage !== this._storageData) {
+      this._renderCache = this._buildRenderCache();
+    }
+    return this._renderCache;
+  }
+
+  _buildRenderCache() {
+    // schedulesByEntity: stessa semantica di _getSchedules (.includes su entry stringa).
+    const schedulesByEntity = new Map();
+    const states = this._hass?.states;
+    if (states) {
+      for (const s of Object.values(states)) {
+        if (!s.entity_id.startsWith('switch.schedule_')) continue;
+        const ents = s.attributes?.entities;
+        if (!Array.isArray(ents)) continue;
+        const seenEid = new Set(); // come .filter: ogni schedule al più una volta per entità
+        for (const e of ents) {
+          if (typeof e !== 'string' || seenEid.has(e)) continue;
+          seenEid.add(e);
+          let arr = schedulesByEntity.get(e);
+          if (!arr) schedulesByEntity.set(e, arr = []);
+          arr.push(s);
+        }
+      }
+    }
+    // linksById: primo link per profilo per id, in ordine di profilo (come fa .find() per-profilo).
+    const linksById = new Map();
+    for (const p of this._storageData?.profiles || []) {
+      const seen = new Set();
+      for (const l of p.scheduleLinks || []) {
+        if (!l?.id || seen.has(l.id)) continue;
+        seen.add(l.id);
+        let arr = linksById.get(l.id);
+        if (!arr) linksById.set(l.id, arr = []);
+        arr.push(l);
+      }
+    }
+    return { _hass: this._hass, _storage: this._storageData, schedulesByEntity, linksById };
+  }
+
+  // Tutti i link (uno per profilo, in ordine) che corrispondono allo schedule id.
+  _linksFor(scheduleEntityId) {
+    if (this._storageData && this._hass) return this._getRenderCache().linksById.get(scheduleEntityId) || [];
+    const out = [];
+    for (const p of this._storageData?.profiles || []) {
+      const l = (p.scheduleLinks || []).find(x => x.id === scheduleEntityId);
+      if (l) out.push(l);
+    }
+    return out;
+  }
+
   _getSchedules(entityId) {
     if (!this._hass || !entityId) return [];
-    return Object.values(this._hass.states).filter(s =>
-      s.entity_id.startsWith('switch.schedule_') &&
-      s.attributes.entities?.includes(entityId)
-    );
+    return this._getRenderCache().schedulesByEntity.get(entityId) || [];
   }
 
   _detectDomain(entityId) {
@@ -1686,6 +1774,24 @@ export default class WeeklyScheduleBase extends HTMLElement {
     if (temp == null) return '#9E9E9E';
     const ratio = Math.min(1, Math.max(0, (temp - 10) / 15));
     return `rgb(${Math.round(33 + ratio * 211)},${Math.round(150 - ratio * 83)},${Math.round(243 - ratio * 189)})`;
+  }
+
+  // Contrast: black/white text over a block color (luminance 0.299R+0.587G+0.114B, threshold 150).
+  // Parses #RGB / #RRGGBB / rgb(r,g,b); falls back to white for anything non-parsable (transparent, var(), …).
+  _textColorFor(color) {
+    if (!color || typeof color !== 'string') return '#fff';
+    let r, g, b;
+    const hex = color.trim().replace(/^#/, '');
+    if (/^[0-9a-fA-F]{3}$/.test(hex)) {
+      r = parseInt(hex[0] + hex[0], 16); g = parseInt(hex[1] + hex[1], 16); b = parseInt(hex[2] + hex[2], 16);
+    } else if (/^[0-9a-fA-F]{6}$/.test(hex)) {
+      r = parseInt(hex.slice(0, 2), 16); g = parseInt(hex.slice(2, 4), 16); b = parseInt(hex.slice(4, 6), 16);
+    } else {
+      const m = color.match(/rgba?\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)/i);
+      if (!m) return '#fff';
+      r = +m[1]; g = +m[2]; b = +m[3];
+    }
+    return (0.299 * r + 0.587 * g + 0.114 * b) > 150 ? '#000' : '#fff';
   }
 
   _parseTime(t) { const [h, m] = t.split(':').map(Number); return h * 60 + (m || 0); }
@@ -1783,6 +1889,22 @@ export default class WeeklyScheduleBase extends HTMLElement {
       };
       window.addEventListener('wsc-storage-changed', this._storageListener);
     }
+    // a11y: attivazione da tastiera dei controlli role="button" (div cliccabili). Bind una sola
+    // volta sullo shadowRoot persistente → copre render principale, popup <dialog> e view.
+    if (!this._kbdBound) {
+      this._kbdBound = true;
+      this.shadowRoot.addEventListener('keydown', e => this._onActivationKeydown(e));
+    }
+  }
+
+  // Enter/Spazio su un elemento role="button" → click sintetico (i click handler sono delegati
+  // via closest()). Input/checkbox/textarea/button nativi non hanno role=button → non intercettati.
+  _onActivationKeydown(e) {
+    if (e.key !== 'Enter' && e.key !== ' ' && e.key !== 'Spacebar') return;
+    const el = e.target;
+    if (!el || typeof el.click !== 'function' || el.getAttribute?.('role') !== 'button') return;
+    e.preventDefault();
+    el.click();
   }
 
   disconnectedCallback() {
@@ -1857,7 +1979,7 @@ export default class WeeklyScheduleBase extends HTMLElement {
     const state = s.state==='off'?' (disattivo)':'';
     const el = document.createElement('div');
     el.className = 'sched-tooltip';
-    el.innerHTML = `<div class="tt-name">${(s.attributes.friendly_name||entityId).replace(/</g,'&lt;')}${state}</div><div class="tt-row">🕐 ${slots}</div>${actionText?`<div class="tt-row">${actionText}</div>`:''}${days?`<div class="tt-row">📅 ${days}</div>`:''}`;
+    el.innerHTML = `<div class="tt-name">${this._esc(s.attributes.friendly_name||entityId)}${state}</div><div class="tt-row">🕐 ${slots}</div>${actionText?`<div class="tt-row">${actionText}</div>`:''}${days?`<div class="tt-row">📅 ${days}</div>`:''}`;
     this.shadowRoot.appendChild(el); this._ttEl = el;
     const W=el.offsetWidth, H2=el.offsetHeight;
     let left=rect.left+rect.width/2-W/2, top=rect.top-H2-12;
@@ -1895,7 +2017,7 @@ export default class WeeklyScheduleBase extends HTMLElement {
       turnOn: true, brightness: 100, enableBrightness: false,
       enableColor: false, color: '#FFFFFF',
       enableSpeed: false, speed: 50,
-      coverAction: 'close', enablePosition: false, position: 50,
+      coverAction: 'close', position: 50,
       stopAction: null, stopValue: null,
       conditions: [], condCombinator: 'and', condInterval: 15, _condOpen: false,
       overrideEnabled: false,
@@ -1977,8 +2099,7 @@ export default class WeeklyScheduleBase extends HTMLElement {
       color: ad.rgb_color ? this._rgbToHex(ad.rgb_color) : '#FFFFFF',
       enableSpeed: ad.percentage !== undefined,
       speed: ad.percentage ?? 50,
-      coverAction: (svc.includes('open_cover') ? 'open' : svc.includes('stop_cover') ? 'stop' : 'close'),
-      enablePosition: ad.position !== undefined,
+      coverAction: (svc.includes('set_cover_position') ? 'position' : svc.includes('open_cover') ? 'open' : svc.includes('stop_cover') ? 'stop' : 'close'),
       position: ad.position ?? 50,
       stopAction: (() => {
         const stored = this._getStoredStop(entityId);
@@ -2155,16 +2276,16 @@ export default class WeeklyScheduleBase extends HTMLElement {
         <div class="section-label">${this.t('popup.action')}</div>
         <div class="radio-row" style="flex-wrap:wrap;gap:10px">
           <label><input type="radio" name="cover-action" value="open" ${ps.coverAction==='open'?'checked':''}> ${this.t('endact.open')}</label>
-          <label><input type="radio" name="cover-action" value="close" ${ps.coverAction!=='open'&&ps.coverAction!=='stop'?'checked':''}> ${this.t('endact.close')}</label>
+          <label><input type="radio" name="cover-action" value="close" ${ps.coverAction==='close'?'checked':''}> ${this.t('endact.close')}</label>
           <label><input type="radio" name="cover-action" value="stop" ${ps.coverAction==='stop'?'checked':''}> ${this.t('endact.stop')}</label>
+          ${this._entityCaps(ps.entityConf.entity).coverPosition ? `<label><input type="radio" name="cover-action" value="position" ${ps.coverAction==='position'?'checked':''}> ${this.t('endact.position')}</label>` : ''}
         </div>
         ${this._entityCaps(ps.entityConf.entity).coverPosition ? `
-        <div class="action-row" style="margin-top:8px;border-bottom:none">
-          <label class="action-check"><input type="checkbox" class="chk-position" ${ps.enablePosition?'checked':''}><span>${this.t('endact.position')}</span></label>
-          <div class="param-inline ${ps.enablePosition?'':'disabled'}">
-            <span class="position-value" style="min-width:40px;text-align:right;font-weight:700">${ps.position}%</span>
-            <input type="range" class="position-slider" min="0" max="100" step="1" value="${ps.position}" ${ps.enablePosition?'':'disabled'}>
-          </div>
+        <div class="cover-pos-block" style="${ps.coverAction==='position'?'':'display:none'}">
+          <span class="cover-pos-end">${this.t('endact.close')}</span>
+          <input type="range" class="position-slider" min="0" max="100" step="1" value="${ps.position}">
+          <span class="cover-pos-end">${this.t('endact.open')}</span>
+          <span class="position-value">${ps.position}%</span>
         </div>` : ''}
       </div>` : `
       <div>
@@ -2186,7 +2307,7 @@ export default class WeeklyScheduleBase extends HTMLElement {
         </div>
         ${ps.conditions.map((c,i)=>{
           const hasEntity = !!c.entity;
-          const entityInput = `<input class="cond-entity" list="cond-ents-${i}" placeholder="${this.t('cond.entity')}" value="${(c.entity||'').replace(/"/g,'&quot;')}" data-ci="${i}">
+          const entityInput = `<input class="cond-entity" list="cond-ents-${i}" placeholder="${this.t('cond.entity')}" value="${this._escAttr(c.entity||'')}" data-ci="${i}">
             <datalist id="cond-ents-${i}">${condEnts.map(eid=>`<option value="${eid}">`).join('')}</datalist>`;
           if (!hasEntity) {
             // Wait for entity selection before showing operator/value pickers
@@ -2208,15 +2329,15 @@ export default class WeeklyScheduleBase extends HTMLElement {
             const minAttr = spec.min!=null ? ` min="${spec.min}"` : '';
             const maxAttr = spec.max!=null ? ` max="${spec.max}"` : '';
             const unitHtml = spec.unit ? `<span class="cond-unit">${spec.unit}</span>` : '';
-            valHtml = `<input class="cond-val" type="number"${stepAttr}${minAttr}${maxAttr} data-ci="${i}" placeholder="${this.t('cond.value')}" value="${(c.value||'').replace(/"/g,'&quot;')}">${unitHtml}`;
+            valHtml = `<input class="cond-val" type="number"${stepAttr}${minAttr}${maxAttr} data-ci="${i}" placeholder="${this.t('cond.value')}" value="${this._escAttr(c.value||'')}">${unitHtml}`;
           } else if (spec.kind === 'boolean' || spec.kind === 'select') {
             const opts = spec.options || [];
-            valHtml = `<select class="cond-val" data-ci="${i}"><option value="">--</option>${opts.map(o=>`<option value="${o}" ${c.value===o?'selected':''}>${o}</option>`).join('')}</select>`;
+            valHtml = `<select class="cond-val" data-ci="${i}"><option value="">--</option>${opts.map(o=>`<option value="${this._escAttr(o)}" ${c.value===o?'selected':''}>${this._esc(o)}</option>`).join('')}</select>`;
           } else if (spec.kind === 'climate-picker') {
             // attribute not yet selected
             valHtml = `<span class="cond-hint">${this.t('cond.choose_attribute')||'⬅ Scegli un attributo'}</span>`;
           } else {
-            valHtml = `<input class="cond-val" type="text" data-ci="${i}" placeholder="${this.t('cond.value')}" value="${(c.value||'').replace(/"/g,'&quot;')}">`;
+            valHtml = `<input class="cond-val" type="text" data-ci="${i}" placeholder="${this.t('cond.value')}" value="${this._escAttr(c.value||'')}">`;
           }
           return `
           <div class="cond-row">
@@ -2241,7 +2362,7 @@ export default class WeeklyScheduleBase extends HTMLElement {
         </div>
         <label class="cond-override-row" style="${ps.conditions.length===0?'opacity:.45':''}">
           <input type="checkbox" class="cond-override" ${ps.overrideEnabled?'checked':''} ${ps.conditions.length===0?'disabled':''}>
-          <span><b>✋ ${this.t('override.enable')}</b><br><span class="cond-override-hint">${this.t('override.hint')}</span></span>
+          <span><b><ha-icon icon="mdi:hand-back-right-outline" style="--mdi-icon-size:16px;vertical-align:middle;margin-right:4px"></ha-icon>${this.t('override.enable')}</b><br><span class="cond-override-hint">${this.t('override.hint')}</span></span>
         </label>
       </div>` : '';
 
@@ -2266,7 +2387,7 @@ export default class WeeklyScheduleBase extends HTMLElement {
         .section-label { font-size:0.72em;font-weight:600;letter-spacing:.03em;color:var(--secondary-text-color);margin-bottom:6px; }
         .timebar { position:relative;height:48px;background:var(--secondary-background-color,#f5f5f5);border-radius:8px;overflow:hidden;touch-action:none;user-select:none; }
         .tb-bg { position:absolute;top:6px;height:calc(100% - 12px);border-radius:6px;opacity:.6;pointer-events:none; }
-        .tb-edit { position:absolute;top:0;height:100%;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:.65em;font-weight:700;color:white;text-shadow:0 1px 3px rgba(0,0,0,.45);cursor:grab;box-sizing:border-box;touch-action:none;overflow:hidden;box-shadow:0 2px 8px rgba(var(--rgb-primary-color,3,169,244),.3); }
+        .tb-edit { position:absolute;top:0;height:100%;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:.65em;font-variant-numeric:tabular-nums;font-weight:700;color:white;text-shadow:0 1px 3px rgba(0,0,0,.45);cursor:grab;box-sizing:border-box;touch-action:none;overflow:hidden;box-shadow:0 2px 8px rgba(var(--rgb-primary-color,3,169,244),.3); }
         .tb-edit:active { cursor:grabbing; }
         .tb-handle { position:absolute;top:0;height:100%;width:20px;cursor:ew-resize;display:flex;align-items:center;justify-content:center;flex-shrink:0; }
         .tb-handle::after { content:'';display:block;width:20px;height:20px;border-radius:50%;background:white;box-shadow:0 1px 6px rgba(0,0,0,.25);border:2px solid var(--primary-color,#03a9f4);transition:background .15s; }
@@ -2289,6 +2410,14 @@ export default class WeeklyScheduleBase extends HTMLElement {
         .action-row { display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid var(--divider-color,#f0f0f0); }
         .action-check { display:flex;align-items:center;gap:6px;font-size:.82em;color:var(--primary-text-color);white-space:nowrap;cursor:pointer;min-width:110px; }
         .param-inline { display:flex;align-items:center;gap:8px;flex:1; }
+        .cover-pos-block { display:flex;align-items:center;gap:10px;margin-top:10px; }
+        .cover-pos-end { font-size:.74em;font-weight:600;color:var(--secondary-text-color);white-space:nowrap; }
+        .cover-pos-block .position-value { min-width:42px;text-align:right;font-weight:700;font-variant-numeric:tabular-nums; }
+        .cover-pos-block .position-slider { flex:1;-webkit-appearance:none;appearance:none;height:10px;border-radius:6px;background:linear-gradient(90deg,#1a1a1a 0%,#5c5c5c 40%,#ffca28 100%);outline:none;cursor:pointer; }
+        .cover-pos-block .position-slider::-webkit-slider-runnable-track { height:10px;border-radius:6px;background:transparent; }
+        .cover-pos-block .position-slider::-webkit-slider-thumb { -webkit-appearance:none;appearance:none;width:18px;height:18px;border-radius:50%;background:#fff;border:2px solid var(--primary-color,#03a9f4);box-shadow:0 1px 4px rgba(0,0,0,.45);margin-top:-4px;cursor:pointer; }
+        .cover-pos-block .position-slider::-moz-range-track { height:10px;border-radius:6px;background:linear-gradient(90deg,#1a1a1a 0%,#5c5c5c 40%,#ffca28 100%); }
+        .cover-pos-block .position-slider::-moz-range-thumb { width:18px;height:18px;border-radius:50%;background:#fff;border:2px solid var(--primary-color,#03a9f4);box-shadow:0 1px 4px rgba(0,0,0,.45);cursor:pointer; }
         .brightness-value { font-size:.9em;font-weight:700;color:var(--primary-text-color);min-width:40px;text-align:right; }
         input[type=range] { flex:1;accent-color:var(--primary-color,#03a9f4);cursor:pointer; }
         .temp-inp { width:70px;flex-shrink:0;padding:4px 6px;border-radius:6px;border:1px solid var(--divider-color,#ccc);background:var(--card-background-color,#fff);color:var(--primary-text-color);font-size:.88em;font-family:inherit;text-align:center;-moz-appearance:textfield; }
@@ -2363,9 +2492,9 @@ export default class WeeklyScheduleBase extends HTMLElement {
         .lo-name{font-size:.76em;font-weight:600;color:var(--primary-text-color)}
         .lo-id{font-size:.66em;color:var(--secondary-text-color);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-family:monospace}
         .lo-badge{font-size:.6em;font-weight:700;padding:1px 6px;border-radius:6px;flex-shrink:0;text-transform:uppercase}
-        .lo-badge.on{background:color-mix(in srgb,#4CAF50 22%,transparent);color:#2e7d32}
+        .lo-badge.on{background:color-mix(in srgb,var(--success-color,#4CAF50) 22%,transparent);color:var(--success-color,#4CAF50)}
         .lo-badge.off{background:color-mix(in srgb,var(--secondary-text-color) 18%,transparent);color:var(--secondary-text-color)}
-        .lo-badge.missing{background:color-mix(in srgb,#f44336 18%,transparent);color:#f44336}
+        .lo-badge.missing{background:color-mix(in srgb,var(--error-color,#f44336) 18%,transparent);color:var(--error-color,#f44336)}
         .lo-acts{display:flex;gap:4px;flex-shrink:0}
         .lo-btn{padding:3px 8px;border-radius:7px;border:1px solid var(--primary-color,#03a9f4);background:none;color:var(--primary-color,#03a9f4);cursor:pointer;font-size:.68em;white-space:nowrap}
         .lo-btn:hover{background:color-mix(in srgb,var(--primary-color,#03a9f4) 10%,transparent)}
@@ -2389,7 +2518,7 @@ export default class WeeklyScheduleBase extends HTMLElement {
           <div class="timebar">
             ${bgBlocks.map(b=>`<div class="tb-bg" style="left:${b.left}%;width:${b.width}%;background:${b.color};opacity:.45"></div>`).join('')}
             ${magnetPoints.map(pt=>`<div class="tb-magnet" data-min="${pt}" style="left:${this._minutesToPercent(pt)}%"></div>`).join('')}
-            <div class="tb-edit" style="left:${editLeft}%;width:${editWidth}%;background:${editColor}">
+            <div class="tb-edit" style="left:${editLeft}%;width:${editWidth}%;background:${editColor};color:${this._textColorFor(editColor)}">
               <div class="tb-handle tb-handle-l"></div>
               <span class="tb-label">${timeLabel}</span>
               <div class="tb-handle tb-handle-r"></div>
@@ -2421,7 +2550,7 @@ export default class WeeklyScheduleBase extends HTMLElement {
             <button class="shortcut-btn" data-shortcut="weekend">${this.t('days.weekend')}</button>
           </div>
           <div class="day-chips">
-            ${DAY_NAMES.map((d,i)=>`<div class="day-chip ${ps.days.includes(i)?'on':''}" data-day="${i}">${d.slice(0,2)}</div>`).join('')}
+            ${DAY_NAMES.map((d,i)=>`<div class="day-chip ${ps.days.includes(i)?'on':''}" data-day="${i}" role="button" tabindex="0" aria-pressed="${ps.days.includes(i)}">${d.slice(0,2)}</div>`).join('')}
           </div>
         </div>
         ${domainSection}
@@ -2432,14 +2561,14 @@ export default class WeeklyScheduleBase extends HTMLElement {
         </div>
         <div class="cond-section">
           <div class="cond-hdr" id="condToggle">
-            <span>⚡ ${this.t('popup.conditions')}${ps.conditions.length?` (${ps.conditions.length})`:''}</span>
+            <span><ha-icon icon="mdi:flash" style="--mdi-icon-size:16px;vertical-align:middle;margin-right:4px"></ha-icon>${this.t('popup.conditions')}${ps.conditions.length?` (${ps.conditions.length})`:''}</span>
             <span>${ps._condOpen?'▾':'▸'}</span>
           </div>
           ${condBodyHtml}
         </div>
         <div class="notif-section">
           <div class="notif-hdr" id="notifToggle">
-            <span>🔔 ${this.t('popup.notifications')}${ps.notifyService?' ✓':''}</span>
+            <span><ha-icon icon="mdi:bell-outline" style="--mdi-icon-size:16px;vertical-align:middle;margin-right:4px"></ha-icon>${this.t('popup.notifications')}${ps.notifyService?' ✓':''}</span>
             <span>${ps._notifOpen?'▾':'▸'}</span>
           </div>
           ${ps._notifOpen?`
@@ -2450,7 +2579,7 @@ export default class WeeklyScheduleBase extends HTMLElement {
                 const notifySvcs = Object.keys(this._hass?.services?.notify || {}).sort().map(s => `notify.${s}`);
                 const current = ps.notifyService || '';
                 const inList = notifySvcs.includes(current);
-                const extra = (current && !inList) ? `<option value="${current.replace(/"/g,'&quot;')}" selected>${current} ⚠</option>` : '';
+                const extra = (current && !inList) ? `<option value="${this._escAttr(current)}" selected>${this._esc(current)} ⚠</option>` : '';
                 const opts = notifySvcs.map(svc => `<option value="${svc}" ${current === svc ? 'selected' : ''}>${svc}</option>`).join('');
                 return `<select class="notif-svc"><option value="">-- ${this._lang==='it'?'seleziona':this._lang==='fr'?'sélectionner':'select'} --</option>${extra}${opts}</select>`;
               })()}
@@ -2466,12 +2595,12 @@ export default class WeeklyScheduleBase extends HTMLElement {
             </div>
             <div class="notif-row notif-msg-start-row" style="${(ps.notifyTrigger==='start' || ps.notifyTrigger==='both') ? '' : 'display:none'}">
               <label class="section-label" style="margin:0 0 3px">${ps.notifyTrigger==='both' ? (this.t('notify.msg_start_label') || 'Messaggio inizio') : (this.t('popup.notify_message_label') || 'Messaggio')}</label>
-              <textarea class="notif-msg" rows="5" placeholder="${this.t('notify.default_start')}">${(ps.notifyMessage||'').replace(/</g,'&lt;')}</textarea>
+              <textarea class="notif-msg" rows="5" placeholder="${this.t('notify.default_start')}">${this._esc(ps.notifyMessage||'')}</textarea>
               <button class="notif-restore" style="${(ps.notifyMessage && ps.notifyMessage !== ps._defaultNotifyMsg) ? '' : 'display:none'}">↺ ${this.t('notify.restore_auto') || 'Ripristina testo automatico'}</button>
             </div>
             <div class="notif-row notif-msg-end-row" style="${(ps.notifyTrigger==='end' || ps.notifyTrigger==='both') ? '' : 'display:none'}">
               <label class="section-label" style="margin:0 0 3px">${ps.notifyTrigger==='both' ? (this.t('notify.msg_end_label') || 'Messaggio fine') : (this.t('popup.notify_message_label') || 'Messaggio')}</label>
-              <textarea class="notif-msg-end" rows="5" placeholder="${this.t('notify.default_end')}">${(ps.notifyMessageEnd||'').replace(/</g,'&lt;')}</textarea>
+              <textarea class="notif-msg-end" rows="5" placeholder="${this.t('notify.default_end')}">${this._esc(ps.notifyMessageEnd||'')}</textarea>
               <button class="notif-restore-end" style="${(ps.notifyMessageEnd && ps.notifyMessageEnd !== ps._defaultNotifyMsgEnd) ? '' : 'display:none'}">↺ ${this.t('notify.restore_auto') || 'Ripristina testo automatico'}</button>
             </div>
           </div>`:''}
@@ -2545,7 +2674,7 @@ export default class WeeklyScheduleBase extends HTMLElement {
         ps.enableHvac = false; ps.enablePreset = false; ps.enableFan = false; ps.enableSwing = false;
         ps.hvacMode = ''; ps.presetMode = ''; ps.fanMode = ''; ps.swingMode = '';
         ps.enableBrightness = false;
-        ps.enableColor = false; ps.enableSpeed = false; ps.enablePosition = false; ps.coverAction = 'close';
+        ps.enableColor = false; ps.enableSpeed = false; ps.coverAction = 'close';
         ps.stopAction = null; ps.stopValue = null;
         // Re-render the whole popup so domainSection + name + notify defaults update
         this._renderPopup();
@@ -2564,6 +2693,7 @@ export default class WeeklyScheduleBase extends HTMLElement {
         const d = parseInt(chip.dataset.day);
         ps.days = ps.days.includes(d) ? ps.days.filter(x => x !== d) : [...ps.days, d].sort((a,b)=>a-b);
         chip.classList.toggle('on', ps.days.includes(d));
+        chip.setAttribute('aria-pressed', String(ps.days.includes(d)));
       })
     );
 
@@ -2571,7 +2701,7 @@ export default class WeeklyScheduleBase extends HTMLElement {
       btn.addEventListener('click', () => {
         const s = btn.dataset.shortcut;
         ps.days = s==='all'?[0,1,2,3,4,5,6]:s==='workdays'?[0,1,2,3,4]:[5,6];
-        dlg.querySelectorAll('.day-chip').forEach(c => c.classList.toggle('on', ps.days.includes(parseInt(c.dataset.day))));
+        dlg.querySelectorAll('.day-chip').forEach(c => { const on = ps.days.includes(parseInt(c.dataset.day)); c.classList.toggle('on', on); c.setAttribute('aria-pressed', String(on)); });
         dlg.querySelectorAll('.shortcut-btn').forEach(b => b.classList.toggle('active', b === btn));
       })
     );
@@ -2618,7 +2748,7 @@ export default class WeeklyScheduleBase extends HTMLElement {
           ? `<span class="temp-msg-range">Range dispositivo: ${haMin}° → ${haMax}°</span>` : '';
         const msgArea = dlg.querySelector('.temp-msg-area');
         if (msgArea) msgArea.innerHTML = warn + deviceRange;
-        if (eb) eb.style.backgroundColor = this._tempToColor(v);
+        if (eb) { const c = this._tempToColor(v); eb.style.backgroundColor = c; eb.style.color = this._textColorFor(c); }
       };
       if (ct && ts && ti) {
         ct.addEventListener('change', () => {
@@ -2659,10 +2789,12 @@ export default class WeeklyScheduleBase extends HTMLElement {
       spdChk.addEventListener('change', () => { ps.enableSpeed = spdChk.checked; spd.disabled = !spdChk.checked; spd.closest('.param-inline')?.classList.toggle('disabled', !spdChk.checked); });
       spd.addEventListener('input', () => { ps.speed = parseInt(spd.value); if (spdV) spdV.textContent = `${ps.speed}%`; });
     }
-    dlg.querySelectorAll('input[name="cover-action"]').forEach(r => r.addEventListener('change', () => { ps.coverAction = r.value; }));
-    const posChk = dlg.querySelector('.chk-position'), pos = dlg.querySelector('.position-slider'), posV = dlg.querySelector('.position-value');
-    if (posChk && pos) {
-      posChk.addEventListener('change', () => { ps.enablePosition = posChk.checked; pos.disabled = !posChk.checked; pos.closest('.param-inline')?.classList.toggle('disabled', !posChk.checked); });
+    const posBlock = dlg.querySelector('.cover-pos-block'), pos = dlg.querySelector('.position-slider'), posV = dlg.querySelector('.position-value');
+    dlg.querySelectorAll('input[name="cover-action"]').forEach(r => r.addEventListener('change', () => {
+      ps.coverAction = r.value;
+      if (posBlock) posBlock.style.display = (r.value === 'position') ? '' : 'none';
+    }));
+    if (pos) {
       pos.addEventListener('input', () => { ps.position = parseInt(pos.value); if (posV) posV.textContent = `${ps.position}%`; });
     }
     // End-of-slot (auto-off) action editor
@@ -2906,6 +3038,8 @@ export default class WeeklyScheduleBase extends HTMLElement {
       link.stopValue = ps.stopValue;
     };
 
+    let ok = true;
+    await this._withTx(async () => {
     try {
       if (ps.mode === 'create') {
         const beforeIds = new Set(Object.keys(this._hass.states).filter(k => k.startsWith('switch.schedule_')));
@@ -2939,15 +3073,17 @@ export default class WeeklyScheduleBase extends HTMLElement {
         await this._syncExtrasAutomation(ps.entityId, ps);
         await this._syncNotifyAutomation(ps.entityId, ps);
       }
-    } catch (e) { await this._alert(`${this.t('errors.save_failed')}: ${e.message || e}`); return; }
+    } catch (e) { ok = false; await this._alert(`${this.t('errors.save_failed')}: ${e.message || e}`); return; }
     await this._wsSet(this._storageData).catch(() => {});
-    this._closePopup();
+    });
+    if (ok) this._closePopup();
   }
 
   async _deleteSchedule() {
     const ps = this._popupState;
     if (!ps || ps.mode !== 'edit') return;
     if (!await this._confirm(this.t('errors.delete_confirm'))) return;
+    await this._withTx(async () => {
     const eid = ps.entityId;
     const childId = this._getAutoChildId(eid);
     const condAutoId = this._getCondAutoId(eid);
@@ -2980,6 +3116,7 @@ export default class WeeklyScheduleBase extends HTMLElement {
     }
     try { await this._hass.callService('scheduler', 'remove', { entity_id: eid }); } catch (e) { console.error(e); }
     await this._wsSet(data);
+    });
     this._closePopup();
   }
 
@@ -2998,6 +3135,7 @@ export default class WeeklyScheduleBase extends HTMLElement {
     const profiles = data.profiles || [];
     const p = profiles.find(x => x.id === id);
     if (!p) return;
+    await this._withTx(async () => {
     let activeProfiles = [...(data.activeProfiles || [])];
     if (p.exclusive !== false) {
       for (const cp of profiles.filter(x => x.id !== id && x.exclusive !== false && activeProfiles.includes(x.id))) {
@@ -3020,6 +3158,7 @@ export default class WeeklyScheduleBase extends HTMLElement {
         try { await this._hass.callService('switch', 'turn_on', { entity_id: link.autoChildId }); } catch {}
     if (!activeProfiles.includes(id)) activeProfiles.push(id);
     await this._wsSet({ ...data, activeProfiles });
+    });
     this.render();
   }
 
@@ -3037,6 +3176,7 @@ export default class WeeklyScheduleBase extends HTMLElement {
   async _deleteProfile(id) {
     if (id === 'default') return;
     if (!await this._confirm(this.t('errors.delete_profile_confirm'))) return;
+    await this._withTx(async () => {
     const data = this._storageData;
     const p = (data.profiles || []).find(x => x.id === id);
     if (p) {
@@ -3063,6 +3203,7 @@ export default class WeeklyScheduleBase extends HTMLElement {
     if (this._selectedProfileId === id)
       this._selectedProfileId = activeProfiles[0] || profiles[0]?.id || null;
     await this._wsSet({ ...data, profiles, activeProfiles });
+    });
     this.render();
   }
 
@@ -3080,6 +3221,7 @@ export default class WeeklyScheduleBase extends HTMLElement {
     if (!src) return;
     const name = await this._prompt(this.t('profile.duplicate'), `${src.name} (copy)`);
     if (!name?.trim()) return;
+    await this._withTx(async () => {
     const newId = `prf_${Date.now()}`;
     const newProfile = {
       id: newId, name: name.trim(), exclusive: src.exclusive,
@@ -3104,6 +3246,7 @@ export default class WeeklyScheduleBase extends HTMLElement {
       } catch (e) { console.error('Duplicate schedule failed', schedId, e); }
     }
     this._selectedProfileId = prevSelectedId;
+    });
     this.render();
   }
 
@@ -3142,7 +3285,7 @@ export default class WeeklyScheduleBase extends HTMLElement {
       const barColor = isToday ? 'var(--primary-color,#03a9f4)' : 'var(--divider-color,#e0e0e0)';
       const nameColor = isToday ? 'var(--primary-text-color)' : 'var(--secondary-text-color)';
 
-      const hdr = `<div class="compact-day-hdr" data-day="${di}">
+      const hdr = `<div class="compact-day-hdr" data-day="${di}" role="button" tabindex="0" aria-expanded="${expanded}">
         <div class="compact-day-bar" style="background:${barColor}"></div>
         <span class="compact-day-name" style="color:${nameColor}">${dayName.toUpperCase().slice(0,3)}</span>
         <div class="compact-mini-timeline">${miniBars}</div>
@@ -3162,8 +3305,9 @@ export default class WeeklyScheduleBase extends HTMLElement {
         const blocksHtml = blocks.map(b => {
           const glowStyle = b.isActive ? `;--cblk-glow:${b.color};--cblk-glow-soft:${b.color}80` : '';
           const showContent = b.heightPct > 4;
-          return `<div class="compact-blk${b.isOff?' off':''}${b.isActive?' active':''}${b.isMuted?' muted':''}" data-entity="${b.entityId}" data-day="${di}" style="left:${b.startPct}%;width:${b.heightPct}%;background-color:${b.color}${glowStyle}">` +
-            (showContent ? `<ha-icon icon="${icon}" style="--mdi-icon-size:10px;color:white;opacity:.9;flex-shrink:0"></ha-icon><span class="compact-blk-val">${b.label||''}</span>` : '') +
+          return `<div class="compact-blk${b.isOff?' off':''}${b.isActive?' active':''}${b.isMuted?' muted':''}" data-entity="${b.entityId}" data-day="${di}" style="left:${b.startPct}%;width:${b.heightPct}%;background-color:${b.color};color:${this._textColorFor(b.color)}${glowStyle}">` +
+            (b.isMuted ? `<ha-icon class="blk-muted-ico" icon="mdi:volume-off"></ha-icon>` : '') +
+            (showContent ? `<ha-icon icon="${icon}" style="--mdi-icon-size:10px;color:inherit;opacity:.9;flex-shrink:0"></ha-icon><span class="compact-blk-val">${b.label||''}</span>` : '') +
             `</div>`;
         }).join('');
 
@@ -3171,7 +3315,7 @@ export default class WeeklyScheduleBase extends HTMLElement {
           <div class="compact-ent-icon" style="background:${color}26">
             <ha-icon icon="${icon}" style="--mdi-icon-size:18px;color:${color}E6"></ha-icon>
           </div>
-          <span class="compact-ent-name">${(ec.name||ec.entity).replace(/</g,'&lt;')}</span>
+          <span class="compact-ent-name">${this._esc(ec.name||ec.entity)}</span>
           <div class="compact-bar" data-day="${di}" data-ei="${ei}" data-entity-id="${ec.entity}" style="position:relative;flex:1;height:32px;background:var(--divider-color,#e0e0e0);border-radius:6px;overflow:hidden;cursor:pointer">
             ${blocksHtml}
           </div>
@@ -3240,7 +3384,7 @@ export default class WeeklyScheduleBase extends HTMLElement {
           const ec = ents[ei];
           const [, defColor] = this._domainIconMdi(ec.entity);
           const color = ec.color || defColor;
-          const name = (ec.name || ec.entity).replace(/</g,'&lt;');
+          const name = this._esc(ec.name || ec.entity);
           const label = name.length > 8 ? name.slice(0,7) + '…' : name;
           return `<div class="focus-lane-hdr" style="left:${li * 100 / numLanes}%;width:${100 / numLanes}%">` +
             `<div class="focus-lane-dot" style="background:${color}"></div><span>${label}</span></div>`;
@@ -3255,18 +3399,19 @@ export default class WeeklyScheduleBase extends HTMLElement {
         : `left:4px;right:4px`;
       const glowStyle = b.isActive ? `;--fblk-glow:${b.color};--fblk-glow-soft:${b.color}80` : '';
       const content = b.heightPct >= minForFull
-        ? `<ha-icon icon="${b.icon}" style="--mdi-icon-size:14px;color:white;opacity:.9;flex-shrink:0"></ha-icon>` +
+        ? `<ha-icon icon="${b.icon}" style="--mdi-icon-size:14px;color:inherit;opacity:.9;flex-shrink:0"></ha-icon>` +
           `<div class="focus-blk-info">` +
-            `<span class="focus-blk-name">${(b.entityName).replace(/</g,'&lt;')}</span>` +
-            `<span class="focus-blk-val">${(b.label||'').replace(/</g,'&lt;')}</span>` +
+            `<span class="focus-blk-name">${this._esc(b.entityName)}</span>` +
+            `<span class="focus-blk-val">${this._esc(b.label||'')}</span>` +
           `</div>`
         : b.heightPct >= minForContent
-          ? `<ha-icon icon="${b.icon}" style="--mdi-icon-size:14px;color:white;opacity:.9;flex-shrink:0"></ha-icon>` +
-            `<span class="focus-blk-val">${(b.label||'').replace(/</g,'&lt;')}</span>`
+          ? `<ha-icon icon="${b.icon}" style="--mdi-icon-size:14px;color:inherit;opacity:.9;flex-shrink:0"></ha-icon>` +
+            `<span class="focus-blk-val">${this._esc(b.label||'')}</span>`
           : b.heightPct >= minForValue
-            ? `<span class="focus-blk-val">${(b.label||'').replace(/</g,'&lt;')}</span>`
+            ? `<span class="focus-blk-val">${this._esc(b.label||'')}</span>`
             : '';
-      return `<div class="focus-blk${b.isOff?' off':''}${b.isActive?' active':''}${b.isMuted?' muted':''}" data-entity="${b.entityId}" style="top:${b.startPct}%;height:${b.heightPct}%;background-color:${b.color}${glowStyle};min-height:20px;${posStyle}">${content}</div>`;
+      const mutedIco = b.isMuted ? `<ha-icon class="blk-muted-ico" icon="mdi:volume-off"></ha-icon>` : '';
+      return `<div class="focus-blk${b.isOff?' off':''}${b.isActive?' active':''}${b.isMuted?' muted':''}" data-entity="${b.entityId}" style="top:${b.startPct}%;height:${b.heightPct}%;background-color:${b.color};color:${this._textColorFor(b.color)}${glowStyle};min-height:20px;${posStyle}">${mutedIco}${content}</div>`;
     }).join('');
 
     // CSS grid column template: axis fixed, focus day gets max 45%, slims share rest equally
@@ -3312,7 +3457,7 @@ export default class WeeklyScheduleBase extends HTMLElement {
 
       const nameColor = isToday ? 'var(--primary-color,#03a9f4)' : 'var(--secondary-text-color)';
       const shortName = dayName.slice(0,2);
-      return `<div class="focus-slim" data-day="${di}">
+      return `<div class="focus-slim" data-day="${di}" role="button" tabindex="0">
         <div class="focus-slim-hdr" style="color:${nameColor}">${shortName}</div>
         <div class="focus-slim-body">${barsHtml}</div>
       </div>`;
@@ -3385,9 +3530,9 @@ export default class WeeklyScheduleBase extends HTMLElement {
     this._setStyles('group-edit', S);
     const root = this._ensureRoot();
     root.innerHTML=`<ha-card>
-      <div class="card-header"><span class="card-title">Edit: ${group.name.replace(/</g,'&lt;')}</span><button class="btn-back">← Back</button></div>
+      <div class="card-header"><span class="card-title">Edit: ${this._esc(group.name)}</span><button class="btn-back">← Back</button></div>
       <div class="form">
-        <div class="form-row"><div class="form-label">${this.t('group.name')}</div><input type="text" class="form-input grp-name-inp" value="${group.name.replace(/"/g,'&quot;')}"></div>
+        <div class="form-row"><div class="form-label">${this.t('group.name')}</div><input type="text" class="form-input grp-name-inp" value="${this._escAttr(group.name)}"></div>
         <div class="form-row">
           <span class="color-lbl">Tab color</span>
           ${this._colorPickerHTML(group.color||'#9C27B0','group-pal')}
@@ -3402,12 +3547,12 @@ export default class WeeklyScheduleBase extends HTMLElement {
           <div class="ent-list">
             ${availableEnts.map(e=>{
               const pre=(group.entities||[]).find(x=>x.entity===e.entity_id);
-              return `<div class="ent-item${pre?' sel':''}" data-entity="${e.entity_id}" data-domain="${e.domain}" data-name="${e.friendly_name.toLowerCase().replace(/"/g,'')}">
-                <div class="ent-row-top">
+              return `<div class="ent-item${pre?' sel':''}" data-entity="${e.entity_id}" data-domain="${e.domain}" data-name="${this._escAttr(e.friendly_name.toLowerCase())}">
+                <div class="ent-row-top" role="button" tabindex="0">
                   <input type="checkbox" class="ent-chk" data-entity="${e.entity_id}"${pre?' checked':''}>
                   <span class="dom-badge dom-${e.domain}">${e.domain}</span>
-                  <span class="ent-name">${e.friendly_name}</span>
-                  <input type="text" class="ent-label-inp" data-entity="${e.entity_id}" placeholder="Label" value="${pre?.name||e.friendly_name}">
+                  <span class="ent-name">${this._esc(e.friendly_name)}</span>
+                  <input type="text" class="ent-label-inp" data-entity="${e.entity_id}" placeholder="Label" value="${this._escAttr(pre?.name||e.friendly_name)}">
                 </div>
                 ${this._colorPickerHTML(pre?.color||'#9E9E9E')}
               </div>`;
@@ -3534,8 +3679,8 @@ export default class WeeklyScheduleBase extends HTMLElement {
       <div class="group-list">
         ${groups.length?groups.map(g=>`
           <div class="group-card">
-            <div class="group-hd"><span class="dot" style="background:${g.color||'#9E9E9E'}"></span><span class="group-name">${g.name}</span></div>
-            <div class="tags">${(g.entities||[]).map(ec=>`<div class="tag"><span class="tag-dot" style="background:${ec.color||'#9E9E9E'}"></span>${ec.name||ec.entity}</div>`).join('')}</div>
+            <div class="group-hd"><span class="dot" style="background:${g.color||'#9E9E9E'}"></span><span class="group-name">${this._esc(g.name)}</span></div>
+            <div class="tags">${(g.entities||[]).map(ec=>`<div class="tag"><span class="tag-dot" style="background:${ec.color||'#9E9E9E'}"></span>${this._esc(ec.name||ec.entity)}</div>`).join('')}</div>
             <div class="group-footer"><button class="btn-edit-grp" data-id="${g.id}">Edit</button><button class="btn-del" data-id="${g.id}">Delete</button></div>
           </div>`).join(''):'<div class="empty">No groups yet.</div>'}
       </div>
@@ -3556,12 +3701,12 @@ export default class WeeklyScheduleBase extends HTMLElement {
           <div class="ent-list">
             ${availableEnts.map(e=>{
               const pre=yamlMap[e.entity_id];
-              return `<div class="ent-item${pre?' sel':''}" data-entity="${e.entity_id}" data-domain="${e.domain}" data-name="${e.friendly_name.toLowerCase().replace(/"/g,'')}">
-                <div class="ent-row-top">
+              return `<div class="ent-item${pre?' sel':''}" data-entity="${e.entity_id}" data-domain="${e.domain}" data-name="${this._escAttr(e.friendly_name.toLowerCase())}">
+                <div class="ent-row-top" role="button" tabindex="0">
                   <input type="checkbox" class="ent-chk" data-entity="${e.entity_id}"${pre?' checked':''}>
                   <span class="dom-badge dom-${e.domain}">${e.domain}</span>
-                  <span class="ent-name">${e.friendly_name}</span>
-                  <input type="text" class="ent-label-inp" data-entity="${e.entity_id}" placeholder="Label" value="${pre?.name||e.friendly_name}">
+                  <span class="ent-name">${this._esc(e.friendly_name)}</span>
+                  <input type="text" class="ent-label-inp" data-entity="${e.entity_id}" placeholder="Label" value="${this._escAttr(pre?.name||e.friendly_name)}">
                 </div>
                 ${this._colorPickerHTML(pre?.color||'#9E9E9E')}
               </div>`;

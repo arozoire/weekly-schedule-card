@@ -14,6 +14,7 @@ class WeeklyScheduleCard extends WeeklyScheduleBase {
   // doesn't re-parse it on every state change — see _setStyles in base-card).
   _mainStyles(H) {
     return `
+        [role="button"]:focus-visible{outline:2px solid var(--primary-color,#03a9f4);outline-offset:2px;border-radius:6px}
         :host{display:block;font-family:var(--primary-font-family,sans-serif)}
         ha-card{padding:14px 16px 8px}
         .card-header{display:flex;flex-direction:column;gap:0;margin-bottom:0}
@@ -47,13 +48,13 @@ class WeeklyScheduleCard extends WeeklyScheduleBase {
         .sub-col:hover{background:rgba(255,255,255,.08)}
         .sub-divider{position:absolute;top:0;left:0;width:1px;height:100%;background:rgba(255,255,255,.35);z-index:1;pointer-events:none}
         @keyframes block-pulse{0%,100%{box-shadow:0 0 4px var(--blk-glow),0 0 8px var(--blk-glow)}50%{box-shadow:0 0 8px var(--blk-glow),0 0 16px var(--blk-glow),0 0 24px var(--blk-glow-soft)}}
-        .block{position:absolute;left:0;right:0;display:flex;align-items:center;justify-content:center;font-size:.6em;font-weight:600;color:white;text-shadow:0 1px 2px rgba(0,0,0,.4);cursor:pointer;transition:filter .15s;overflow:hidden;border-radius:4px;border-left:3px solid rgba(255,255,255,.4);box-sizing:border-box;opacity:.88}
+        .block{position:absolute;left:0;right:0;display:flex;align-items:center;justify-content:center;font-size:.65em;font-variant-numeric:tabular-nums;font-weight:600;color:white;text-shadow:0 1px 2px rgba(0,0,0,.4);cursor:pointer;transition:filter .15s;overflow:hidden;border-radius:4px;border-left:3px solid rgba(255,255,255,.4);box-sizing:border-box;opacity:.88}
         .block:hover{filter:brightness(.84);opacity:1}
         .block.active{animation:block-pulse 2s infinite ease-in-out;opacity:1!important;z-index:2}
         .block.off{opacity:.5;background-image:repeating-linear-gradient(45deg,transparent,transparent 4px,rgba(255,255,255,.15) 4px,rgba(255,255,255,.15) 6px)}
         .block.muted,.gantt-block.muted{background-image:repeating-linear-gradient(45deg,transparent,transparent 4px,rgba(255,152,0,.5) 4px,rgba(255,152,0,.5) 8px)!important;outline:2px dashed #FF9800;outline-offset:-2px;animation:none!important;opacity:.85!important}
-        .block.muted::after,.gantt-block.muted::after{content:'🔇';position:absolute;top:1px;left:3px;font-size:.7em;z-index:3;text-shadow:0 1px 2px rgba(0,0,0,.5);pointer-events:none}
-        .blk-stop{position:absolute;bottom:2px;right:2px;font-size:.5em;opacity:.75;pointer-events:none;line-height:1}
+        .blk-muted-ico{position:absolute;top:1px;left:2px;--mdi-icon-size:13px;color:#FF9800;z-index:3;pointer-events:none;filter:drop-shadow(0 1px 1px rgba(0,0,0,.5))}
+        .blk-stop{position:absolute;bottom:2px;right:2px;--mdi-icon-size:12px;color:inherit;opacity:.85;pointer-events:none;line-height:1}
         .add-hint{position:absolute;bottom:6px;right:0;left:0;text-align:center;font-size:1.1em;color:var(--secondary-text-color);opacity:0;pointer-events:none;transition:opacity .15s}
         .day-column:hover .add-hint,.sub-col:hover .add-hint{opacity:.5}
         .gantt{display:flex;flex-direction:column}
@@ -71,9 +72,12 @@ class WeeklyScheduleCard extends WeeklyScheduleBase {
         .gantt-ent-spacer{width:64px;flex-shrink:0}
         .gantt-ent-lbl{font-size:.62em;font-weight:600;color:var(--secondary-text-color);width:64px;flex-shrink:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
         .gantt-area{flex:1;position:relative;height:100%}
-        .gantt-block{position:absolute;top:3px;bottom:3px;border-radius:5px;display:flex;align-items:center;justify-content:center;font-size:.58em;font-weight:600;color:white;text-shadow:0 1px 2px rgba(0,0,0,.4);cursor:pointer;overflow:hidden;min-width:4px;border-left:3px solid rgba(255,255,255,.4);box-sizing:border-box;opacity:.88}
+        .gantt-block{position:absolute;top:3px;bottom:3px;border-radius:5px;display:flex;align-items:center;justify-content:center;font-size:.65em;font-variant-numeric:tabular-nums;font-weight:600;color:white;text-shadow:0 1px 2px rgba(0,0,0,.4);cursor:pointer;overflow:hidden;min-width:4px;border-left:3px solid rgba(255,255,255,.4);box-sizing:border-box;opacity:.88}
         .gantt-block:hover{filter:brightness(.84);opacity:1}
         .gantt-block.active{animation:block-pulse 2s infinite ease-in-out;opacity:1!important;z-index:2}
+        @media (prefers-reduced-motion: reduce){
+          .block.active,.gantt-block.active{animation:none!important;box-shadow:0 0 0 2px var(--blk-glow,var(--primary-color,#03a9f4)),0 0 6px var(--blk-glow-soft,transparent)}
+        }
         .gantt-block.off{opacity:.5;background-image:repeating-linear-gradient(45deg,transparent,transparent 4px,rgba(255,255,255,.15) 4px,rgba(255,255,255,.15) 6px)}
         .gantt-add{position:absolute;right:4px;top:50%;transform:translateY(-50%);font-size:.9em;color:var(--secondary-text-color);opacity:0;pointer-events:none}
         .gantt-row:hover .gantt-add{opacity:.5}
@@ -148,7 +152,8 @@ class WeeklyScheduleCard extends WeeklyScheduleBase {
     for (let h=0;h<24;h+=2) timeLabels.push({label:`${String(h).padStart(2,'0')}:00`,pct:(h/24)*100});
 
     // Build column-mode grid HTML
-    const _blk = b => `<div class="block ${b.isOff?'off':''}${b.isActive?' active':''}${b.isMuted?' muted':''}" data-entity="${b.entityId}" style="top:${b.startPct}%;height:${b.heightPct}%;background-color:${b.color};min-height:4px${b.isActive?`;--blk-glow:${b.color};--blk-glow-soft:${b.color}80`:''}">${b.heightPct>8?b.label:''}${b.hasStop?'<span class="blk-stop">⏹</span>':''}${b.hasCond?'<span class="blk-stop" style="right:12px">⚡</span>':''}</div>`;
+    const lblMin = (40 / H) * 100; // soglia px-based come la focus view: niente label sui blocchi troppo bassi (evita testo troncato)
+    const _blk = b => `<div class="block ${b.isOff?'off':''}${b.isActive?' active':''}${b.isMuted?' muted':''}" data-entity="${b.entityId}" style="top:${b.startPct}%;height:${b.heightPct}%;background-color:${b.color};color:${this._textColorFor(b.color)};min-height:4px${b.isActive?`;--blk-glow:${b.color};--blk-glow-soft:${b.color}80`:''}">${b.heightPct>=lblMin?this._esc(b.label):''}${b.isMuted?'<ha-icon class="blk-muted-ico" icon="mdi:volume-off"></ha-icon>':''}${b.hasStop?'<ha-icon class="blk-stop" icon="mdi:stop"></ha-icon>':''}${b.hasCond?'<ha-icon class="blk-stop" icon="mdi:flash" style="right:12px"></ha-icon>':''}</div>`;
     let colGrid = '';
     if (!isGroup) {
       colGrid = DAYS.map((_,di)=>{
@@ -189,7 +194,7 @@ class WeeklyScheduleCard extends WeeklyScheduleBase {
             <div class="gantt-rows">
               ${(tab.entities || (tab.entity ? [tab] : [])).map((ec,ei)=>`
                 <div class="gantt-row" data-day="${di}" data-ei="${ei}" style="border-left:3px solid ${ec.color||'#9E9E9E'};border-top:3px solid ${ec.color||'#9E9E9E'}">
-                  <div class="gantt-ent-lbl">${ec.name||ec.entity}</div>
+                  <div class="gantt-ent-lbl">${this._esc(ec.name||ec.entity)}</div>
                   <div class="gantt-area">
                     ${[0,6,12,18,24].map(h=>`<div class="gantt-vline" style="left:${(h/24)*100}%"></div>`).join('')}
                     ${this._getProfileSchedules(ec.entity).filter(s=>this._appliesToDay(s.attributes.weekdays||[],di)).flatMap(s=>(s.attributes.timeslots||[]).map(slot=>{
@@ -204,7 +209,7 @@ class WeeklyScheduleCard extends WeeklyScheduleBase {
                       const temp=s.attributes.actions?.[0]?.data?.temperature??null;
                       const lbl=this._detectDomain(ec.entity)==='climate'&&temp!=null?`${temp}°`:s.attributes.friendly_name;
                       const glowStyle=isActive?`;--blk-glow:${color};--blk-glow-soft:${color}80`:'';
-                      return `<div class="gantt-block ${isOff?'off':''}${isActive?' active':''}${isMuted?' muted':''}" data-entity="${s.entity_id}" style="left:${this._minutesToPercent(sMin)}%;width:${this._minutesToPercent(eMin-sMin)}%;background-color:${color}${glowStyle}">${(eMin-sMin)>60?lbl:''}${hasStop?'<span class="blk-stop">⏹</span>':''}${hasCond?'<span class="blk-stop" style="right:12px">⚡</span>':''}</div>`;
+                      return `<div class="gantt-block ${isOff?'off':''}${isActive?' active':''}${isMuted?' muted':''}" data-entity="${s.entity_id}" style="left:${this._minutesToPercent(sMin)}%;width:${this._minutesToPercent(eMin-sMin)}%;background-color:${color};color:${this._textColorFor(color)}${glowStyle}">${(eMin-sMin)>60?this._esc(lbl):''}${isMuted?'<ha-icon class="blk-muted-ico" icon="mdi:volume-off"></ha-icon>':''}${hasStop?'<ha-icon class="blk-stop" icon="mdi:stop"></ha-icon>':''}${hasCond?'<ha-icon class="blk-stop" icon="mdi:flash" style="right:12px"></ha-icon>':''}</div>`;
                     })).join('')}
                     <div class="gantt-add">+</div>
                   </div>
@@ -215,10 +220,10 @@ class WeeklyScheduleCard extends WeeklyScheduleBase {
 
     // Legend
     const legend = isGroup
-      ? `<div class="ent-legend">${(tab.entities||[]).map(ec=>'<div class="ent-legend-item"><div class="ent-legend-dot" style="background:' + (ec.color||'#9E9E9E') + '"></div><span>' + (ec.name||ec.entity) + '</span></div>').join('')}</div>`
+      ? `<div class="ent-legend">${(tab.entities||[]).map(ec=>'<div class="ent-legend-item"><div class="ent-legend-dot" style="background:' + (ec.color||'#9E9E9E') + '"></div><span>' + this._esc(ec.name||ec.entity) + '</span></div>').join('')}</div>`
       : `<div class="legend">${this._getProfileSchedules(tab.entity).map(s=>{
           const color=this._blockColor(s,tab),isOff=s.state==='off',temp=s.attributes.actions?.[0]?.data?.temperature??null;
-          return `<div class="legend-item" data-entity="${s.entity_id}" style="${isOff?'opacity:.55':''}"><div class="legend-dot" style="background-color:${color}"></div><span>${s.attributes.friendly_name||s.entity_id}${this._detectDomain(tab.entity)==='climate'&&temp!=null?` — ${temp}°`:''}${isOff?' (off)':''}</span></div>`;
+          return `<div class="legend-item" data-entity="${s.entity_id}" role="button" tabindex="0" style="${isOff?'opacity:.55':''}"><div class="legend-dot" style="background-color:${color}"></div><span>${this._esc(s.attributes.friendly_name||s.entity_id)}${this._detectDomain(tab.entity)==='climate'&&temp!=null?` — ${temp}°`:''}${isOff?' (off)':''}</span></div>`;
         }).join('')}</div>`;
 
     this._setStyles('main', this._mainStyles(H));
@@ -229,7 +234,7 @@ class WeeklyScheduleCard extends WeeklyScheduleBase {
         ${inNewProfile ? `
         <div class="card-header">
           <div class="hdr-row1">
-            <span class="card-title">${(editingProfile?.name||this.t('profile.new_profile')).replace(/</g,'&lt;')} <span style="font-size:.68em;font-weight:400;opacity:.55">— ${this.t('profile.new_profile_mode')}</span></span>
+            <span class="card-title">${this._esc(editingProfile?.name||this.t('profile.new_profile'))} <span style="font-size:.68em;font-weight:400;opacity:.55">— ${this.t('profile.new_profile_mode')}</span></span>
             <div class="hdr-icons">
               <button class="btn-hdr btn-profile-cancel">${this.t('popup.cancel')}</button>
               <button class="btn-hdr btn-profile-save" style="background:var(--primary-color,#03a9f4);color:white;border-color:var(--primary-color,#03a9f4)">${this.t('popup.save')}</button>
@@ -249,10 +254,10 @@ class WeeklyScheduleCard extends WeeklyScheduleBase {
               const active=this._isProfileActive(p),viewed=p.id===this._selectedProfileId,excl=p.exclusive!==false,isDef=p.id==='default';
               const pcolor=this._getProfileColor(p);
               return '<div class="chip-wrap">'
-                + '<div class="profile-chip' + (viewed?' viewed':'') + (active?' active-op':'') + '" data-pid="' + p.id + '" style="--pchip-color:' + pcolor + '">'
+                + '<div class="profile-chip' + (viewed?' viewed':'') + (active?' active-op':'') + '" role="button" tabindex="0" data-pid="' + p.id + '" style="--pchip-color:' + pcolor + '">'
                 + '<ha-icon class="chip-lock" icon="' + (excl?'mdi:lock':'mdi:lock-open-variant') + '" style="--mdi-icon-size:11px"></ha-icon>'
                 + (active?'<span class="chip-act-dot"></span>':'')
-                + '<span class="chip-name">' + p.name + '</span>'
+                + '<span class="chip-name">' + this._esc(p.name) + '</span>'
                 + '<button class="chip-activate' + (active?' on':'') + '" data-pid="' + p.id + '" title="' + (active?this.t('profile.deactivate'):this.t('profile.activate')) + '"><ha-icon icon="' + (active?'mdi:pause':'mdi:play') + '" style="--mdi-icon-size:14px"></ha-icon></button>'
                 + '<button class="chip-menu" data-pid="' + p.id + '"><ha-icon icon="mdi:dots-vertical" style="--mdi-icon-size:14px"></ha-icon></button>'
                 + '</div>'
@@ -270,7 +275,7 @@ class WeeklyScheduleCard extends WeeklyScheduleBase {
           const vp=profiles.find(x=>x.id===this._selectedProfileId)||profiles[0];
           if(!vp) return '';
           const isAct=this._isProfileActive(vp);
-          return '<div class="profile-status-bar">' + this.t('profile.viewing') + ': <strong>' + vp.name + '</strong>'
+          return '<div class="profile-status-bar">' + this.t('profile.viewing') + ': <strong>' + this._esc(vp.name) + '</strong>'
             + (isAct ? ' <span class="psb-active">● ' + this.t('profile.active') + '</span>'
                      : ' <span>○ </span><button class="psb-activate-btn" data-pid="' + vp.id + '">' + this.t('profile.activate') + '</button>')
             + '</div>';
@@ -278,7 +283,7 @@ class WeeklyScheduleCard extends WeeklyScheduleBase {
 
         ${allTabs.length>1?`<div class="tab-bar">${allTabs.map((t,i)=>{
           const dot=t.color||(t.entities?.[0]?.color)||null;
-          return `<div class="tab ${i===this._activeTab?'active':''}" data-tab="${i}">${dot?`<span class="tab-dot" style="background-color:${dot}"></span>`:''}${t.name||t.entity}</div>`;
+          return `<div class="tab ${i===this._activeTab?'active':''}" data-tab="${i}" role="button" tabindex="0">${dot?`<span class="tab-dot" style="background-color:${dot}"></span>`:''}${this._esc(t.name||t.entity)}</div>`;
         }).join('')}</div>`:''}
 
         ${this._layout === 'rows' ? gantt : `
@@ -398,16 +403,20 @@ class WeeklyScheduleCard extends WeeklyScheduleBase {
     this._startTimeInterval();
     this._updateTimeLine();
 
-    // Tooltip hover
-    this.shadowRoot.addEventListener('mouseover', e => {
-      const blk = e.target.closest('.block,.gantt-block'); if (!blk) return;
-      const id = blk.dataset.entity; if (!id) return;
-      this._hideTooltip();
-      this._ttTimer = setTimeout(() => this._showTooltip(id, blk.getBoundingClientRect()), 300);
-    });
-    this.shadowRoot.addEventListener('mouseout', e => {
-      if (e.target.closest('.block,.gantt-block')) this._hideTooltip();
-    });
+    // Tooltip hover — bind once: lo shadowRoot persiste tra i render, altrimenti i listener
+    // si accumulano a ogni render (memory leak + N timer per hover).
+    if (!this._tooltipListenersBound) {
+      this._tooltipListenersBound = true;
+      this.shadowRoot.addEventListener('mouseover', e => {
+        const blk = e.target.closest('.block,.gantt-block'); if (!blk) return;
+        const id = blk.dataset.entity; if (!id) return;
+        this._hideTooltip();
+        this._ttTimer = setTimeout(() => this._showTooltip(id, blk.getBoundingClientRect()), 300);
+      });
+      this.shadowRoot.addEventListener('mouseout', e => {
+        if (e.target.closest('.block,.gantt-block')) this._hideTooltip();
+      });
+    }
   }
 }
 
@@ -427,17 +436,56 @@ class WeeklyScheduleMiniCard extends HTMLElement {
   }
 
   set hass(hass) {
+    const prev = this._prevHass;
+    this._prevHass = hass;
     this._hass = hass;
     if (!this._storageData && !this._loadingStorage) {
       this._loadingStorage = true;
       hass.connection.sendMessagePromise({ type:'frontend/get_user_data', key:'weekly_schedule_card' })
         .then(r => { this._storageData = r?.value || { profiles: [] }; this._loadingStorage = false; this._render(); })
         .catch(() => { this._storageData = { profiles: [] }; this._loadingStorage = false; this._render(); });
+      this._render(); // primo paint immediato; la .then ri-renderizza con lo storage
+      return;
     }
-    this._render();
+    // Debounce + diff: evita il full innerHTML rebuild a ogni update di hass (più volte/sec)
+    this._scheduleMiniRender(prev);
   }
   setConfig(config) { this._config = config; }
   getCardSize() { return 2; }
+
+  _scheduleMiniRender(prev) {
+    if (this._renderTimer) return;
+    this._pendingPrev = this._pendingPrev || prev;
+    this._renderTimer = setTimeout(() => {
+      this._renderTimer = null;
+      const p = this._pendingPrev; this._pendingPrev = null;
+      if (this._miniHassChanged(p, this._hass)) this._render();
+    }, 100);
+  }
+
+  // Re-render solo se è cambiato state/last_changed di uno switch.schedule_* o di un'entità
+  // referenziata nelle condizioni (da storage). Stessa filosofia di _hassChangedRelevant base.
+  _miniHassChanged(prev, curr) {
+    if (!prev || !curr) return true;
+    const watched = new Set();
+    for (const p of this._storageData?.profiles || [])
+      for (const link of p.scheduleLinks || [])
+        for (const c of link.conditions || [])
+          if (c?.entity) watched.add(c.entity);
+    for (const eid of watched) {
+      const s = curr.states[eid], ps = prev.states[eid];
+      if (!s || !ps) { if (s !== ps) return true; continue; }
+      if (ps.state !== s.state || ps.last_changed !== s.last_changed) return true;
+    }
+    for (const s of Object.values(curr.states)) {
+      if (!s.entity_id.startsWith('switch.schedule_')) continue;
+      const ps = prev.states[s.entity_id];
+      if (!ps || ps.state !== s.state || ps.last_changed !== s.last_changed) return true;
+    }
+    for (const k in prev.states) // schedule rimosso
+      if (k.startsWith('switch.schedule_') && !curr.states[k]) return true;
+    return false;
+  }
 
   _parseTime(t) { const [h,m]=t.split(':').map(Number); return h*60+(m||0); }
 
@@ -532,7 +580,7 @@ class WeeklyScheduleMiniCard extends HTMLElement {
       const ents=s.attributes.entities||[];
       const firstEnt=typeof ents[0]==='string'?ents[0]:ents[0]?.entity_id||'';
       const icon=this._domainIcon(firstEnt);
-      const name=(s.attributes.friendly_name||s.entity_id).replace(/</g,'&lt;');
+      const name=WeeklyScheduleBase._esc(s.attributes.friendly_name||s.entity_id);
       const action=this._actionLabel(s,firstEnt);
       return `<div class="mini-row">
         <div class="mini-icon-wrap">${icon}</div>
@@ -542,7 +590,7 @@ class WeeklyScheduleMiniCard extends HTMLElement {
       </div>`;
     };
     const activeRows=running.map(s=>rowHtml(s,'')).join('');
-    const mutedRows=muted.map(s=>rowHtml(s,'🔇')).join('');
+    const mutedRows=muted.map(s=>rowHtml(s,'<ha-icon icon="mdi:volume-off" style="--mdi-icon-size:14px;vertical-align:middle"></ha-icon>')).join('');
 
     // Group others by primary entity
     const groups=new Map();
@@ -559,7 +607,7 @@ class WeeklyScheduleMiniCard extends HTMLElement {
       groups.get(firstEnt).items.push(rowHtml(s,badge));
     }
     const othersHtml=[...groups.values()].map(g=>`
-      <div class="mini-group-hdr">${g.name.replace(/</g,'&lt;')}</div>
+      <div class="mini-group-hdr">${WeeklyScheduleBase._esc(g.name)}</div>
       ${g.items.join('')}
     `).join('');
 
@@ -568,7 +616,7 @@ class WeeklyScheduleMiniCard extends HTMLElement {
     const collapseLbl=lang==='it'?'Nascondi':lang==='fr'?'Masquer':'Hide';
 
     const defTitle=lang==='it'?'Schedule attivi':lang==='fr'?'Plannings actifs':'Active schedules';
-    const title=(this._config?.title||defTitle).replace(/</g,'&lt;');
+    const title=WeeklyScheduleBase._esc(this._config?.title||defTitle);
     const emptyActive=lang==='it'?'Nessuno schedule attivo ora':lang==='fr'?'Aucun planning actif':'No schedule active now';
     const mutedLbl=lang==='it'?'Attivi ma in pausa (condizione non soddisfatta)':lang==='fr'?'Actifs mais en pause (condition non satisfaite)':'Active but muted (condition not met)';
     this.shadowRoot.innerHTML=`
@@ -594,7 +642,7 @@ class WeeklyScheduleMiniCard extends HTMLElement {
       <ha-card>
         <div class="mini-title">${title}</div>
         ${activeRows||(muted.length?'':`<div class="mini-empty">📅 ${emptyActive}</div>`)}
-        ${muted.length?`<div class="mini-muted-hdr">🔇 ${mutedLbl}</div>${mutedRows.replace(/class="mini-row"/g,'class="mini-row muted-row"')}`:''}
+        ${muted.length?`<div class="mini-muted-hdr"><ha-icon icon="mdi:volume-off" style="--mdi-icon-size:14px;vertical-align:-2px;margin-right:2px"></ha-icon>${mutedLbl}</div>${mutedRows.replace(/class="mini-row"/g,'class="mini-row muted-row"')}`:''}
         ${others.length?`
           <button class="mini-expand">
             <span>${expanded?collapseLbl:expandLbl}</span>
@@ -625,6 +673,7 @@ class WeeklyScheduleMiniCard extends HTMLElement {
 
   disconnectedCallback() {
     if(this._interval){clearInterval(this._interval);this._interval=null;}
+    if(this._renderTimer){clearTimeout(this._renderTimer);this._renderTimer=null;}
     if(this._storageListener){
       window.removeEventListener('wsc-storage-changed', this._storageListener);
       this._storageListener = null;
