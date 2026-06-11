@@ -45,7 +45,7 @@ class WeeklyScheduleViewCard extends WeeklyScheduleBase {
         .vc-icon-btn { width:32px; height:32px; border-radius:50%; background:var(--secondary-background-color,#f5f5f5); border:none; cursor:pointer; display:flex; align-items:center; justify-content:center; color:var(--secondary-text-color); padding:0; flex-shrink:0; transition:all .15s; }
         .vc-icon-btn:hover { background:color-mix(in srgb,var(--primary-color,#03a9f4) 10%,transparent); color:var(--primary-color,#03a9f4); }
         .profiles-row, .tabs-row { display:flex; gap:6px; flex-wrap:wrap; margin-bottom:8px; }
-        .prof-chip, .tab-chip { padding:4px 10px; border-radius:14px; border:1.5px solid var(--divider-color,#ccc); cursor:pointer; font-size:.75em; color:var(--secondary-text-color); user-select:none; display:flex; align-items:center; gap:6px; }
+        .prof-chip, .tab-chip { padding:3px 10px; border-radius:14px; border:1.5px solid var(--divider-color,#ccc); cursor:pointer; font-size:.7em; color:var(--secondary-text-color); user-select:none; display:flex; align-items:center; gap:6px; }
         .prof-chip.active, .tab-chip.active { font-weight:600; }
         .prof-chip.viewed { background:color-mix(in srgb,var(--primary-color,#03a9f4) 8%,transparent); border-color:color-mix(in srgb,var(--primary-color,#03a9f4) 40%,transparent); color:var(--primary-color,#03a9f4); }
         .prof-chip.viewed.active { box-shadow:0 0 6px color-mix(in srgb,var(--primary-color,#03a9f4) 25%,transparent); }
@@ -135,7 +135,8 @@ class WeeklyScheduleViewCard extends WeeklyScheduleBase {
       const cls = ['prof-chip'];
       if (active) cls.push('active');
       if (viewed) cls.push('viewed');
-      const style = active ? `background:${color}1F;border-color:${color};color:${color}` : '';
+      // Attivo = accento blu primario (non il colore del profilo), per coerenza con lo stato "attivo"
+      const style = active ? 'background:color-mix(in srgb,var(--primary-color,#03a9f4) 14%,transparent);border-color:var(--primary-color,#03a9f4);color:var(--primary-color,#03a9f4)' : '';
       const actLbl = active ? (this.t('profile.deactivate') || 'Disattiva') : (this.t('profile.activate') || 'Attiva');
       const actColor = active ? 'var(--secondary-text-color)' : '#4CAF50';
       return `<div class="${cls.join(' ')}" role="button" tabindex="0" data-pid="${p.id}" style="${style}"><span class="chip-name">${this._esc(p.name)}</span><button class="chip-activate" data-pid="${p.id}" title="${actLbl}" style="color:${actColor}">${active ? '⏸' : '▶'}</button></div>`;

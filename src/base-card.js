@@ -6,6 +6,7 @@ const PALETTE=['#F44336','#E91E63','#9C27B0','#673AB7','#3F51B5','#2196F3','#03A
 const LOCALES = {
   en: {
     card:{ title:'Weekly Schedule',new_profile:'New profile',groups:'Groups',no_entities:'No entities configured',no_entities_sub:'Add entities via YAML config, or create a Group to get started.',manage_groups:'Manage Groups',layout_rows_view:'Rows view',layout_cols_view:'Columns view',no_schedule_now:'No schedule active now',empty_schedule:'No schedule' },
+    layout:{ focus:'Focus',compact:'Compact' },
     popup:{ new_schedule:'New Schedule',edit_schedule:'Edit Schedule',schedule_active:'Schedule Active',time_slot:'Time slot',snap:'Snap',days:'Days',start:'Start',end:'End',drag_hint:'Drag handles to resize.',next_slot:'＋ Next slot',temperature:'Temperature',hvac_mode:'HVAC Mode',preset_mode:'Preset Mode',fan_mode:'Fan Mode',swing_mode:'Swing Mode',climate_actions:'Climate Actions',light_action:'Light Action',action:'Action',brightness:'Brightness',auto_off:'Auto at slot end',none:'None',turn_off:'Turn Off',turn_on:'Turn On',set_temp:'Set temp',conditions:'Conditions',add_condition:'+ Condition',notifications:'Notifications',notify_service_label:'Service (e.g. notify.mobile_app_phone)',notify_message_label:'Message',name:'Name',name_placeholder:'Schedule name (optional)',save:'Save',delete:'Delete',cancel:'Cancel',ok:'OK' },
     days:{ mon:'Mon',tue:'Tue',wed:'Wed',thu:'Thu',fri:'Fri',sat:'Sat',sun:'Sun',all:'All',workdays:'Workdays',weekend:'Weekend' },
     profile:{ exclusive_label:'🔒 Exclusive (deactivates other exclusive profiles)',shared_label:'🔓 Shared (coexists with other profiles)',new_profile:'New Profile',create:'Create',name_placeholder:'Profile name',new_profile_mode:'new profile',rename:'Rename',duplicate:'Duplicate',delete:'Delete',viewing:'Viewing',active:'Active',activate:'Activate',deactivate:'Deactivate' },
@@ -21,6 +22,7 @@ const LOCALES = {
   },
   it: {
     card:{ title:'Pianificazione Settimanale',new_profile:'Nuovo profilo',groups:'Gruppi',no_entities:'Nessuna entità configurata',no_entities_sub:'Aggiungi entità via YAML o crea un Gruppo per iniziare.',manage_groups:'Gestisci Gruppi',layout_rows_view:'Vista righe',layout_cols_view:'Vista colonne',no_schedule_now:'Nessuno schedule attivo ora',empty_schedule:'Nessuno schedule' },
+    layout:{ focus:'Focus',compact:'Compatta' },
     popup:{ new_schedule:'Nuovo Schedule',edit_schedule:'Modifica Schedule',schedule_active:'Schedule Attivo',time_slot:'Fascia oraria',snap:'Snap',days:'Giorni',start:'Inizio',end:'Fine',drag_hint:'Trascina le maniglie per ridimensionare.',next_slot:'＋ Slot successivo',temperature:'Temperatura',hvac_mode:'Modalità HVAC',preset_mode:'Modalità preset',fan_mode:'Modalità ventola',swing_mode:'Modalità oscillazione',climate_actions:'Azioni clima',light_action:'Azione luce',action:'Azione',brightness:'Luminosità',auto_off:'Azione al termine slot',none:'Nessuna',turn_off:'Spegni',turn_on:'Accendi',set_temp:'Imposta temp',conditions:'Condizioni',add_condition:'+ Condizione',notifications:'Notifiche',notify_service_label:'Servizio (es. notify.mobile_app_phone)',notify_message_label:'Messaggio',name:'Nome',name_placeholder:'Nome schedule (opzionale)',save:'Salva',delete:'Elimina',cancel:'Annulla',ok:'OK' },
     days:{ mon:'Lun',tue:'Mar',wed:'Mer',thu:'Gio',fri:'Ven',sat:'Sab',sun:'Dom',all:'Tutti',workdays:'Feriali',weekend:'Weekend' },
     profile:{ exclusive_label:'🔒 Esclusivo (disattiva altri profili esclusivi)',shared_label:'🔓 Condiviso (coesiste con altri profili)',new_profile:'Nuovo Profilo',create:'Crea',name_placeholder:'Nome profilo',new_profile_mode:'nuovo profilo',rename:'Rinomina',duplicate:'Duplica',delete:'Elimina',viewing:'Stai visualizzando',active:'Attivo',activate:'Attiva',deactivate:'Disattiva' },
@@ -36,6 +38,7 @@ const LOCALES = {
   },
   fr: {
     card:{ title:'Planning Hebdomadaire',new_profile:'Nouveau profil',groups:'Groupes',no_entities:'Aucune entité configurée',no_entities_sub:'Ajoutez des entités via la config YAML, ou créez un Groupe pour commencer.',manage_groups:'Gérer les Groupes',layout_rows_view:'Vue lignes',layout_cols_view:'Vue colonnes',no_schedule_now:'Aucun planning actif',empty_schedule:'Aucun planning' },
+    layout:{ focus:'Focus',compact:'Compacte' },
     popup:{ new_schedule:'Nouveau Schedule',edit_schedule:'Modifier Schedule',schedule_active:'Schedule Actif',time_slot:'Créneau horaire',snap:'Snap',days:'Jours',start:'Début',end:'Fin',drag_hint:'Glissez les poignées pour redimensionner.',next_slot:'＋ Créneau suivant',temperature:'Température',hvac_mode:'Mode HVAC',preset_mode:'Mode preset',fan_mode:'Mode ventilateur',swing_mode:'Mode oscillation',climate_actions:'Actions climatisation',light_action:'Action lumière',action:'Action',brightness:'Luminosité',auto_off:'Action en fin de créneau',none:'Aucune',turn_off:'Éteindre',turn_on:'Allumer',set_temp:'Définir temp',conditions:'Conditions',add_condition:'+ Condition',notifications:'Notifications',notify_service_label:'Service (ex. notify.mobile_app_phone)',notify_message_label:'Message',name:'Nom',name_placeholder:'Nom du schedule (optionnel)',save:'Sauvegarder',delete:'Supprimer',cancel:'Annuler',ok:'OK' },
     days:{ mon:'Lun',tue:'Mar',wed:'Mer',thu:'Jeu',fri:'Ven',sat:'Sam',sun:'Dim',all:'Tous',workdays:'Jours ouvrés',weekend:'Week-end' },
     profile:{ exclusive_label:"🔒 Exclusif (désactive les autres profils exclusifs)",shared_label:"🔓 Partagé (coexiste avec d'autres profils)",new_profile:'Nouveau Profil',create:'Créer',name_placeholder:'Nom du profil',new_profile_mode:'nouveau profil',rename:'Renommer',duplicate:'Dupliquer',delete:'Supprimer',viewing:'En vue',active:'Actif',activate:'Activer',deactivate:'Désactiver' },
@@ -3307,7 +3310,7 @@ export default class WeeklyScheduleBase extends HTMLElement {
           const showContent = b.heightPct > 4;
           return `<div class="compact-blk${b.isOff?' off':''}${b.isActive?' active':''}${b.isMuted?' muted':''}" data-entity="${b.entityId}" data-day="${di}" style="left:${b.startPct}%;width:${b.heightPct}%;background-color:${b.color};color:${this._textColorFor(b.color)}${glowStyle}">` +
             (b.isMuted ? `<ha-icon class="blk-muted-ico" icon="mdi:volume-off"></ha-icon>` : '') +
-            (showContent ? `<ha-icon icon="${icon}" style="--mdi-icon-size:10px;color:inherit;opacity:.9;flex-shrink:0"></ha-icon><span class="compact-blk-val">${b.label||''}</span>` : '') +
+            (showContent ? `<span class="compact-blk-val">${b.label||''}</span>` : '') +
             `</div>`;
         }).join('');
 
@@ -3399,17 +3402,13 @@ export default class WeeklyScheduleBase extends HTMLElement {
         : `left:4px;right:4px`;
       const glowStyle = b.isActive ? `;--fblk-glow:${b.color};--fblk-glow-soft:${b.color}80` : '';
       const content = b.heightPct >= minForFull
-        ? `<ha-icon icon="${b.icon}" style="--mdi-icon-size:14px;color:inherit;opacity:.9;flex-shrink:0"></ha-icon>` +
-          `<div class="focus-blk-info">` +
+        ? `<div class="focus-blk-info">` +
             `<span class="focus-blk-name">${this._esc(b.entityName)}</span>` +
             `<span class="focus-blk-val">${this._esc(b.label||'')}</span>` +
           `</div>`
-        : b.heightPct >= minForContent
-          ? `<ha-icon icon="${b.icon}" style="--mdi-icon-size:14px;color:inherit;opacity:.9;flex-shrink:0"></ha-icon>` +
-            `<span class="focus-blk-val">${this._esc(b.label||'')}</span>`
-          : b.heightPct >= minForValue
-            ? `<span class="focus-blk-val">${this._esc(b.label||'')}</span>`
-            : '';
+        : b.heightPct >= minForValue
+          ? `<span class="focus-blk-val">${this._esc(b.label||'')}</span>`
+          : '';
       const mutedIco = b.isMuted ? `<ha-icon class="blk-muted-ico" icon="mdi:volume-off"></ha-icon>` : '';
       return `<div class="focus-blk${b.isOff?' off':''}${b.isActive?' active':''}${b.isMuted?' muted':''}" data-entity="${b.entityId}" style="top:${b.startPct}%;height:${b.heightPct}%;background-color:${b.color};color:${this._textColorFor(b.color)}${glowStyle};min-height:20px;${posStyle}">${mutedIco}${content}</div>`;
     }).join('');

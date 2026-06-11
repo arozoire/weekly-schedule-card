@@ -85,7 +85,7 @@ class WeeklyScheduleCard extends WeeklyScheduleBase {
         .legend-item{display:flex;align-items:center;gap:4px;font-size:.75em;color:var(--primary-text-color);cursor:pointer}
         .legend-dot{width:12px;height:12px;border-radius:50%;flex-shrink:0}
         .chip-wrap{position:relative;flex-shrink:0}
-        .profile-chip{display:flex;align-items:center;gap:5px;padding:2px 8px 2px 9px;height:24px;border-radius:13px;border:1.5px solid color-mix(in srgb,var(--pchip-color,#03a9f4) 30%,var(--divider-color,#ccc));border-left:3px solid var(--pchip-color,#03a9f4);background:linear-gradient(90deg,color-mix(in srgb,var(--pchip-color,#03a9f4) 22%,transparent) 0%,transparent 60%);cursor:pointer;font-size:.72em;color:var(--primary-text-color);user-select:none;transition:all .15s;box-sizing:border-box;flex-shrink:0}
+        .profile-chip{display:flex;align-items:center;gap:5px;padding:2px 8px 2px 9px;height:24px;border-radius:13px;border:1.5px solid color-mix(in srgb,var(--pchip-color,#03a9f4) 30%,var(--divider-color,#ccc));border-left:3px solid var(--pchip-color,#03a9f4);background:linear-gradient(90deg,color-mix(in srgb,var(--pchip-color,#03a9f4) 22%,transparent) 0%,transparent 60%);cursor:pointer;font-size:.68em;color:var(--primary-text-color);user-select:none;transition:all .15s;box-sizing:border-box;flex-shrink:0}
         .profile-chip:hover{border-color:color-mix(in srgb,var(--pchip-color,#03a9f4) 55%,var(--divider-color,#ccc));border-left-color:var(--pchip-color,#03a9f4);background:linear-gradient(90deg,color-mix(in srgb,var(--pchip-color,#03a9f4) 32%,transparent) 0%,transparent 65%)}
         .profile-chip.viewed{background:linear-gradient(90deg,color-mix(in srgb,var(--pchip-color,#03a9f4) 30%,transparent) 0%,color-mix(in srgb,var(--pchip-color,#03a9f4) 5%,transparent) 70%);border-color:color-mix(in srgb,var(--pchip-color,#03a9f4) 45%,var(--divider-color,#ccc));font-weight:600}
         .profile-chip.active-op{border-left-width:4px;box-shadow:0 1px 6px color-mix(in srgb,var(--pchip-color,#03a9f4) 30%,transparent)}
@@ -256,7 +256,6 @@ class WeeklyScheduleCard extends WeeklyScheduleBase {
               const pcolor=this._getProfileColor(p);
               return '<div class="chip-wrap">'
                 + '<div class="profile-chip' + (viewed?' viewed':'') + (active?' active-op':'') + '" role="button" tabindex="0" data-pid="' + p.id + '" style="--pchip-color:' + pcolor + '">'
-                + '<ha-icon class="chip-lock" icon="' + (excl?'mdi:lock':'mdi:lock-open-variant') + '" style="--mdi-icon-size:11px"></ha-icon>'
                 + (active?'<span class="chip-act-dot"></span>':'')
                 + '<span class="chip-name">' + this._esc(p.name) + '</span>'
                 + '<button class="chip-activate' + (active?' on':'') + '" data-pid="' + p.id + '" title="' + (active?this.t('profile.deactivate'):this.t('profile.activate')) + '"><ha-icon icon="' + (active?'mdi:pause':'mdi:play') + '" style="--mdi-icon-size:14px"></ha-icon></button>'
