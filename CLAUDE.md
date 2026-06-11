@@ -281,6 +281,7 @@ notifications:
 
 ## Last modified
 always update last modified date with day an hour Rome utc
+2026-06-11 14:21 Rome (v1.1.5 UI editing card) — rimossa la status bar "Viewing: … Active"; profilo attivo indicato da una barra verde sotto la chip (`.profile-chip.active-op::after`), rimosso il pallino verde (chip-act-dot). Vista colonne gruppi: piccolo gap fisso (4px) tra le sub-colonne delle entità (calc su left/width), rimosso il sub-divider.
 2026-06-11 14:00 Rome (v1.1.4 UI polish) — view card: rimossa icona dominio dai blocchi focus/compact (il "riquadro bianco"); chip profilo attivo in blu primario (non più il colore rosso del profilo) + scritta più piccola; editing card: rimosso lucchetto dalla chip + font ridotto; fix i18n `layout.focus`/`layout.compact` (mostrava la chiave grezza) con nuovo blocco LOCALES `layout`.
 2026-06-11 13:42 Rome (WIP vista colonne) — blocchi colonne: rimosse etichette e icone-indicatore (illeggibili in colonne strette + "quadratino bianco" = `mdi:stop`); colori smorzati (opacità blocchi .88→.72, attivi 1→.9, pulse ridotto a bordo interno + glow leggero). Dettagli su tooltip/vista righe. Branch `fix/columns-visual`, in iterazione su screenshot (restano: fine-tuning colori + chip profilo).
 2026-06-11 08:56 Rome (UX cover) — azione tenda: posizione come 4° radio (open/close/stop/position, mutuamente esclusivi; rimosso `enablePosition`, `coverAction` unica fonte). Slider posizione con etichette Chiuso/Aperto e track a gradiente nero→giallo sole (chiuso 0% → aperto 100%). Semantica HA invariata (`set_cover_position`).

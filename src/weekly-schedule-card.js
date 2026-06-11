@@ -1,5 +1,5 @@
 // src/weekly-schedule-card.js
-// Last modified: 2026-06-11 Rome (v1.1.4)
+// Last modified: 2026-06-11 Rome (v1.1.5)
 
 import WeeklyScheduleBase from './base-card.js';
 import './weekly-schedule-view-card.js';
@@ -20,7 +20,7 @@ class WeeklyScheduleCard extends WeeklyScheduleBase {
         ha-card{padding:14px 16px 8px}
         .card-header{display:flex;flex-direction:column;gap:0;margin-bottom:0}
         .hdr-row1{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
-        .hdr-row2{display:flex;flex-wrap:nowrap;gap:6px;align-items:center;margin-bottom:6px;overflow-x:auto;scrollbar-width:none}
+        .hdr-row2{display:flex;flex-wrap:nowrap;gap:6px;align-items:center;margin-bottom:6px;padding-bottom:6px;overflow-x:auto;scrollbar-width:none}
         .hdr-row2::-webkit-scrollbar{display:none}
         .hdr-sep{height:1px;background:var(--divider-color,#e0e0e0);margin-bottom:10px}
         .card-title{font-size:.95em;font-weight:500;color:var(--primary-text-color)}
@@ -86,10 +86,11 @@ class WeeklyScheduleCard extends WeeklyScheduleBase {
         .legend-item{display:flex;align-items:center;gap:4px;font-size:.75em;color:var(--primary-text-color);cursor:pointer}
         .legend-dot{width:12px;height:12px;border-radius:50%;flex-shrink:0}
         .chip-wrap{position:relative;flex-shrink:0}
-        .profile-chip{display:flex;align-items:center;gap:5px;padding:2px 8px 2px 9px;height:24px;border-radius:13px;border:1.5px solid color-mix(in srgb,var(--pchip-color,#03a9f4) 30%,var(--divider-color,#ccc));border-left:3px solid var(--pchip-color,#03a9f4);background:linear-gradient(90deg,color-mix(in srgb,var(--pchip-color,#03a9f4) 22%,transparent) 0%,transparent 60%);cursor:pointer;font-size:.68em;color:var(--primary-text-color);user-select:none;transition:all .15s;box-sizing:border-box;flex-shrink:0}
+        .profile-chip{display:flex;position:relative;align-items:center;gap:5px;padding:2px 8px 2px 9px;height:24px;border-radius:13px;border:1.5px solid color-mix(in srgb,var(--pchip-color,#03a9f4) 30%,var(--divider-color,#ccc));border-left:3px solid var(--pchip-color,#03a9f4);background:linear-gradient(90deg,color-mix(in srgb,var(--pchip-color,#03a9f4) 22%,transparent) 0%,transparent 60%);cursor:pointer;font-size:.68em;color:var(--primary-text-color);user-select:none;transition:all .15s;box-sizing:border-box;flex-shrink:0}
         .profile-chip:hover{border-color:color-mix(in srgb,var(--pchip-color,#03a9f4) 55%,var(--divider-color,#ccc));border-left-color:var(--pchip-color,#03a9f4);background:linear-gradient(90deg,color-mix(in srgb,var(--pchip-color,#03a9f4) 32%,transparent) 0%,transparent 65%)}
         .profile-chip.viewed{background:linear-gradient(90deg,color-mix(in srgb,var(--pchip-color,#03a9f4) 30%,transparent) 0%,color-mix(in srgb,var(--pchip-color,#03a9f4) 5%,transparent) 70%);border-color:color-mix(in srgb,var(--pchip-color,#03a9f4) 45%,var(--divider-color,#ccc));font-weight:600}
         .profile-chip.active-op{border-left-width:4px;box-shadow:0 1px 6px color-mix(in srgb,var(--pchip-color,#03a9f4) 30%,transparent)}
+        .profile-chip.active-op::after{content:'';position:absolute;left:7px;right:7px;bottom:-5px;height:3px;border-radius:2px;background:var(--success-color,#4CAF50)}
         .profile-chip.viewed.active-op{background:linear-gradient(90deg,color-mix(in srgb,var(--pchip-color,#03a9f4) 42%,transparent) 0%,color-mix(in srgb,var(--pchip-color,#03a9f4) 8%,transparent) 75%);border-color:var(--pchip-color,#03a9f4);font-weight:600;box-shadow:0 1px 8px color-mix(in srgb,var(--pchip-color,#03a9f4) 34%,transparent)}
         .chip-act-dot{width:7px;height:7px;border-radius:50%;background:#4CAF50;flex-shrink:0;box-shadow:0 0 4px color-mix(in srgb,#4CAF50 60%,transparent)}
         .chip-lock{opacity:.55;flex-shrink:0;color:currentColor}
@@ -171,8 +172,7 @@ class WeeklyScheduleCard extends WeeklyScheduleBase {
         <div class="day-column day-column-grp" data-day="${di}">
           ${ents.map((ec,ei)=>{
             const blocks=this._getBlocksForDay(di,this._getProfileSchedules(ec.entity),ec);
-            return `<div class="sub-col" data-day="${di}" data-ei="${ei}" style="left:${(ei/N)*100}%;width:${(1/N)*100}%;box-shadow:inset 3px 0 0 0 ${ec.color||'transparent'}">
-              ${ei>0?'<div class="sub-divider"></div>':''}
+            return `<div class="sub-col" data-day="${di}" data-ei="${ei}" style="left:calc(${(ei/N)*100}% + 2px);width:calc(${(1/N)*100}% - 4px);box-shadow:inset 3px 0 0 0 ${ec.color||'transparent'}">
               ${blocks.map(_blk).join('')}
               <div class="add-hint">+</div>
             </div>`;
@@ -257,7 +257,6 @@ class WeeklyScheduleCard extends WeeklyScheduleBase {
               const pcolor=this._getProfileColor(p);
               return '<div class="chip-wrap">'
                 + '<div class="profile-chip' + (viewed?' viewed':'') + (active?' active-op':'') + '" role="button" tabindex="0" data-pid="' + p.id + '" style="--pchip-color:' + pcolor + '">'
-                + (active?'<span class="chip-act-dot"></span>':'')
                 + '<span class="chip-name">' + this._esc(p.name) + '</span>'
                 + '<button class="chip-activate' + (active?' on':'') + '" data-pid="' + p.id + '" title="' + (active?this.t('profile.deactivate'):this.t('profile.activate')) + '"><ha-icon icon="' + (active?'mdi:pause':'mdi:play') + '" style="--mdi-icon-size:14px"></ha-icon></button>'
                 + '<button class="chip-menu" data-pid="' + p.id + '"><ha-icon icon="mdi:dots-vertical" style="--mdi-icon-size:14px"></ha-icon></button>'
@@ -271,16 +270,7 @@ class WeeklyScheduleCard extends WeeklyScheduleBase {
             <button class="chip-add" title="${this.t('profile.new_profile')}">＋</button>
           </div>
           <div class="hdr-sep"></div>
-        </div>
-        ${(()=>{
-          const vp=profiles.find(x=>x.id===this._selectedProfileId)||profiles[0];
-          if(!vp) return '';
-          const isAct=this._isProfileActive(vp);
-          return '<div class="profile-status-bar">' + this.t('profile.viewing') + ': <strong>' + this._esc(vp.name) + '</strong>'
-            + (isAct ? ' <span class="psb-active">● ' + this.t('profile.active') + '</span>'
-                     : ' <span>○ </span><button class="psb-activate-btn" data-pid="' + vp.id + '">' + this.t('profile.activate') + '</button>')
-            + '</div>';
-        })()}`}
+        </div>`}
 
         ${allTabs.length>1?`<div class="tab-bar">${allTabs.map((t,i)=>{
           const dot=t.color||(t.entities?.[0]?.color)||null;
