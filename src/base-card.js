@@ -963,7 +963,7 @@ export default class WeeklyScheduleBase extends HTMLElement {
         out.push({ service: 'fan.turn_off', target: { entity_id: eid } });
       }
     } else if (dom === 'cover') {
-      if (ps.enablePosition) {
+      if (ps.coverAction === 'position') {
         out.push({ service: 'cover.set_cover_position', target: { entity_id: eid }, data: { position: ps.position } });
       } else {
         const map = { open: 'open_cover', close: 'close_cover', stop: 'stop_cover' };
@@ -2017,7 +2017,7 @@ export default class WeeklyScheduleBase extends HTMLElement {
       turnOn: true, brightness: 100, enableBrightness: false,
       enableColor: false, color: '#FFFFFF',
       enableSpeed: false, speed: 50,
-      coverAction: 'close', enablePosition: false, position: 50,
+      coverAction: 'close', position: 50,
       stopAction: null, stopValue: null,
       conditions: [], condCombinator: 'and', condInterval: 15, _condOpen: false,
       overrideEnabled: false,
@@ -2099,8 +2099,7 @@ export default class WeeklyScheduleBase extends HTMLElement {
       color: ad.rgb_color ? this._rgbToHex(ad.rgb_color) : '#FFFFFF',
       enableSpeed: ad.percentage !== undefined,
       speed: ad.percentage ?? 50,
-      coverAction: (svc.includes('open_cover') ? 'open' : svc.includes('stop_cover') ? 'stop' : 'close'),
-      enablePosition: ad.position !== undefined,
+      coverAction: (svc.includes('set_cover_position') ? 'position' : svc.includes('open_cover') ? 'open' : svc.includes('stop_cover') ? 'stop' : 'close'),
       position: ad.position ?? 50,
       stopAction: (() => {
         const stored = this._getStoredStop(entityId);
@@ -2277,16 +2276,16 @@ export default class WeeklyScheduleBase extends HTMLElement {
         <div class="section-label">${this.t('popup.action')}</div>
         <div class="radio-row" style="flex-wrap:wrap;gap:10px">
           <label><input type="radio" name="cover-action" value="open" ${ps.coverAction==='open'?'checked':''}> ${this.t('endact.open')}</label>
-          <label><input type="radio" name="cover-action" value="close" ${ps.coverAction!=='open'&&ps.coverAction!=='stop'?'checked':''}> ${this.t('endact.close')}</label>
+          <label><input type="radio" name="cover-action" value="close" ${ps.coverAction==='close'?'checked':''}> ${this.t('endact.close')}</label>
           <label><input type="radio" name="cover-action" value="stop" ${ps.coverAction==='stop'?'checked':''}> ${this.t('endact.stop')}</label>
+          ${this._entityCaps(ps.entityConf.entity).coverPosition ? `<label><input type="radio" name="cover-action" value="position" ${ps.coverAction==='position'?'checked':''}> ${this.t('endact.position')}</label>` : ''}
         </div>
         ${this._entityCaps(ps.entityConf.entity).coverPosition ? `
-        <div class="action-row" style="margin-top:8px;border-bottom:none">
-          <label class="action-check"><input type="checkbox" class="chk-position" ${ps.enablePosition?'checked':''}><span>${this.t('endact.position')}</span></label>
-          <div class="param-inline ${ps.enablePosition?'':'disabled'}">
-            <span class="position-value" style="min-width:40px;text-align:right;font-weight:700">${ps.position}%</span>
-            <input type="range" class="position-slider" min="0" max="100" step="1" value="${ps.position}" ${ps.enablePosition?'':'disabled'}>
-          </div>
+        <div class="cover-pos-block" style="${ps.coverAction==='position'?'':'display:none'}">
+          <span class="cover-pos-end">${this.t('endact.close')}</span>
+          <input type="range" class="position-slider" min="0" max="100" step="1" value="${ps.position}">
+          <span class="cover-pos-end">${this.t('endact.open')}</span>
+          <span class="position-value">${ps.position}%</span>
         </div>` : ''}
       </div>` : `
       <div>
@@ -2411,6 +2410,14 @@ export default class WeeklyScheduleBase extends HTMLElement {
         .action-row { display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid var(--divider-color,#f0f0f0); }
         .action-check { display:flex;align-items:center;gap:6px;font-size:.82em;color:var(--primary-text-color);white-space:nowrap;cursor:pointer;min-width:110px; }
         .param-inline { display:flex;align-items:center;gap:8px;flex:1; }
+        .cover-pos-block { display:flex;align-items:center;gap:10px;margin-top:10px; }
+        .cover-pos-end { font-size:.74em;font-weight:600;color:var(--secondary-text-color);white-space:nowrap; }
+        .cover-pos-block .position-value { min-width:42px;text-align:right;font-weight:700;font-variant-numeric:tabular-nums; }
+        .cover-pos-block .position-slider { flex:1;-webkit-appearance:none;appearance:none;height:10px;border-radius:6px;background:linear-gradient(90deg,#1a1a1a 0%,#5c5c5c 40%,#ffca28 100%);outline:none;cursor:pointer; }
+        .cover-pos-block .position-slider::-webkit-slider-runnable-track { height:10px;border-radius:6px;background:transparent; }
+        .cover-pos-block .position-slider::-webkit-slider-thumb { -webkit-appearance:none;appearance:none;width:18px;height:18px;border-radius:50%;background:#fff;border:2px solid var(--primary-color,#03a9f4);box-shadow:0 1px 4px rgba(0,0,0,.45);margin-top:-4px;cursor:pointer; }
+        .cover-pos-block .position-slider::-moz-range-track { height:10px;border-radius:6px;background:linear-gradient(90deg,#1a1a1a 0%,#5c5c5c 40%,#ffca28 100%); }
+        .cover-pos-block .position-slider::-moz-range-thumb { width:18px;height:18px;border-radius:50%;background:#fff;border:2px solid var(--primary-color,#03a9f4);box-shadow:0 1px 4px rgba(0,0,0,.45);cursor:pointer; }
         .brightness-value { font-size:.9em;font-weight:700;color:var(--primary-text-color);min-width:40px;text-align:right; }
         input[type=range] { flex:1;accent-color:var(--primary-color,#03a9f4);cursor:pointer; }
         .temp-inp { width:70px;flex-shrink:0;padding:4px 6px;border-radius:6px;border:1px solid var(--divider-color,#ccc);background:var(--card-background-color,#fff);color:var(--primary-text-color);font-size:.88em;font-family:inherit;text-align:center;-moz-appearance:textfield; }
@@ -2667,7 +2674,7 @@ export default class WeeklyScheduleBase extends HTMLElement {
         ps.enableHvac = false; ps.enablePreset = false; ps.enableFan = false; ps.enableSwing = false;
         ps.hvacMode = ''; ps.presetMode = ''; ps.fanMode = ''; ps.swingMode = '';
         ps.enableBrightness = false;
-        ps.enableColor = false; ps.enableSpeed = false; ps.enablePosition = false; ps.coverAction = 'close';
+        ps.enableColor = false; ps.enableSpeed = false; ps.coverAction = 'close';
         ps.stopAction = null; ps.stopValue = null;
         // Re-render the whole popup so domainSection + name + notify defaults update
         this._renderPopup();
@@ -2782,10 +2789,12 @@ export default class WeeklyScheduleBase extends HTMLElement {
       spdChk.addEventListener('change', () => { ps.enableSpeed = spdChk.checked; spd.disabled = !spdChk.checked; spd.closest('.param-inline')?.classList.toggle('disabled', !spdChk.checked); });
       spd.addEventListener('input', () => { ps.speed = parseInt(spd.value); if (spdV) spdV.textContent = `${ps.speed}%`; });
     }
-    dlg.querySelectorAll('input[name="cover-action"]').forEach(r => r.addEventListener('change', () => { ps.coverAction = r.value; }));
-    const posChk = dlg.querySelector('.chk-position'), pos = dlg.querySelector('.position-slider'), posV = dlg.querySelector('.position-value');
-    if (posChk && pos) {
-      posChk.addEventListener('change', () => { ps.enablePosition = posChk.checked; pos.disabled = !posChk.checked; pos.closest('.param-inline')?.classList.toggle('disabled', !posChk.checked); });
+    const posBlock = dlg.querySelector('.cover-pos-block'), pos = dlg.querySelector('.position-slider'), posV = dlg.querySelector('.position-value');
+    dlg.querySelectorAll('input[name="cover-action"]').forEach(r => r.addEventListener('change', () => {
+      ps.coverAction = r.value;
+      if (posBlock) posBlock.style.display = (r.value === 'position') ? '' : 'none';
+    }));
+    if (pos) {
       pos.addEventListener('input', () => { ps.position = parseInt(pos.value); if (posV) posV.textContent = `${ps.position}%`; });
     }
     // End-of-slot (auto-off) action editor
