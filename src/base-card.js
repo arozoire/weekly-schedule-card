@@ -13,7 +13,7 @@ const LOCALES = {
     errors:{ no_days:'Please select at least one day.',delete_confirm:'Delete this schedule?',delete_profile_confirm:'Delete this profile and all its schedules?',save_failed:'Failed',overlap:'Overlap with existing schedule in this profile' },
     warnings:{ temp_unusual:'⚠️ Unusual value — check device compatibility',temp_very_high:'🔴 Warning: very high temperature',out_of_slider_range:'Outside typical range for this entity' },
     cond:{ add:'Add condition',entity:'Entity',operator:'Operator',value:'Value',and_all:'All (AND)',or_any:'Any (OR)',recheck:'Re-check interval' },
-    notify:{ restore_auto:'Restore auto text',trigger_label:'When to notify',trigger_none:'Never',trigger_start:'On start',trigger_end:'On end',trigger_both:'Start + end',msg_start_label:'Start message',msg_end_label:'End message',default_start:'Schedule started',default_end:'Schedule ended' },
+    notify:{ restore_auto:'Restore auto text',trigger_label:'When to notify',trigger_none:'Never',trigger_start:'On start',trigger_end:'On end',trigger_both:'Start + end',msg_start_label:'Start message',msg_end_label:'End message',default_start:'Schedule started',default_end:'Schedule ended',on:'on',off:'off',from_to:'From {start} to {end}',was_active:'Was active {start}–{end}',end_off:'auto turn off',end_on:'auto turn on',end_temp:'set {value}°C',end_none:'no action',conditions_label:'Conditions',recheck:'Recheck every {n} min',at_end:'At end: {action}',completed:'schedule completed',set_to:'set to',brightness:'brightness' },
     linked:{ title:'Linked objects',auto_off:'Auto-off automation',cond_auto:'Condition automation',extras_auto:'Extras automation',notify:'Notification',override_flag:'Override flag',open:'Open',edit_yaml:'Edit YAML',missing:'missing' },
     endact:{ brightness:'Set brightness',color:'Set color',color_temp:'Set color temp',speed:'Set speed',position:'Set position',open:'Open',close:'Close',stop:'Stop' },
     override:{ enable:'Allow manual override',hint:'If you change the entity by hand during a slot, the schedule stops re-applying its value until the next slot (conditional schedules only).',active:'Manual override active',inactive:'No override',cancel:'Cancel override now' }
@@ -27,7 +27,7 @@ const LOCALES = {
     errors:{ no_days:'Seleziona almeno un giorno.',delete_confirm:'Eliminare questo schedule?',delete_profile_confirm:'Eliminare questo profilo e tutti i suoi schedule?',save_failed:'Errore',overlap:'Sovrapposizione con schedule esistente in questo profilo' },
     warnings:{ temp_unusual:'⚠️ Valore insolito — verifica compatibilità con il tuo dispositivo',temp_very_high:'🔴 Attenzione: temperatura molto alta',out_of_slider_range:'Fuori dal range tipico per questa entità' },
     cond:{ add:'Aggiungi condizione',entity:'Entità',operator:'Operatore',value:'Valore',and_all:'Tutte (AND)',or_any:'Una qualsiasi (OR)',recheck:'Intervallo rivalutazione' },
-    notify:{ restore_auto:'Ripristina testo automatico',trigger_label:'Quando notificare',trigger_none:'Mai',trigger_start:"All'inizio",trigger_end:'Alla fine',trigger_both:'Inizio + fine',msg_start_label:'Messaggio inizio',msg_end_label:'Messaggio fine',default_start:'Schedule attivato',default_end:'Schedule terminato' },
+    notify:{ restore_auto:'Ripristina testo automatico',trigger_label:'Quando notificare',trigger_none:'Mai',trigger_start:"All'inizio",trigger_end:'Alla fine',trigger_both:'Inizio + fine',msg_start_label:'Messaggio inizio',msg_end_label:'Messaggio fine',default_start:'Schedule attivato',default_end:'Schedule terminato',on:'acceso',off:'spento',from_to:'Dalle {start} alle {end}',was_active:'Era attivo {start}–{end}',end_off:'spegnimento automatico',end_on:'accensione automatica',end_temp:'imposta {value}°C',end_none:'nessuna azione',conditions_label:'Condizioni',recheck:'Controllo ogni {n} min',at_end:'Alla fine: {action}',completed:'schedule completato',set_to:'impostato a',brightness:'luminosità' },
     linked:{ title:'Oggetti collegati',auto_off:'Automazione auto-off',cond_auto:'Automazione condizioni',extras_auto:'Automazione extra',notify:'Notifica',override_flag:'Flag override',open:'Apri',edit_yaml:'Modifica YAML',missing:'mancante' },
     endact:{ brightness:'Imposta luminosità',color:'Imposta colore',color_temp:'Imposta temp. colore',speed:'Imposta velocità',position:'Imposta posizione',open:'Apri',close:'Chiudi',stop:'Ferma' },
     override:{ enable:'Consenti override manuale',hint:'Se cambi l\'entità a mano durante uno slot, lo schedule smette di ri-applicare il suo valore fino al prossimo slot (solo schedule con condizioni).',active:'Override manuale attivo',inactive:'Nessun override',cancel:'Annulla override adesso' }
@@ -41,7 +41,7 @@ const LOCALES = {
     errors:{ no_days:'Sélectionnez au moins un jour.',delete_confirm:'Supprimer ce schedule ?',delete_profile_confirm:'Supprimer ce profil et tous ses schedules ?',save_failed:'Échec',overlap:'Chevauchement avec un planning existant dans ce profil' },
     warnings:{ temp_unusual:"⚠️ Valeur inhabituelle — vérifiez la compatibilité avec votre appareil",temp_very_high:"🔴 Attention : température très élevée",out_of_slider_range:'Hors de la plage typique pour cette entité' },
     cond:{ add:'Ajouter condition',entity:'Entité',operator:'Opérateur',value:'Valeur',and_all:'Toutes (AND)',or_any:"N'importe laquelle (OR)",recheck:'Intervalle de réévaluation' },
-    notify:{ restore_auto:'Restaurer texte auto',trigger_label:'Quand notifier',trigger_none:'Jamais',trigger_start:'Au début',trigger_end:'À la fin',trigger_both:'Début + fin',msg_start_label:'Message début',msg_end_label:'Message fin',default_start:'Schedule démarré',default_end:'Schedule terminé' },
+    notify:{ restore_auto:'Restaurer texte auto',trigger_label:'Quand notifier',trigger_none:'Jamais',trigger_start:'Au début',trigger_end:'À la fin',trigger_both:'Début + fin',msg_start_label:'Message début',msg_end_label:'Message fin',default_start:'Schedule démarré',default_end:'Schedule terminé',on:'allumé',off:'éteint',from_to:'De {start} à {end}',was_active:'Était actif {start}–{end}',end_off:'extinction automatique',end_on:'allumage automatique',end_temp:'régler {value}°C',end_none:'aucune action',conditions_label:'Conditions',recheck:'Revérification chaque {n} min',at_end:'À la fin: {action}',completed:'planification terminée',set_to:'réglé à',brightness:'luminosité' },
     linked:{ title:'Objets liés',auto_off:'Automatisation auto-off',cond_auto:'Automatisation conditions',extras_auto:'Automatisation extra',notify:'Notification',override_flag:'Indicateur surcharge',open:'Ouvrir',edit_yaml:'Modifier YAML',missing:'manquant' },
     endact:{ brightness:'Définir luminosité',color:'Définir couleur',color_temp:'Définir temp. couleur',speed:'Définir vitesse',position:'Définir position',open:'Ouvrir',close:'Fermer',stop:'Arrêter' },
     override:{ enable:'Autoriser la commande manuelle',hint:'Si vous changez l\'entité à la main pendant un créneau, le planning cesse de réappliquer sa valeur jusqu\'au prochain créneau (plannings avec conditions uniquement).',active:'Commande manuelle active',inactive:'Aucune surcharge',cancel:'Annuler la surcharge' }
@@ -679,51 +679,46 @@ export default class WeeklyScheduleBase extends HTMLElement {
 
   _buildDefaultNotifyMessage(ps, kind = 'start') {
     if (!ps) return '';
-    const lang = this._lang || 'it';
     const ec = ps.entityConf || {};
     const entityName = this._hass?.states?.[ec.entity]?.attributes?.friendly_name || ec.name || ec.entity || '';
     const startTime = this._minutesToTime(ps.startMin);
     const endTime = this._minutesToTime(ps.endMin === 1440 ? 0 : ps.endMin);
-    const onLbl = lang === 'en' ? 'on' : lang === 'fr' ? 'allumé' : 'acceso';
-    const offLbl = lang === 'en' ? 'off' : lang === 'fr' ? 'éteint' : 'spento';
-    const fromTo = lang === 'en' ? `From ${startTime} to ${endTime}` : lang === 'fr' ? `De ${startTime} à ${endTime}` : `Dalle ${startTime} alle ${endTime}`;
+    const onLbl = this.t('notify.on');
+    const offLbl = this.t('notify.off');
+    const fromTo = this.t('notify.from_to', { start: startTime, end: endTime });
     // weekdays
     const ds = [...(ps.days || [])].sort((a,b)=>a-b);
     let daysText;
-    if (ds.length === 7) daysText = this.t('days.all') || (lang==='en'?'every day':lang==='fr'?'tous les jours':'tutti i giorni');
-    else if (ds.length === 5 && ds.every((v,i)=>v===i)) daysText = this.t('days.workdays') || (lang==='en'?'workdays':lang==='fr'?'jours ouvrés':'feriali');
-    else if (ds.length === 2 && ds[0]===5 && ds[1]===6) daysText = this.t('days.weekend') || (lang==='en'?'weekend':'weekend');
+    if (ds.length === 7) daysText = this.t('days.all');
+    else if (ds.length === 5 && ds.every((v,i)=>v===i)) daysText = this.t('days.workdays');
+    else if (ds.length === 2 && ds[0]===5 && ds[1]===6) daysText = this.t('days.weekend');
     else daysText = ds.map(i => this.t(`days.${this._getDayKey(i)}`) || this._getDayKey(i)).join(', ');
     // end action
     let endAction;
-    if (ps.stopAction === 'turn_off') endAction = lang==='en'?'auto turn off':lang==='fr'?'extinction automatique':'spegnimento automatico';
-    else if (ps.stopAction === 'turn_on') endAction = lang==='en'?'auto turn on':lang==='fr'?'allumage automatique':'accensione automatica';
-    else if (ps.stopAction === 'set_temperature') endAction = lang==='en'?`set ${ps.stopValue}°C`:lang==='fr'?`régler ${ps.stopValue}°C`:`imposta ${ps.stopValue}°C`;
-    else endAction = lang==='en'?'no action':lang==='fr'?'aucune action':'nessuna azione';
+    if (ps.stopAction === 'turn_off') endAction = this.t('notify.end_off');
+    else if (ps.stopAction === 'turn_on') endAction = this.t('notify.end_on');
+    else if (ps.stopAction === 'set_temperature') endAction = this.t('notify.end_temp', { value: ps.stopValue });
+    else endAction = this.t('notify.end_none');
     // condition line
     let condLine = '';
     const validConds = (ps.conditions || []).filter(c => c.entity && c.value);
     if (validConds.length) {
       const condTxt = validConds.map(c => `${c.entity} ${c.operator} ${c.value}`).join(ps.condCombinator === 'or' ? ' OR ' : ' AND ');
-      const condLbl = lang==='en'?'Conditions':lang==='fr'?'Conditions':'Condizioni';
-      const recheckLbl = lang==='en'?`Recheck every ${ps.condInterval} min`:lang==='fr'?`Revérification chaque ${ps.condInterval} min`:`Controllo ogni ${ps.condInterval} min`;
-      condLine = `\n🔍 ${condLbl}: ${condTxt}\n🔄 ${recheckLbl}`;
+      condLine = `\n🔍 ${this.t('notify.conditions_label')}: ${condTxt}\n🔄 ${this.t('notify.recheck', { n: ps.condInterval })}`;
     }
     const daysLbl = `📅 ${daysText}`;
-    const endLbl = lang==='en'?`🔚 At end: ${endAction}`:lang==='fr'?`🔚 À la fin: ${endAction}`:`🔚 Alla fine: ${endAction}`;
+    const endLbl = `🔚 ${this.t('notify.at_end', { action: endAction })}`;
     let firstLine;
     if (kind === 'end') {
       // End-of-slot message: schedule completed, optionally mentions auto-action
-      const endedLbl = lang==='en'?'schedule completed':lang==='fr'?'planification terminée':'schedule completato';
-      firstLine = `⏹️ ${entityName} — ${endedLbl}`;
-      const wasFromTo = lang==='en'?`Was active ${startTime}–${endTime}`:lang==='fr'?`Était actif ${startTime}–${endTime}`:`Era attivo ${startTime}–${endTime}`;
+      firstLine = `⏹️ ${entityName} — ${this.t('notify.completed')}`;
+      const wasFromTo = this.t('notify.was_active', { start: startTime, end: endTime });
       return `${firstLine}\n⏰ ${wasFromTo}\n${daysLbl}\n${endLbl}`;
     }
     // Start message (default)
     if (ps.domain === 'climate') {
       if (ps.enableTemp) {
-        const setLbl = lang==='en'?'set to':lang==='fr'?'réglé à':'impostato a';
-        firstLine = `🌡️ ${entityName} ${setLbl} ${ps.temp}°C`;
+        firstLine = `🌡️ ${entityName} ${this.t('notify.set_to')} ${ps.temp}°C`;
       } else if (ps.enableHvac && ps.hvacMode) {
         firstLine = `❄️ ${entityName}: ${ps.hvacMode}`;
       } else {
@@ -733,8 +728,7 @@ export default class WeeklyScheduleBase extends HTMLElement {
       const stateLbl = ps.turnOn ? onLbl : offLbl;
       let bLine = '';
       if (ps.turnOn && ps.enableBrightness) {
-        const brLbl = lang==='en'?'brightness':lang==='fr'?'luminosité':'luminosità';
-        bLine = ` (${brLbl} ${ps.brightness}%)`;
+        bLine = ` (${this.t('notify.brightness')} ${ps.brightness}%)`;
       }
       firstLine = `💡 ${entityName} ${stateLbl}${bLine}`;
     } else {
