@@ -205,10 +205,9 @@ Toggle ciclico: **columns ↔ rows** (solo queste due). I builder `_buildCompact
 ```
 focus    → giorno espanso + colonne slim (default)
 compact  → giorni collassabili
-rows     → righe per giorno
 ```
-Toggle ciclico tra focus / compact / rows. Nessun editing, nessun profilo, nessun gruppo.
-Click blocco → more-info switch.schedule_*.
+Toggle ciclico **focus ↔ compact** (solo queste due; `_cycleLayout`/`setConfig` le
+limitano). Nessun editing, nessun profilo, nessun gruppo. Click blocco → more-info switch.schedule_*.
 
 ## I18n
 Lingue: en, it, fr.

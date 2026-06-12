@@ -31,7 +31,10 @@ all on top of the [Scheduler Component](https://github.com/nielsfaber/scheduler-
   stops re-applying until the next slot (safety direction still fires)
 - **Notifications** when a schedule fires — server-side HA automation, works
   even with every dashboard closed (with smart default message)
-- **Climate, light, switch** domains with per-domain popup controls
+- **Climate, light, fan, cover, switch** domains with per-domain popup controls
+- **Keyboard accessible**: interactive controls are reachable by Tab and
+  activate with Enter/Space (`role`/`tabindex`, `aria-pressed`/`aria-expanded`,
+  `:focus-visible`)
 - **i18n**: English, Italian, French (auto-detect from HA locale)
 
 ---
@@ -165,7 +168,6 @@ editing-only fields.
 type: custom:weekly-schedule-card        # or weekly-schedule-view-card
 title: "Weekly Schedule"                 # optional
 language: it                             # optional, auto-detected from HA
-default_view: columns                    # optional
 time_step: 15                            # optional, minutes snap
 entities:                                # also configurable from the UI
   - entity: climate.bedroom
@@ -188,7 +190,6 @@ notifications:
 |------------------------|-----------------|---------------|-------|
 | `title`                | string          | _(none)_      | Header title |
 | `language`             | `en` / `it` / `fr` | auto       | Falls back to HA locale, then browser |
-| `default_view`         | `columns` / `rows` | `columns` | Initial layout (editing card) |
 | `time_step`            | integer (min)   | `15`          | Snap interval for drag |
 | `entities[]`           | list            | `[]`          | Can also be edited from the card UI |
 | `entities[].entity`    | entity_id       | _required_    | Climate / light / switch |
@@ -211,7 +212,7 @@ entities owned by the [Scheduler Component](https://github.com/nielsfaber/schedu
 |-------|-------|---------|---------------|
 | Presentation | this card | Lovelace YAML | Which entities to render, colors, layout, language, popup defaults |
 | Schedules | Scheduler Component | `switch.schedule_*` entities | `weekdays`, `timeslots`, `entities`, `actions`, `current_slot` |
-| Profiles & groups | this card | `input_text.weekly_schedule_profiles_N` | JSON, chunked at 255 chars/helper, auto-rotated (N = 0, 1, 2, …) |
+| Profiles & groups | this card | HA **user data** (websocket `frontend/set_user_data`, key `weekly_schedule_card`) | One JSON blob: `{ groups, profiles[], activeProfiles[] }`, each profile holding its `groups`, `schedules` and `scheduleLinks` |
 | Conditions | this card | `automation.wsc_*` (generated) | One HA automation per conditional schedule, lifecycle-bound to it |
 | Auto-off / auto-on | this card | `automation.wsc_autooff_*` (generated) | One HA automation per schedule, fires the end-of-slot action when `current_slot` clears |
 
@@ -285,7 +286,9 @@ See [Conditions & Notifications](#conditions--notifications) and
 | Domain | Popup controls | Action service |
 |--------|----------------|----------------|
 | `climate` | temperature slider (5–80 °C, manual input up to 100 °C), `hvac_mode`, `preset_mode`, `fan_mode`, `swing_mode` (optional) | `climate.set_temperature` (+ mode services if set) |
-| `light`   | on/off + optional `brightness` slider | `light.turn_on` (with `brightness_pct`) / `light.turn_off` |
+| `light`   | on/off + optional `brightness` slider + optional **RGB color** | `light.turn_on` (`brightness_pct` / `rgb_color`) / `light.turn_off` |
+| `fan`     | on/off + optional **speed %** | `fan.turn_on` (`percentage`) / `fan.turn_off` |
+| `cover`   | **open / close / stop / set position** (mutually exclusive). The position slider is directional — dragging **right closes more** (0 % = closed, 100 % = open) | `cover.open_cover` / `close_cover` / `stop_cover` / `set_cover_position` |
 | `switch`  | on/off toggle | `switch.turn_on` / `switch.turn_off` |
 | _other_   | recognized as `unknown`; basic on/off only | `homeassistant.turn_on` / `turn_off` |
 
@@ -404,8 +407,10 @@ them. Profiles that share at least one entity become **mutually exclusive**:
 activating one auto-deactivates the conflicting ones, so you cannot end up
 with two competing setpoints on the same climate.
 
-Profiles are persisted in chunked `input_text.weekly_schedule_profiles_N`
-helpers (255 char per chunk, auto-rotated). Practical limit ~10 profiles.
+Profiles are persisted as a single JSON blob in **Home Assistant user data**
+(websocket `frontend/get_user_data` / `set_user_data`, key `weekly_schedule_card`).
+No `input_text` helpers, no 255-char chunking, no practical profile cap — and
+saves are **batched into one write per user action** to avoid event storms.
 
 **Groups** bundle entities together inside a profile. They share a color and
 appear as a single chip in the toolbar. Useful for "all thermostats" or
@@ -440,7 +445,9 @@ Mechanism:
 
 The schedule switch itself stays `on` — only the downstream actions are
 gated. The popup UI adapts to the selected condition entity (numeric slider
-for sensors, dropdown for selects, etc.).
+for sensors, dropdown for selects, etc.), and the entity field has a custom
+**autocomplete** (filters by entity id and friendly name) that works on
+desktop **and** mobile / the HA companion app.
 
 #### Manual override (conditional schedules)
 
@@ -528,11 +535,11 @@ Source layout:
 
 ```
 src/
-  base-card.js                   # shared class, imported by both cards
-  weekly-schedule-card.js        # editing card (extends base)
+  base-card.js                   # shared class + inline LOCALES (en/it/fr) + storage
+  weekly-schedule-card.js        # editing card (extends base) + mini card
   weekly-schedule-view-card.js   # view-only card (extends base)
-  locales/{en,it,fr}.json        # translations
-rollup.config.js                 # two IIFE entries
+rollup.config.js                 # two IIFE entries (minified with terser)
+scripts/deploy.js                # cross-platform deploy (dist/*.js → /config/www)
 dist/
   weekly-schedule-card.js        # bundled editing card
   weekly-schedule-view-card.js   # bundled view card
