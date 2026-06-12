@@ -92,14 +92,19 @@ Azione PRINCIPALE per dominio: climate (temp/hvac/preset/fan/swing), light (on/o
 **colore rgb** se supportato), fan (on/off + **velocità %**), cover (**apri/chiudi/ferma + posizione %**),
 switch (on/off). Builder unico `_buildScheduleActions`. Colore via `_colorPickerHTML` (palette → rgb).
 
-## Condizioni
-Non supportate da Scheduler Component → automazione HA generata:
-```javascript
-// Trigger: state change + time_pattern ogni N min
-// Condition: current_slot !== null + condizioni utente
-// Action: turn_off se condizioni non soddisfatte, turn_on se soddisfatte
-// Storage: { scheduleId, automationId, conditions, interval }
-```
+## Condizioni (event-driven + isteresi — WIP, da testare in HA)
+Non supportate da Scheduler Component → automazione HA generata (`wsc_cond_*`).
+**EVENT-DRIVEN** (niente più `time_pattern`/polling): trigger su inizio/fine slot
+(`current_slot`) + cambio **stato E attributo** delle entità-condizione → gira solo quando serve.
+- Condition top-level (no-override): `state != 'off'` + `current_slot != None` (in-slot).
+- Action: `_buildScheduleActions` se condizioni soddisfatte, `_buildStopActions` se no.
+- **Isteresi (banda morta)**: per condizioni numeriche, `c.hysteresis` (assoluta) o default
+  **5% del valore**; 0 = soglia secca. `_buildHACondition(c, activeExpr)` genera una
+  `condition: template` *stateful*: la soglia dipende se l'azione attiva è già applicata
+  (`_hysteresisActiveExpr(ps)`: `is_state(target,on/off)` per switch/light/fan, `temperature ==`
+  per climate; null per cover/altro → niente isteresi). Es. `<60` banda 3 → bagna sotto 57, ferma sopra 63.
+- `condInterval` resta nello storage (legacy, non più usato per i trigger); dropdown UI rimosso.
+- UI: campo `± tolleranza` (`.cond-hyst`) accanto al valore solo per condizioni numeriche.
 
 ## Manual override (v1.1.0) — solo schedule CON condizioni
 Toggle per-schedule "Consenti override manuale" (`link.overrideEnabled`), visibile nella

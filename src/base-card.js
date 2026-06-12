@@ -1,5 +1,5 @@
 // src/base-card.js
-// Last modified: 2026-06-11 Rome (v1.1.6)
+// Last modified: 2026-06-12 Rome (WIP condizioni event-driven + isteresi)
 
 const PALETTE=['#F44336','#E91E63','#9C27B0','#673AB7','#3F51B5','#2196F3','#03A9F4','#00BCD4','#009688','#4CAF50','#8BC34A','#CDDC39','#FFEB3B','#FFC107','#FF9800','#FF5722','#795548','#9E9E9E','#607D8B','#000000','#FFFFFF','#FF80AB','#69F0AE','#40C4FF'];
 
@@ -13,7 +13,7 @@ const LOCALES = {
     group:{ title:'Groups',back:'← Back',edit:'Edit',create:'Create Group',tab_color:'Tab color',select_entities:'Select entities',no_groups:'No groups yet.',create_new:'Create new group',delete_confirm:'Delete this group?',name:'Group name',enter_name:'Enter a group name.',select_entity:'Please select at least one entity.',create_placeholder:'e.g. Home Climate',removed_active:'active schedule(s) found on removed entit(ies). Deactivate?' },
     errors:{ no_days:'Please select at least one day.',delete_confirm:'Delete this schedule?',delete_profile_confirm:'Delete this profile and all its schedules?',save_failed:'Failed',overlap:'Overlap with existing schedule in this profile' },
     warnings:{ temp_unusual:'⚠️ Unusual value — check device compatibility',temp_very_high:'🔴 Warning: very high temperature',out_of_slider_range:'Outside typical range for this entity' },
-    cond:{ add:'Add condition',entity:'Entity',operator:'Operator',value:'Value',and_all:'All (AND)',or_any:'Any (OR)',recheck:'Re-check interval' },
+    cond:{ add:'Add condition',entity:'Entity',operator:'Operator',value:'Value',and_all:'All (AND)',or_any:'Any (OR)',recheck:'Re-check interval',hysteresis:'Deadband ± (empty = 5% of value)' },
     notify:{ restore_auto:'Restore auto text',trigger_label:'When to notify',trigger_none:'Never',trigger_start:'On start',trigger_end:'On end',trigger_both:'Start + end',msg_start_label:'Start message',msg_end_label:'End message',default_start:'Schedule started',default_end:'Schedule ended',on:'on',off:'off',from_to:'From {start} to {end}',was_active:'Was active {start}–{end}',end_off:'auto turn off',end_on:'auto turn on',end_temp:'set {value}°C',end_none:'no action',conditions_label:'Conditions',recheck:'Recheck every {n} min',at_end:'At end: {action}',completed:'schedule completed',set_to:'set to',brightness:'brightness' },
     sched_name:{ all_day:'all-day',workdays_abbr:'wd' },
     linked:{ title:'Linked objects',auto_off:'Auto-off automation',cond_auto:'Condition automation',extras_auto:'Extras automation',notify:'Notification',override_flag:'Override flag',open:'Open',edit_yaml:'Edit YAML',missing:'missing' },
@@ -29,7 +29,7 @@ const LOCALES = {
     group:{ title:'Gruppi',back:'← Indietro',edit:'Modifica',create:'Crea Gruppo',tab_color:'Colore tab',select_entities:'Seleziona entità',no_groups:'Nessun gruppo.',create_new:'Crea nuovo gruppo',delete_confirm:'Eliminare questo gruppo?',name:'Nome gruppo',enter_name:'Inserisci un nome gruppo.',select_entity:"Seleziona almeno un'entità.",create_placeholder:'es. Clima Casa',removed_active:'schedule attivi su entità rimosse. Disattivarli?' },
     errors:{ no_days:'Seleziona almeno un giorno.',delete_confirm:'Eliminare questo schedule?',delete_profile_confirm:'Eliminare questo profilo e tutti i suoi schedule?',save_failed:'Errore',overlap:'Sovrapposizione con schedule esistente in questo profilo' },
     warnings:{ temp_unusual:'⚠️ Valore insolito — verifica compatibilità con il tuo dispositivo',temp_very_high:'🔴 Attenzione: temperatura molto alta',out_of_slider_range:'Fuori dal range tipico per questa entità' },
-    cond:{ add:'Aggiungi condizione',entity:'Entità',operator:'Operatore',value:'Valore',and_all:'Tutte (AND)',or_any:'Una qualsiasi (OR)',recheck:'Intervallo rivalutazione' },
+    cond:{ add:'Aggiungi condizione',entity:'Entità',operator:'Operatore',value:'Valore',and_all:'Tutte (AND)',or_any:'Una qualsiasi (OR)',recheck:'Intervallo rivalutazione',hysteresis:'Banda morta ± (vuoto = 5% del valore)' },
     notify:{ restore_auto:'Ripristina testo automatico',trigger_label:'Quando notificare',trigger_none:'Mai',trigger_start:"All'inizio",trigger_end:'Alla fine',trigger_both:'Inizio + fine',msg_start_label:'Messaggio inizio',msg_end_label:'Messaggio fine',default_start:'Schedule attivato',default_end:'Schedule terminato',on:'acceso',off:'spento',from_to:'Dalle {start} alle {end}',was_active:'Era attivo {start}–{end}',end_off:'spegnimento automatico',end_on:'accensione automatica',end_temp:'imposta {value}°C',end_none:'nessuna azione',conditions_label:'Condizioni',recheck:'Controllo ogni {n} min',at_end:'Alla fine: {action}',completed:'schedule completato',set_to:'impostato a',brightness:'luminosità' },
     sched_name:{ all_day:'tutto-gg',workdays_abbr:'fer' },
     linked:{ title:'Oggetti collegati',auto_off:'Automazione auto-off',cond_auto:'Automazione condizioni',extras_auto:'Automazione extra',notify:'Notifica',override_flag:'Flag override',open:'Apri',edit_yaml:'Modifica YAML',missing:'mancante' },
@@ -45,7 +45,7 @@ const LOCALES = {
     group:{ title:'Groupes',back:'← Retour',edit:'Modifier',create:'Créer Groupe',tab_color:'Couleur onglet',select_entities:'Sélectionner entités',no_groups:'Aucun groupe.',create_new:'Créer nouveau groupe',delete_confirm:'Supprimer ce groupe ?',name:'Nom du groupe',enter_name:'Entrez un nom de groupe.',select_entity:'Sélectionnez au moins une entité.',create_placeholder:'ex. Climat Maison',removed_active:'planning(s) actif(s) sur entité(s) retirée(s). Désactiver ?' },
     errors:{ no_days:'Sélectionnez au moins un jour.',delete_confirm:'Supprimer ce schedule ?',delete_profile_confirm:'Supprimer ce profil et tous ses schedules ?',save_failed:'Échec',overlap:'Chevauchement avec un planning existant dans ce profil' },
     warnings:{ temp_unusual:"⚠️ Valeur inhabituelle — vérifiez la compatibilité avec votre appareil",temp_very_high:"🔴 Attention : température très élevée",out_of_slider_range:'Hors de la plage typique pour cette entité' },
-    cond:{ add:'Ajouter condition',entity:'Entité',operator:'Opérateur',value:'Valeur',and_all:'Toutes (AND)',or_any:"N'importe laquelle (OR)",recheck:'Intervalle de réévaluation' },
+    cond:{ add:'Ajouter condition',entity:'Entité',operator:'Opérateur',value:'Valeur',and_all:'Toutes (AND)',or_any:"N'importe laquelle (OR)",recheck:'Intervalle de réévaluation',hysteresis:'Bande morte ± (vide = 5% de la valeur)' },
     notify:{ restore_auto:'Restaurer texte auto',trigger_label:'Quand notifier',trigger_none:'Jamais',trigger_start:'Au début',trigger_end:'À la fin',trigger_both:'Début + fin',msg_start_label:'Message début',msg_end_label:'Message fin',default_start:'Schedule démarré',default_end:'Schedule terminé',on:'allumé',off:'éteint',from_to:'De {start} à {end}',was_active:'Était actif {start}–{end}',end_off:'extinction automatique',end_on:'allumage automatique',end_temp:'régler {value}°C',end_none:'aucune action',conditions_label:'Conditions',recheck:'Revérification chaque {n} min',at_end:'À la fin: {action}',completed:'planification terminée',set_to:'réglé à',brightness:'luminosité' },
     sched_name:{ all_day:'tt-jour',workdays_abbr:'jo' },
     linked:{ title:'Objets liés',auto_off:'Automatisation auto-off',cond_auto:'Automatisation conditions',extras_auto:'Automatisation extra',notify:'Notification',override_flag:'Indicateur surcharge',open:'Ouvrir',edit_yaml:'Modifier YAML',missing:'manquant' },
@@ -710,7 +710,7 @@ export default class WeeklyScheduleBase extends HTMLElement {
     const validConds = (ps.conditions || []).filter(c => c.entity && c.value);
     if (validConds.length) {
       const condTxt = validConds.map(c => `${c.entity} ${c.operator} ${c.value}`).join(ps.condCombinator === 'or' ? ' OR ' : ' AND ');
-      condLine = `\n🔍 ${this.t('notify.conditions_label')}: ${condTxt}\n🔄 ${this.t('notify.recheck', { n: ps.condInterval })}`;
+      condLine = `\n🔍 ${this.t('notify.conditions_label')}: ${condTxt}`;
     }
     const daysLbl = `📅 ${daysText}`;
     const endLbl = `🔚 ${this.t('notify.at_end', { action: endAction })}`;
@@ -917,12 +917,46 @@ export default class WeeklyScheduleBase extends HTMLElement {
     return { hasCond: true, satisfied };
   }
 
-  _buildHACondition(c) {
+  // Banda morta (isteresi) di una condizione numerica: c.hysteresis se valorizzata (assoluta,
+  // stessa unità del valore), altrimenti default 5% del valore. 0 → niente isteresi.
+  _condBand(c) {
+    const v = parseFloat(c.value);
+    if (isNaN(v)) return 0;
+    if (c.hysteresis === '' || c.hysteresis == null) return Math.abs(v) * 0.05;
+    const h = parseFloat(c.hysteresis);
+    return isNaN(h) ? 0 : Math.abs(h);
+  }
+
+  // Espressione Jinja: l'azione ATTIVA dello schedule è già applicata sull'entità target?
+  // Serve all'isteresi (soglia stateful). null = dominio non gestito → soglia secca.
+  _hysteresisActiveExpr(ps) {
+    if (!ps) return null;
+    const t = ps.entityConf?.entity;
+    if (!t) return null;
+    if (ps.domain === 'climate' && ps.enableTemp) return `(state_attr('${t}','temperature') | float(-999)) == ${ps.temp}`;
+    if (['switch', 'light', 'fan', 'input_boolean'].includes(ps.domain)) return `is_state('${t}','${ps.turnOn ? 'on' : 'off'}')`;
+    return null; // cover/altro: niente isteresi
+  }
+
+  _buildHACondition(c, activeExpr = null) {
     const numOps = ['>', '<', '>=', '<='];
     if (numOps.includes(c.operator)) {
+      const v = parseFloat(c.value);
+      const band = this._condBand(c);
+      // Isteresi (soglia stateful) solo se: banda > 0, dominio gestito (activeExpr), valore valido
+      if (activeExpr && band > 0 && !isNaN(v)) {
+        const lt = c.operator === '<' || c.operator === '<=';
+        // <,<=: attivo sotto soglia → resta attivo finché < (v+band), riparte sotto (v-band)
+        // >,>=: attivo sopra soglia → resta attivo finché > (v-band), riparte sopra (v+band)
+        const hiWhenActive = lt ? (v + band) : (v - band);
+        const loWhenIdle  = lt ? (v - band) : (v + band);
+        const valExpr = c.attribute ? `state_attr('${c.entity}','${c.attribute}')` : `states('${c.entity}')`;
+        const cmp = (lt ? '<' : '>') + ((c.operator === '<=' || c.operator === '>=') ? '=' : '');
+        const tmpl = `{% set v = ${valExpr} | float(none) %}{{ v is not none and v ${cmp} ((${hiWhenActive}) if (${activeExpr}) else (${loWhenIdle})) }}`;
+        return { condition: 'template', value_template: tmpl };
+      }
       const cond = { condition: 'numeric_state', entity_id: c.entity };
       if (c.attribute) cond.attribute = c.attribute;
-      const v = parseFloat(c.value);
       if (c.operator === '>')  cond.above = v;
       if (c.operator === '<')  cond.below = v;
       if (c.operator === '>=') cond.above = v - 0.001;
@@ -1152,7 +1186,8 @@ export default class WeeklyScheduleBase extends HTMLElement {
     await this._saveCondData(scheduleEntityId, null, validConds, condCombinator, condInterval);
     // Deterministic automation ID (REST endpoint requires a non-empty object_id)
     const targetId = existingId || `wsc_cond_${scheduleEntityId.replace('switch.', '')}`;
-    const haConds = validConds.map(c => this._buildHACondition(c));
+    const activeExpr = this._hysteresisActiveExpr(ps); // null se dominio non gestito → soglia secca
+    const haConds = validConds.map(c => this._buildHACondition(c, activeExpr));
     const condBlock = haConds.length === 1 ? haConds[0] : { condition: condCombinator === 'or' ? 'or' : 'and', conditions: haConds };
     // Build active/inactive actions on the TARGET entity (not on schedule switch)
     const activeActions = ps ? this._buildScheduleActions(ps) : null;
@@ -1161,14 +1196,20 @@ export default class WeeklyScheduleBase extends HTMLElement {
     // Manual-override mode: only when enabled AND there is a target action to gate.
     const overrideOn = !!(ps && ps.overrideEnabled && activeActions);
     const flagEnt = this._overrideFlagEntityId(scheduleEntityId);
-    // Triggers: schedule turn_on + slot start/end (id 'slot') + periodic + condition entities (id 'eval').
+    // Triggers EVENT-DRIVEN (niente time_pattern → mai polling 24/7). Inizio/fine slot (id 'slot')
+    // + cambi di stato E attributo delle entità-condizione (id 'eval'): gira solo quando serve.
     const triggers = [
       { platform: 'state', entity_id: scheduleEntityId, to: 'on', id: 'slot' },
       { platform: 'state', entity_id: scheduleEntityId, attribute: 'current_slot', id: 'slot' },
-      { platform: 'time_pattern', minutes: `/${condInterval}`, id: 'eval' },
     ];
-    const condEntityIds = [...new Set(validConds.map(c => c.entity).filter(Boolean))];
-    for (const ce of condEntityIds) triggers.push({ platform: 'state', entity_id: ce, id: 'eval' });
+    const trigState = new Set(), trigAttr = new Set();
+    for (const c of validConds) {
+      if (!c.entity) continue;
+      trigState.add(c.entity);
+      if (c.attribute) trigAttr.add(`${c.entity}|${c.attribute}`);
+    }
+    for (const ent of trigState) triggers.push({ platform: 'state', entity_id: ent, id: 'eval' });
+    for (const ka of trigAttr) { const [ent, attr] = ka.split('|'); triggers.push({ platform: 'state', entity_id: ent, attribute: attr, id: 'eval' }); }
 
     let action, mode, topInSlot = true;
     if (overrideOn) {
@@ -2336,7 +2377,11 @@ export default class WeeklyScheduleBase extends HTMLElement {
             const minAttr = spec.min!=null ? ` min="${spec.min}"` : '';
             const maxAttr = spec.max!=null ? ` max="${spec.max}"` : '';
             const unitHtml = spec.unit ? `<span class="cond-unit">${spec.unit}</span>` : '';
-            valHtml = `<input class="cond-val" type="number"${stepAttr}${minAttr}${maxAttr} data-ci="${i}" placeholder="${this.t('cond.value')}" value="${this._escAttr(c.value||'')}">${unitHtml}`;
+            const vNum = parseFloat(c.value);
+            const hyAuto = !isNaN(vNum) ? String(Math.round(Math.abs(vNum) * 0.05 * 100) / 100) : '';
+            const hyVal = (c.hysteresis === '' || c.hysteresis == null) ? '' : c.hysteresis;
+            const hyInput = `<input class="cond-hyst" type="number"${spec.step ? ` step="${spec.step}"` : ' step="0.1"'} min="0" data-ci="${i}" placeholder="±${hyAuto}" title="${this.t('cond.hysteresis')}" value="${this._escAttr(hyVal)}">`;
+            valHtml = `<input class="cond-val" type="number"${stepAttr}${minAttr}${maxAttr} data-ci="${i}" placeholder="${this.t('cond.value')}" value="${this._escAttr(c.value||'')}">${unitHtml}${hyInput}`;
           } else if (spec.kind === 'boolean' || spec.kind === 'select') {
             const opts = spec.options || [];
             valHtml = `<select class="cond-val" data-ci="${i}"><option value="">--</option>${opts.map(o=>`<option value="${this._escAttr(o)}" ${c.value===o?'selected':''}>${this._esc(o)}</option>`).join('')}</select>`;
@@ -2357,16 +2402,6 @@ export default class WeeklyScheduleBase extends HTMLElement {
         }).join('')}
         ${ps.conditions.length === 0 ? `<div class="cond-empty">ℹ️ ${this.t('cond.empty_hint') || (this._lang==='it'?'Nessuna condizione attiva — lo schedule girerà sempre nei suoi orari':this._lang==='fr'?'Aucune condition active — le planning fonctionnera toujours dans ses créneaux':'No active conditions — schedule will always run in its slots')}</div>` : ''}
         <button class="cond-add">${this.t('cond.add')}</button>
-        <div class="cond-interval-row">
-          <span style="font-size:.75em;color:var(--secondary-text-color)">${this.t('cond.recheck')}</span>
-          <select class="cond-interval">
-            <option value="5"  ${ps.condInterval===5 ?'selected':''}>5 min</option>
-            <option value="10" ${ps.condInterval===10?'selected':''}>10 min</option>
-            <option value="15" ${ps.condInterval===15?'selected':''}>15 min</option>
-            <option value="30" ${ps.condInterval===30?'selected':''}>30 min</option>
-            <option value="60" ${ps.condInterval===60?'selected':''}>60 min</option>
-          </select>
-        </div>
         <label class="cond-override-row" style="${ps.conditions.length===0?'opacity:.45':''}">
           <input type="checkbox" class="cond-override" ${ps.overrideEnabled?'checked':''} ${ps.conditions.length===0?'disabled':''}>
           <span><b><ha-icon icon="mdi:hand-back-right-outline" style="--mdi-icon-size:16px;vertical-align:middle;margin-right:4px"></ha-icon>${this.t('override.enable')}</b><br><span class="cond-override-hint">${this.t('override.hint')}</span></span>
@@ -2479,6 +2514,7 @@ export default class WeeklyScheduleBase extends HTMLElement {
         .ceo-name{color:var(--secondary-text-color);font-size:.92em}
         .cond-op{flex:0 0 52px;padding:4px 3px;border-radius:6px;border:1px solid var(--divider-color,#ccc);background:var(--card-background-color,#fff);color:var(--primary-text-color);font-size:.78em}
         .cond-val{flex:1;min-width:60px;padding:4px 6px;border-radius:6px;border:1px solid var(--divider-color,#ccc);background:var(--card-background-color,#fff);color:var(--primary-text-color);font-size:.78em}
+        .cond-hyst{flex:0 0 56px;width:56px;padding:4px 5px;border-radius:6px;border:1px dashed var(--divider-color,#ccc);background:var(--card-background-color,#fff);color:var(--secondary-text-color);font-size:.72em}
         .cond-attribute{flex:0 0 110px;padding:4px 4px;border-radius:6px;border:1px solid var(--divider-color,#ccc);background:var(--card-background-color,#fff);color:var(--primary-text-color);font-size:.74em}
         .cond-unit{font-size:.75em;color:var(--secondary-text-color);padding:0 2px;flex-shrink:0}
         .cond-hint{flex:1;font-size:.72em;color:var(--secondary-text-color);font-style:italic;padding:0 4px}
@@ -2910,8 +2946,8 @@ export default class WeeklyScheduleBase extends HTMLElement {
     }));
     dlg.querySelectorAll('.cond-op').forEach(sel=>sel.addEventListener('change',()=>{ ps.conditions[parseInt(sel.dataset.ci)].operator=sel.value; }));
     dlg.querySelectorAll('.cond-val').forEach(inp=>inp.addEventListener(inp.tagName==='SELECT'?'change':'input',()=>{ ps.conditions[parseInt(inp.dataset.ci)].value=inp.value; }));
+    dlg.querySelectorAll('.cond-hyst').forEach(inp=>inp.addEventListener('input',()=>{ ps.conditions[parseInt(inp.dataset.ci)].hysteresis = inp.value.trim(); }));
     dlg.querySelectorAll('input[name="comb"]').forEach(r=>r.addEventListener('change',()=>{ ps.condCombinator=r.value; }));
-    dlg.querySelector('.cond-interval')?.addEventListener('change', e=>{ ps.condInterval=parseInt(e.target.value); });
     dlg.querySelector('.cond-override')?.addEventListener('change', e=>{ ps.overrideEnabled=e.target.checked; });
     // Notifications
     dlg.querySelector('#notifToggle')?.addEventListener('click', () => { ps._notifOpen=!ps._notifOpen; this._renderPopup(); });
