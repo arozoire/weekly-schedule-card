@@ -1,5 +1,5 @@
 // src/weekly-schedule-card.js
-// Last modified: 2026-06-11 Rome (v1.1.5)
+// Last modified: 2026-06-11 Rome (v1.1.6)
 
 import WeeklyScheduleBase from './base-card.js';
 import './weekly-schedule-view-card.js';
@@ -43,7 +43,7 @@ class WeeklyScheduleCard extends WeeklyScheduleBase {
         .hdr-cell{text-align:center;font-size:.68em;font-weight:700;color:var(--secondary-text-color);padding:4px 0;text-transform:uppercase;letter-spacing:.05em}
         .time-axis{position:relative;height:${H}px}
         .time-lbl{position:absolute;right:4px;font-size:.6em;color:var(--secondary-text-color);transform:translateY(-50%);white-space:nowrap}
-        .day-column{position:relative;height:${H}px;background:var(--divider-color,#e0e0e0);border-radius:6px;overflow:hidden;cursor:pointer;box-shadow:0 1px 3px rgba(0,0,0,.06)}
+        .day-column{position:relative;height:${H}px;background:color-mix(in srgb,var(--divider-color,#e0e0e0) 78%,var(--secondary-text-color,#9e9e9e) 22%);border-radius:6px;overflow:hidden;cursor:pointer;box-shadow:0 1px 3px rgba(0,0,0,.06)}
         .day-column:hover{background:color-mix(in srgb,var(--primary-color,#03a9f4) 8%,var(--divider-color,#e0e0e0))}
         .sub-col{position:absolute;top:0;bottom:0}
         .sub-col:hover{background:rgba(255,255,255,.08)}
@@ -90,7 +90,7 @@ class WeeklyScheduleCard extends WeeklyScheduleBase {
         .profile-chip:hover{border-color:color-mix(in srgb,var(--pchip-color,#03a9f4) 55%,var(--divider-color,#ccc));border-left-color:var(--pchip-color,#03a9f4);background:linear-gradient(90deg,color-mix(in srgb,var(--pchip-color,#03a9f4) 32%,transparent) 0%,transparent 65%)}
         .profile-chip.viewed{background:linear-gradient(90deg,color-mix(in srgb,var(--pchip-color,#03a9f4) 30%,transparent) 0%,color-mix(in srgb,var(--pchip-color,#03a9f4) 5%,transparent) 70%);border-color:color-mix(in srgb,var(--pchip-color,#03a9f4) 45%,var(--divider-color,#ccc));font-weight:600}
         .profile-chip.active-op{border-left-width:4px;box-shadow:0 1px 6px color-mix(in srgb,var(--pchip-color,#03a9f4) 30%,transparent)}
-        .profile-chip.active-op::after{content:'';position:absolute;left:7px;right:7px;bottom:-5px;height:3px;border-radius:2px;background:var(--success-color,#4CAF50)}
+        .profile-chip.active-op::after{content:'';position:absolute;left:5px;right:5px;bottom:-5px;height:4px;border-radius:50%;background:var(--success-color,#4CAF50)}
         .profile-chip.viewed.active-op{background:linear-gradient(90deg,color-mix(in srgb,var(--pchip-color,#03a9f4) 42%,transparent) 0%,color-mix(in srgb,var(--pchip-color,#03a9f4) 8%,transparent) 75%);border-color:var(--pchip-color,#03a9f4);font-weight:600;box-shadow:0 1px 8px color-mix(in srgb,var(--pchip-color,#03a9f4) 34%,transparent)}
         .chip-act-dot{width:7px;height:7px;border-radius:50%;background:#4CAF50;flex-shrink:0;box-shadow:0 0 4px color-mix(in srgb,#4CAF50 60%,transparent)}
         .chip-lock{opacity:.55;flex-shrink:0;color:currentColor}
@@ -256,7 +256,7 @@ class WeeklyScheduleCard extends WeeklyScheduleBase {
               const active=this._isProfileActive(p),viewed=p.id===this._selectedProfileId,excl=p.exclusive!==false,isDef=p.id==='default';
               const pcolor=this._getProfileColor(p);
               return '<div class="chip-wrap">'
-                + '<div class="profile-chip' + (viewed?' viewed':'') + (active?' active-op':'') + '" role="button" tabindex="0" data-pid="' + p.id + '" style="--pchip-color:' + pcolor + '">'
+                + '<div class="profile-chip' + (viewed?' viewed':'') + (active?' active-op':'') + '" role="button" tabindex="0" data-pid="' + p.id + '" style="--pchip-color:var(--primary-color,#03a9f4)">'
                 + '<span class="chip-name">' + this._esc(p.name) + '</span>'
                 + '<button class="chip-activate' + (active?' on':'') + '" data-pid="' + p.id + '" title="' + (active?this.t('profile.deactivate'):this.t('profile.activate')) + '"><ha-icon icon="' + (active?'mdi:pause':'mdi:play') + '" style="--mdi-icon-size:14px"></ha-icon></button>'
                 + '<button class="chip-menu" data-pid="' + p.id + '"><ha-icon icon="mdi:dots-vertical" style="--mdi-icon-size:14px"></ha-icon></button>'

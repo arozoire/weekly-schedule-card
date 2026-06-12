@@ -1,5 +1,5 @@
 // src/base-card.js
-// Last modified: 2026-06-11 Rome (v1.1.4)
+// Last modified: 2026-06-11 Rome (v1.1.6)
 
 const PALETTE=['#F44336','#E91E63','#9C27B0','#673AB7','#3F51B5','#2196F3','#03A9F4','#00BCD4','#009688','#4CAF50','#8BC34A','#CDDC39','#FFEB3B','#FFC107','#FF9800','#FF5722','#795548','#9E9E9E','#607D8B','#000000','#FFFFFF','#FF80AB','#69F0AE','#40C4FF'];
 
@@ -2285,9 +2285,9 @@ export default class WeeklyScheduleBase extends HTMLElement {
         </div>
         ${this._entityCaps(ps.entityConf.entity).coverPosition ? `
         <div class="cover-pos-block" style="${ps.coverAction==='position'?'':'display:none'}">
-          <span class="cover-pos-end">${this.t('endact.close')}</span>
-          <input type="range" class="position-slider" min="0" max="100" step="1" value="${ps.position}">
           <span class="cover-pos-end">${this.t('endact.open')}</span>
+          <input type="range" class="position-slider" min="0" max="100" step="1" value="${100 - ps.position}">
+          <span class="cover-pos-end">${this.t('endact.close')}</span>
           <span class="position-value">${ps.position}%</span>
         </div>` : ''}
       </div>` : `
@@ -2310,8 +2310,10 @@ export default class WeeklyScheduleBase extends HTMLElement {
         </div>
         ${ps.conditions.map((c,i)=>{
           const hasEntity = !!c.entity;
-          const entityInput = `<input class="cond-entity" list="cond-ents-${i}" placeholder="${this.t('cond.entity')}" value="${this._escAttr(c.entity||'')}" data-ci="${i}">
-            <datalist id="cond-ents-${i}">${condEnts.map(eid=>`<option value="${eid}">`).join('')}</datalist>`;
+          const entityInput = `<div class="cond-ent-wrap">
+            <input class="cond-entity" placeholder="${this.t('cond.entity')}" value="${this._escAttr(c.entity||'')}" data-ci="${i}" autocomplete="off">
+            <div class="cond-ent-dd" data-ci="${i}"></div>
+          </div>`;
           if (!hasEntity) {
             // Wait for entity selection before showing operator/value pickers
             return `<div class="cond-row">
@@ -2416,10 +2418,10 @@ export default class WeeklyScheduleBase extends HTMLElement {
         .cover-pos-block { display:flex;align-items:center;gap:10px;margin-top:10px; }
         .cover-pos-end { font-size:.74em;font-weight:600;color:var(--secondary-text-color);white-space:nowrap; }
         .cover-pos-block .position-value { min-width:42px;text-align:right;font-weight:700;font-variant-numeric:tabular-nums; }
-        .cover-pos-block .position-slider { flex:1;-webkit-appearance:none;appearance:none;height:10px;border-radius:6px;background:linear-gradient(90deg,#1a1a1a 0%,#5c5c5c 40%,#ffca28 100%);outline:none;cursor:pointer; }
+        .cover-pos-block .position-slider { flex:1;-webkit-appearance:none;appearance:none;height:10px;border-radius:6px;background:linear-gradient(90deg,#eceff1 0%,#90a4ae 45%,#37474f 100%);outline:none;cursor:pointer; }
         .cover-pos-block .position-slider::-webkit-slider-runnable-track { height:10px;border-radius:6px;background:transparent; }
         .cover-pos-block .position-slider::-webkit-slider-thumb { -webkit-appearance:none;appearance:none;width:18px;height:18px;border-radius:50%;background:#fff;border:2px solid var(--primary-color,#03a9f4);box-shadow:0 1px 4px rgba(0,0,0,.45);margin-top:-4px;cursor:pointer; }
-        .cover-pos-block .position-slider::-moz-range-track { height:10px;border-radius:6px;background:linear-gradient(90deg,#1a1a1a 0%,#5c5c5c 40%,#ffca28 100%); }
+        .cover-pos-block .position-slider::-moz-range-track { height:10px;border-radius:6px;background:linear-gradient(90deg,#eceff1 0%,#90a4ae 45%,#37474f 100%); }
         .cover-pos-block .position-slider::-moz-range-thumb { width:18px;height:18px;border-radius:50%;background:#fff;border:2px solid var(--primary-color,#03a9f4);box-shadow:0 1px 4px rgba(0,0,0,.45);cursor:pointer; }
         .brightness-value { font-size:.9em;font-weight:700;color:var(--primary-text-color);min-width:40px;text-align:right; }
         input[type=range] { flex:1;accent-color:var(--primary-color,#03a9f4);cursor:pointer; }
@@ -2466,7 +2468,13 @@ export default class WeeklyScheduleBase extends HTMLElement {
         .cond-body,.notif-body{padding-top:8px;display:flex;flex-direction:column;gap:6px}
         .cond-comb{display:flex;gap:14px;font-size:.8em}
         .cond-row{display:flex;align-items:center;gap:4px;flex-wrap:wrap;margin-bottom:2px}
-        .cond-entity{flex:2;min-width:100px;padding:4px 6px;border-radius:6px;border:1px solid var(--divider-color,#ccc);background:var(--card-background-color,#fff);color:var(--primary-text-color);font-size:.78em}
+        .cond-ent-wrap{position:relative;flex:2;min-width:100px}
+        .cond-entity{width:100%;box-sizing:border-box;padding:4px 6px;border-radius:6px;border:1px solid var(--divider-color,#ccc);background:var(--card-background-color,#fff);color:var(--primary-text-color);font-size:.78em}
+        .cond-ent-dd{position:absolute;left:0;right:0;top:calc(100% + 2px);z-index:60;background:var(--card-background-color,#fff);border:1px solid var(--divider-color,#ccc);border-radius:8px;box-shadow:0 6px 18px rgba(0,0,0,.2);max-height:190px;overflow-y:auto;display:none}
+        .cond-ent-dd.open{display:block}
+        .cond-ent-opt{padding:8px 9px;font-size:.76em;cursor:pointer;color:var(--primary-text-color);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+        .cond-ent-opt:active,.cond-ent-opt:hover{background:color-mix(in srgb,var(--primary-color,#03a9f4) 12%,transparent)}
+        .ceo-name{color:var(--secondary-text-color);font-size:.92em}
         .cond-op{flex:0 0 52px;padding:4px 3px;border-radius:6px;border:1px solid var(--divider-color,#ccc);background:var(--card-background-color,#fff);color:var(--primary-text-color);font-size:.78em}
         .cond-val{flex:1;min-width:60px;padding:4px 6px;border-radius:6px;border:1px solid var(--divider-color,#ccc);background:var(--card-background-color,#fff);color:var(--primary-text-color);font-size:.78em}
         .cond-attribute{flex:0 0 110px;padding:4px 4px;border-radius:6px;border:1px solid var(--divider-color,#ccc);background:var(--card-background-color,#fff);color:var(--primary-text-color);font-size:.74em}
@@ -2798,7 +2806,7 @@ export default class WeeklyScheduleBase extends HTMLElement {
       if (posBlock) posBlock.style.display = (r.value === 'position') ? '' : 'none';
     }));
     if (pos) {
-      pos.addEventListener('input', () => { ps.position = parseInt(pos.value); if (posV) posV.textContent = `${ps.position}%`; });
+      pos.addEventListener('input', () => { ps.position = 100 - parseInt(pos.value); if (posV) posV.textContent = `${ps.position}%`; });
     }
     // End-of-slot (auto-off) action editor
     dlg.querySelector('.end-act-type')?.addEventListener('change', e => {
@@ -2838,6 +2846,49 @@ export default class WeeklyScheduleBase extends HTMLElement {
       }
       this._renderPopup();
     }));
+    // Autocomplete entità condizioni: dropdown custom (il <datalist> nativo non funziona su mobile/app HA)
+    {
+      const COND_DOMAINS = ['sensor','binary_sensor','input_number','input_boolean','number','counter','climate','weather'];
+      const condEntList = Object.keys(this._hass?.states || {}).filter(eid => COND_DOMAINS.includes(eid.split('.')[0])).sort();
+      dlg.querySelectorAll('.cond-entity').forEach(inp => {
+        const wrap = inp.closest('.cond-ent-wrap');
+        const dd = wrap?.querySelector('.cond-ent-dd');
+        if (!dd) return;
+        const ci = parseInt(inp.dataset.ci);
+        const fill = () => {
+          const q = inp.value.trim().toLowerCase();
+          const matches = condEntList.filter(eid => {
+            const fn = (this._hass.states[eid]?.attributes?.friendly_name || '').toLowerCase();
+            return !q || eid.toLowerCase().includes(q) || fn.includes(q);
+          }).slice(0, 30);
+          if (!matches.length) { dd.classList.remove('open'); dd.innerHTML = ''; return; }
+          dd.innerHTML = matches.map(eid => {
+            const fn = this._hass.states[eid]?.attributes?.friendly_name || '';
+            return `<div class="cond-ent-opt" data-eid="${this._escAttr(eid)}">${this._esc(eid)}${fn ? ` <span class="ceo-name">${this._esc(fn)}</span>` : ''}</div>`;
+          }).join('');
+          dd.classList.add('open');
+        };
+        inp.addEventListener('focus', fill);
+        inp.addEventListener('input', fill);
+        inp.addEventListener('blur', () => setTimeout(() => dd.classList.remove('open'), 160));
+        // pointerdown: scatta prima del blur e copre mouse + touch (mobile)
+        dd.addEventListener('pointerdown', ev => {
+          const opt = ev.target.closest('.cond-ent-opt'); if (!opt) return;
+          ev.preventDefault();
+          const eid = opt.dataset.eid;
+          const prev = ps.conditions[ci].entity;
+          ps.conditions[ci].entity = eid;
+          if (prev !== eid) {
+            ps.conditions[ci].attribute = '';
+            ps.conditions[ci].value = '';
+            const spec = this._getCondFieldSpec(eid, '');
+            if (!spec.operators.includes(ps.conditions[ci].operator)) ps.conditions[ci].operator = spec.operators[0];
+          }
+          dd.classList.remove('open');
+          this._renderPopup();
+        });
+      });
+    }
     dlg.querySelectorAll('.cond-attribute').forEach(sel=>sel.addEventListener('change',()=>{
       const i = parseInt(sel.dataset.ci);
       ps.conditions[i].attribute = sel.value;
