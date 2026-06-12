@@ -1088,7 +1088,9 @@ export default class WeeklyScheduleBase extends HTMLElement {
     const a = this._hass?.states?.[eid]?.attributes || {};
     if (t === 'set_temperature')
       return `<div class="end-act-val param-inline"><input type="number" class="end-val-num temp-inp" min="5" max="35" step="0.5" value="${v}"><span style="font-size:.8em;color:var(--secondary-text-color)">°C</span></div>`;
-    if (t === 'set_brightness' || t === 'set_speed' || t === 'set_position')
+    if (t === 'set_position')
+      return `<div class="end-act-val cover-pos-block end-pos" style="flex:1 1 100%;margin-top:0"><span class="cover-pos-end">${this.t('endact.open')}</span><input type="range" class="position-slider" min="0" max="100" step="1" value="${100 - (parseInt(v) || 0)}"><span class="cover-pos-end">${this.t('endact.close')}</span><span class="position-value">${v}%</span></div>`;
+    if (t === 'set_brightness' || t === 'set_speed')
       return `<div class="end-act-val param-inline"><span class="end-val-pct" style="min-width:40px;text-align:right;font-weight:700">${v}%</span><input type="range" class="end-val-range" min="0" max="100" step="1" value="${v}"></div>`;
     if (t === 'set_color')
       return `<div class="end-act-val">${this._colorPickerHTML(v || '#FFFFFF')}</div>`;
@@ -2820,6 +2822,12 @@ export default class WeeklyScheduleBase extends HTMLElement {
     if (endRange) endRange.addEventListener('input', e => {
       ps.stopValue = parseInt(e.target.value);
       const pct = dlg.querySelector('.end-val-pct'); if (pct) pct.textContent = `${ps.stopValue}%`;
+    });
+    // Azione di fine slot "Imposta posizione" tenda: slider invertito (destra = chiude di più), come l'azione principale
+    const endPos = dlg.querySelector('.end-pos .position-slider');
+    if (endPos) endPos.addEventListener('input', e => {
+      ps.stopValue = 100 - parseInt(e.target.value);
+      const pv = dlg.querySelector('.end-pos .position-value'); if (pv) pv.textContent = `${ps.stopValue}%`;
     });
     if (dlg.querySelector('.color-palette')) {
       this._bindColorPalettes(dlg);
