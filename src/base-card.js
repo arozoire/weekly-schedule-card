@@ -1,5 +1,5 @@
 // src/base-card.js
-// Last modified: 2026-06-18 Rome (v1.1.7 condizioni event-driven + isteresi)
+// Last modified: 2026-06-20 Rome (v1.1.8 shared storage via global input_text)
 
 import { compressToBase64, decompressFromBase64 } from './lz-string.js';
 
