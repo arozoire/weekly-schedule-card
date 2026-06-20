@@ -18,5 +18,14 @@ export default [
       name: 'WeeklyScheduleViewCard'
     },
     plugins: [terser()]
+  },
+  {
+    input: 'src/quick-timer-card.js',
+    output: {
+      file: 'dist/quick-timer-card.js',
+      format: 'iife',
+      name: 'QuickTimerCard'
+    },
+    plugins: [terser()]
   }
 ];

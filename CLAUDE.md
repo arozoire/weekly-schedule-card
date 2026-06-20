@@ -204,6 +204,26 @@ Per evitare N scritture+eventi per una singola operazione utente:
   `_duplicateProfile`, `_cancelNewProfile`, `_cleanupOrphanAutomations`. Le `_wsSet` FUORI
   transazione restano scritture immediate (rename profilo, gruppi, `_ensureDefaultProfile`, ecc.).
 
+## Quick Timer Card (`custom:quick-timer-card`, v1.2.0)
+Card a entità singola (`src/quick-timer-card.js`, `extends WeeklyScheduleBase`): **card HA nativa
+incorporata** (`tile` via `window.loadCardHelpers()`→`createCardElement`) per il controllo diretto +
+pannello **Timer** che applica un valore TEMPORANEO per durata/orario, poi ripristina lo stato di prima.
+- **NIENTE scene**: ripristino con azioni esplicite `_buildRestoreActions(eid)` (legge `hass.states`
+  per dominio) cucite in un'automazione **transitoria** `qt_timer_<slug>` (delay + guardia + restore).
+- **Overlap "vince l'ultimo attivato"**: guardia template nell'automazione (adatta quella auto-off
+  riga ~771) → salta il revert se uno `switch.schedule_*` è entrato in slot DOPO l'avvio
+  (`last_changed > now()-durata`).
+- **Auto-pulizia**: automazione eliminata ~30s dopo `endTs` (buffer) o subito all'Annulla; GC su
+  load (`_cleanupFinishedTimers`). A riposo nessun artefatto.
+- **Storage condiviso**: timer attivi in `_sharedSet('quick_timer_card', {timers})` (prefisso helper
+  `wsc_qt_store`) → countdown/annulla cross-device. `set hass` refetch su cambio `input_text.wsc_qt_store_*`.
+- "Annulla" = **ripristina subito** (replay delle `restore` salvate nel record). Durata **o** Fine alle.
+- Override `setConfig`/`set hass`/`render`/`connected/disconnectedCallback` (NON usa schedule/profili).
+  Riusa `_detectDomain`,`_entityCaps`,`_buildScheduleActions`,`_colorPickerHTML`,`_hexToRgb`,
+  `_recreateAutomation`,`_setStyles`,`t`,`_esc`. LOCALES: blocco `qtimer.*` (en/it/fr) in base-card.
+- Limiti: ripristino esplicito best-effort su attributi esotici (effetti/transizioni); `delay` non
+  sopravvive a riavvio HA a metà timer; `loadCardHelpers` richiede Lovelace standard.
+
 ## Popup domini
 ```
 climate → temperature (slider 5-80°C, input manuale fino 100°C)
@@ -303,6 +323,17 @@ notifications:
 
 ## Last modified
 always update last modified date with day an hour Rome utc
+2026-06-20 16:30 Rome (v1.2.0 quick-timer card) — **NEW `custom:quick-timer-card`**
+(`src/quick-timer-card.js`, 3rd rollup entry → `dist/quick-timer-card.js`). Single-entity card:
+native HA `tile` embedded via `loadCardHelpers` for direct control + a **Timer** panel that holds a
+temporary value for a duration/until-time then restores the prior state. **No scenes** — restore is
+explicit (`_buildRestoreActions`, reads `hass.states` per domain) baked into a **transient**
+automation `qt_timer_<slug>` (delay + guard + restore), auto-deleted ~30s after end / on cancel
+(`_cleanupFinishedTimers`) → nothing left at rest. **Overlap "most recent wins"**: guard template
+skips the revert if a `switch.schedule_*` entered its slot AFTER the timer started
+(`last_changed > now()-duration`). Active timers stored in **shared** `quick_timer_card`
+(`wsc_qt_store` prefix) → cross-device countdown/cancel; "Cancel" = restore now. LOCALES `qtimer.*`
+(en/it/fr). `check` script now covers the 3rd bundle; `deploy.js` already copies all `dist/*.js`.
 2026-06-20 14:45 Rome (v1.1.8 shared storage) — **fix: profiles/groups now SHARED across HA users**
 (was per-user `frontend/set_user_data` → invisible on a 2nd account/iPhone). Storage moved to GLOBAL
 `input_text` helpers: `JSON → compressToBase64 (new vendored `src/lz-string.js`, MIT) → ≤255-char

@@ -6,7 +6,7 @@
   "scripts": {
     "build": "npx rollup -c",
     "watch": "npx rollup -c --watch",
-    "check": "npm run build && node -e \"const fs=require('fs');for(const f of ['dist/weekly-schedule-card.js','dist/weekly-schedule-view-card.js']){const c=fs.readFileSync(f,'utf8');if(c.length<500||c.trimStart().startsWith('import')||!c.includes('customElements.define')){console.error('FAIL '+f+' is not a self-contained IIFE bundle');process.exit(1)}console.log('OK '+f+' '+c.length+'b')}\"",
+    "check": "npm run build && node -e \"const fs=require('fs');for(const f of ['dist/weekly-schedule-card.js','dist/weekly-schedule-view-card.js','dist/quick-timer-card.js']){const c=fs.readFileSync(f,'utf8');if(c.length<500||c.trimStart().startsWith('import')||!c.includes('customElements.define')){console.error('FAIL '+f+' is not a self-contained IIFE bundle');process.exit(1)}console.log('OK '+f+' '+c.length+'b')}\"",
     "deploy": "npm run build && node scripts/deploy.js"
   },
   "devDependencies": {

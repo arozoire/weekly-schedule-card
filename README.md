@@ -108,6 +108,33 @@ right now, grouped by parent entity, with live attribute values.
   <img src="docs/images/05-mini.png" alt="Mini card — active schedules" width="480">
 </p>
 
+### `quick-timer-card` — temporary timer (standalone bonus)
+
+A separate single-entity card (its own `dist/quick-timer-card.js` bundle, **not**
+part of the main bundle): the **standard HA entity card** (native `tile`, embedded
+via `loadCardHelpers`) for direct control, plus a **Timer** panel. Pick a value and
+a **duration _or_ end time** → it applies the value, then restores the entity to its
+**previous state** when the timer ends. Examples: thermostat 21 °C for 45 min,
+lights red for 5 min, irrigation on for 10 min.
+
+- **No scenes left behind** — the restore is computed at start and baked into a
+  *transient* automation (`automation.qt_timer_*`) that is auto-removed ~30 s after
+  the timer ends (or immediately on cancel). Nothing lingers at rest.
+- **Overlap with schedules → most recent wins**: start a timer over an active
+  schedule and the timer wins; if a schedule slot begins while the timer runs, the
+  schedule wins and the timer skips its restore.
+- **Cancel = restore now.** Active timers are stored in **shared** state, so the
+  countdown/cancel show on every device.
+
+```yaml
+type: custom:quick-timer-card
+entity: climate.bedroom
+name: Bedroom            # optional
+presets: [5, 10, 15, 30, 45, 60]   # optional minute chips
+```
+
+> Needs its own Lovelace resource (`/local/quick-timer-card.js`) — see below.
+
 ---
 
 ## Installation
@@ -123,11 +150,12 @@ right now, grouped by parent entity, with live attribute values.
 
 ### Manual
 
-Copy both bundles from `dist/` into your HA config:
+Copy the bundles from `dist/` into your HA config:
 
 ```
 dist/weekly-schedule-card.js       →  /config/www/weekly-schedule-card.js
 dist/weekly-schedule-view-card.js  →  /config/www/weekly-schedule-view-card.js
+dist/quick-timer-card.js           →  /config/www/quick-timer-card.js   (only if you use it)
 ```
 
 ### Register resources
@@ -149,6 +177,14 @@ editor code), register it instead/in addition:
 
 ```yaml
   - url: /local/weekly-schedule-view-card.js
+    type: module
+```
+
+The **`quick-timer-card`** ships as its **own** bundle (not inlined in the main
+one), so to use it register it as an extra resource:
+
+```yaml
+  - url: /local/quick-timer-card.js
     type: module
 ```
 
