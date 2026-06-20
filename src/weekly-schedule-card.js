@@ -432,8 +432,8 @@ class WeeklyScheduleMiniCard extends HTMLElement {
     this._hass = hass;
     if (!this._storageData && !this._loadingStorage) {
       this._loadingStorage = true;
-      hass.connection.sendMessagePromise({ type:'frontend/get_user_data', key:'weekly_schedule_card' })
-        .then(r => { this._storageData = r?.value || { profiles: [] }; this._loadingStorage = false; this._render(); })
+      WeeklyScheduleBase._sharedGet(hass, 'weekly_schedule_card')
+        .then(d => { this._storageData = d || { profiles: [] }; this._loadingStorage = false; this._render(); })
         .catch(() => { this._storageData = { profiles: [] }; this._loadingStorage = false; this._render(); });
       this._render(); // primo paint immediato; la .then ri-renderizza con lo storage
       return;

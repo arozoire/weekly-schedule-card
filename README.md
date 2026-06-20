@@ -212,7 +212,7 @@ entities owned by the [Scheduler Component](https://github.com/nielsfaber/schedu
 |-------|-------|---------|---------------|
 | Presentation | this card | Lovelace YAML | Which entities to render, colors, layout, language, popup defaults |
 | Schedules | Scheduler Component | `switch.schedule_*` entities | `weekdays`, `timeslots`, `entities`, `actions`, `current_slot` |
-| Profiles & groups | this card | HA **user data** (websocket `frontend/set_user_data`, key `weekly_schedule_card`) | One JSON blob: `{ groups, profiles[], activeProfiles[] }`, each profile holding its `groups`, `schedules` and `scheduleLinks` |
+| Profiles & groups | this card | **Shared** `input_text` helpers (`input_text.wsc_store_*`) — global, same for every HA user | One JSON blob `{ groups, profiles[], activeProfiles[] }` (each profile holds its `groups`, `schedules`, `scheduleLinks`), compressed and split into ≤255-char chunks |
 | Conditions | this card | `automation.wsc_*` (generated) | One HA automation per conditional schedule, lifecycle-bound to it |
 | Auto-off / auto-on | this card | `automation.wsc_autooff_*` (generated) | One HA automation per schedule, fires the end-of-slot action when `current_slot` clears |
 
@@ -407,10 +407,15 @@ them. Profiles that share at least one entity become **mutually exclusive**:
 activating one auto-deactivates the conflicting ones, so you cannot end up
 with two competing setpoints on the same climate.
 
-Profiles are persisted as a single JSON blob in **Home Assistant user data**
-(websocket `frontend/get_user_data` / `set_user_data`, key `weekly_schedule_card`).
-No `input_text` helpers, no 255-char chunking, no practical profile cap — and
-saves are **batched into one write per user action** to avoid event storms.
+Profiles are persisted in **shared `input_text` helpers** so every HA user (and
+device) sees the same profiles, groups and schedules. The JSON blob is compressed
+and split across `input_text.wsc_store_0..N` (+ `input_text.wsc_store_meta`), which
+the card **creates automatically** the first time an admin saves; existing per-user
+data is **migrated once, automatically**. Saves are **batched into one write per
+user action**, and the card refetches when another device writes (live cross-device
+sync). Notes: creating/deleting those helpers requires an **admin** user (regular
+users can still view, and edit without growing the data); the helpers appear under
+**Settings → Devices & Services → Helpers**.
 
 **Groups** bundle entities together inside a profile. They share a color and
 appear as a single chip in the toolbar. Useful for "all thermostats" or

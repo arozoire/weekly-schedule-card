@@ -146,10 +146,26 @@ template/turn_off puntano a un'entità inesistente e l'override non scatta mai. 
 **Da validare in HA**: `context.parent_id` dell'applicazione scheduler a inizio slot (decide se la
 guardia 5s serve o si toglie).
 
-## Profili storage
-Persistenza via **hass websocket** `frontend/get_user_data` / `set_user_data`, chiave
-`weekly_schedule_card` (NON più `input_text` a chunk). Helper: `_wsGet()` / `_wsSet(data)`.
-Schema reale:
+## Profili storage — CONDIVISO tra utenti (input_text globali, v1.1.8)
+Persistenza in helper **`input_text` GLOBALI** (stati condivisi tra TUTTI gli utenti HA,
+persistenti al riavvio), NON più `frontend/set_user_data` per-utente (era il bug "su un
+secondo account/iPhone non compaiono gruppi/schedule"). Dato il limite 255 char/helper:
+`JSON → compressToBase64 (src/lz-string.js) → split in chunk ≤255` → `input_text.wsc_store_0..N-1`,
+con `input_text.wsc_store_meta` = N (conteggio chunk). Chiave quick-timer: prefisso `wsc_qt_store`.
+- API **statica** su `WeeklyScheduleBase` (così la usa anche la mini-card che non estende la base):
+  `_sharedGet(hass,key)` / `_sharedSet(hass,key,data)` + `_storePrefix`/`_chunkEntity`/`_metaEntity`/
+  `_isAdmin` + `_createInputText`/`_deleteInputText`/`_setInputText` (set_value con retry).
+- `_wsGet()`: legge lo store condiviso; se vuoto **migra una-tantum** dal vecchio `frontend/get_user_data`
+  (`_userDataGet`, tenuto solo per questo) → `_sharedSet` (solo se admin). `_wsSetNow()` → `_sharedSet`.
+  `_wsSet`/`_withTx`/batching INVARIATI (cambia solo la persistenza reale).
+- **Sync cross-device/utente**: `set hass` rifà il fetch quando cambia lo stato di un
+  `input_text.wsc_store_*` (un altro device ha scritto). Miglioria gratuita vs user_data.
+- **Ruoli**: admin legge+scrive+crea/elimina helper+migra; non-admin **legge** sempre e può
+  scrivere via `input_text.set_value` finché non servono nuovi chunk (creazione helper = solo admin).
+- **Mid-write fail-safe**: i chunk si scrivono prima del meta; un lettore che becca lo stato
+  intermedio fallisce il decompress → `_sharedGet` ritorna null → fallback, si auto-corregge al
+  prossimo update. Nessun lock (rischio basso con pochi utenti).
+Schema reale (invariato — è il payload serializzato):
 ```javascript
 {
   groups: [],                 // legacy: migrato dentro profiles[].groups da _ensureDefaultProfile
@@ -225,7 +241,9 @@ del nome di default sono nei blocchi `notify.*` e `sched_name.*`.
 ## Bug noti / limitazioni
 - Scheduler Component non supporta `conditions` nei timeslots
 - Scheduler Component non supporta `stop_action` nei timeslots
-- Profili: limite pratico ~10 profili per vincolo 255 char input_text
+- Storage condiviso: niente lock di concorrenza (2 admin che scrivono insieme → glitch breve
+  fail-safe, si auto-corregge); creazione/eliminazione helper `input_text` richiede admin;
+  gli helper `input_text.wsc_store_*` compaiono in Impostazioni → Helper.
 
 ## Config YAML completa
 ```yaml
@@ -285,6 +303,17 @@ notifications:
 
 ## Last modified
 always update last modified date with day an hour Rome utc
+2026-06-20 14:45 Rome (v1.1.8 shared storage) — **fix: profiles/groups now SHARED across HA users**
+(was per-user `frontend/set_user_data` → invisible on a 2nd account/iPhone). Storage moved to GLOBAL
+`input_text` helpers: `JSON → compressToBase64 (new vendored `src/lz-string.js`, MIT) → ≤255-char
+chunks` in `input_text.wsc_store_0..N` + `input_text.wsc_store_meta` (chunk count). New STATIC API on
+`WeeklyScheduleBase` (`_sharedGet/_sharedSet/_createInputText/_deleteInputText/_setInputText/_isAdmin`,
+prefix `wsc_qt_store` reserved for the upcoming quick-timer card) so the mini-card (doesn't extend base)
+can read it too. `_wsGet` auto-migrates old per-user data once (admin only); `_wsSetNow → _sharedSet`;
+`_wsSet`/`_withTx` batching unchanged. Bonus: `set hass` refetches on `input_text.wsc_store_*` state
+change → live cross-device sync. Roles: admin creates/deletes helpers + migrates; non-admin reads always
+and can `set_value` until new chunks are needed. Mid-write is fail-safe (chunks before meta → reader gets
+null → fallback). Next: quick-timer card (also shared via `wsc_qt_store`).
 2026-06-18 11:10 Rome (v1.1.7) — release del batch: README allineato; set-position azione di fine slot invertito+gradiente come quello principale; **condizioni event-driven** (rimosso `time_pattern`, trigger su stato+attributo) + **isteresi/banda morta** (campo `± tolleranza`, default 5% del valore, `_buildHACondition(c, activeExpr)` template stateful). Override invariato (fragilità slot-start pre-esistente, da validare con traccia). condInterval resta nello storage (legacy).
 2026-06-11 17:29 Rome (v1.1.6 UI + autocomplete) — editing card: grigio colonne vuote più marcato (mix divider+secondary-text), chip profilo forzata a blu primario (non più colore profilo rosso), barra verde attivo affusolata (ellisse `border-radius:50%`). Popup cover "Set position": slider invertito (destra=chiude di più, `value=100-position`, label Aperto↔Chiuso scambiate) + gradiente monocromatico chiaro→scuro (via nero/giallo). Condizioni: autocomplete entità con dropdown custom (`.cond-ent-wrap`/`.cond-ent-dd`, `pointerdown`) al posto del `<datalist>` nativo che non funziona su mobile/app HA.
 2026-06-11 14:21 Rome (v1.1.5 UI editing card) — rimossa la status bar "Viewing: … Active"; profilo attivo indicato da una barra verde sotto la chip (`.profile-chip.active-op::after`), rimosso il pallino verde (chip-act-dot). Vista colonne gruppi: piccolo gap fisso (4px) tra le sub-colonne delle entità (calc su left/width), rimosso il sub-divider.

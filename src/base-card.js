@@ -1,6 +1,8 @@
 // src/base-card.js
 // Last modified: 2026-06-18 Rome (v1.1.7 condizioni event-driven + isteresi)
 
+import { compressToBase64, decompressFromBase64 } from './lz-string.js';
+
 const PALETTE=['#F44336','#E91E63','#9C27B0','#673AB7','#3F51B5','#2196F3','#03A9F4','#00BCD4','#009688','#4CAF50','#8BC34A','#CDDC39','#FFEB3B','#FFC107','#FF9800','#FF5722','#795548','#9E9E9E','#607D8B','#000000','#FFFFFF','#FF80AB','#69F0AE','#40C4FF'];
 
 const LOCALES = {
@@ -98,11 +100,16 @@ export default class WeeklyScheduleBase extends HTMLElement {
     this._prevHass = hass;
     this._hass = hass;
     // Auto re-fetch storage when a schedule entity is added/removed (cross-card sync)
+    // o quando lo store condiviso (input_text.wsc_store_*) cambia → sync cross-device/utente.
     if (prev && this._storageData && !this._loadingStorage) {
       const prevSet = new Set(Object.keys(prev.states).filter(k => k.startsWith('switch.schedule_')));
       const currKeys = Object.keys(hass.states).filter(k => k.startsWith('switch.schedule_'));
       const addedOrRemoved = currKeys.length !== prevSet.size || currKeys.some(k => !prevSet.has(k));
-      if (addedOrRemoved) {
+      let storeChanged = false;
+      const storeRe = /^input_text\.wsc_store_/;
+      const storeKeys = new Set([...Object.keys(prev.states), ...Object.keys(hass.states)].filter(k => storeRe.test(k)));
+      for (const k of storeKeys) { if (prev.states[k]?.state !== hass.states[k]?.state) { storeChanged = true; break; } }
+      if (addedOrRemoved || storeChanged) {
         this._loadingStorage = true;
         this._wsGet().then(data => {
           if (data) this._storageData = data;
@@ -260,14 +267,117 @@ export default class WeeklyScheduleBase extends HTMLElement {
     return root;
   }
 
-  // ── WebSocket storage ─────────────────────────────────────────────────────
+  // ── Shared storage (helper input_text GLOBALI, cross-utente) ───────────────
+  // Profili/gruppi (e i timer della quick-timer card) NON sono più in frontend user_data
+  // per-utente (invisibili agli altri account) ma in helper input_text globali, condivisi
+  // tra tutti gli utenti HA e persistenti al riavvio. Dato il limite 255 char/helper:
+  // JSON → compressToBase64 → split in chunk ≤255 → input_text.<prefix>_0..N-1, con
+  // input_text.<prefix>_meta = N (conteggio chunk). API statica così la usa anche la mini-card.
+
+  static _storePrefix(key) { return key === 'quick_timer_card' ? 'wsc_qt_store' : 'wsc_store'; }
+  static _storeName(key)   { return key === 'quick_timer_card' ? 'WSC QT Store' : 'WSC Store'; }
+  static _isAdmin(hass)    { return !!hass?.user?.is_admin; }
+  static _chunkEntity(key, i) { return `input_text.${WeeklyScheduleBase._storePrefix(key)}_${i}`; }
+  static _metaEntity(key)     { return `input_text.${WeeklyScheduleBase._storePrefix(key)}_meta`; }
+
+  static async _createInputText(hass, name) {
+    return hass.connection.sendMessagePromise({ type: 'input_text/create', name, min: 0, max: 255, mode: 'text' });
+  }
+  static async _deleteInputText(hass, entityId) {
+    return hass.connection.sendMessagePromise({ type: 'input_text/delete', input_text_id: entityId.replace(/^input_text\./, '') });
+  }
+  // set_value con retry breve: subito dopo la creazione l'entità può non essere ancora
+  // nel snapshot hass.states (il servizio gira comunque lato server, dove è già registrata).
+  static async _setInputText(hass, entityId, value) {
+    let lastErr;
+    for (let a = 0; a < 4; a++) {
+      try { return await hass.callService('input_text', 'set_value', { entity_id: entityId, value }); }
+      catch (e) { lastErr = e; await new Promise(r => setTimeout(r, 250)); }
+    }
+    throw lastErr;
+  }
+
+  // Ritorna l'oggetto salvato, oppure null se non inizializzato / incompleto / corrotto
+  // (mid-write: il chiamante fa fallback in modo fail-safe e si auto-corregge al prossimo update).
+  static async _sharedGet(hass, key) {
+    try {
+      const meta = hass?.states?.[WeeklyScheduleBase._metaEntity(key)];
+      if (!meta) return null;
+      const n = parseInt(meta.state, 10);
+      if (!Number.isFinite(n) || n < 1) return null;
+      let payload = '';
+      for (let i = 0; i < n; i++) {
+        const s = hass.states[WeeklyScheduleBase._chunkEntity(key, i)];
+        if (!s) return null;
+        payload += s.state || '';
+      }
+      if (!payload) return null;
+      const json = decompressFromBase64(payload);
+      if (json == null) return null;
+      return JSON.parse(json);
+    } catch (e) { console.error('WSC sharedGet failed', e); return null; }
+  }
+
+  static async _sharedSet(hass, key, data) {
+    // Guardia anti-doppia-creazione: gli helper appena creati non sono ancora nel snapshot
+    // hass.states; due _sharedSet sullo stesso snapshot (es. migrazione + _ensureDefaultProfile)
+    // li ricreerebbero con slug duplicato. Set statico di sessione (lazy-init: niente static field
+    // per compatibilità iOS vecchi).
+    if (!WeeklyScheduleBase._createdHelpers) WeeklyScheduleBase._createdHelpers = new Set();
+    const created = WeeklyScheduleBase._createdHelpers;
+    const prefix = WeeklyScheduleBase._storePrefix(key);
+    const name = WeeklyScheduleBase._storeName(key);
+    const payload = compressToBase64(JSON.stringify(data));
+    const chunks = [];
+    for (let i = 0; i < payload.length; i += 255) chunks.push(payload.slice(i, i + 255));
+    if (!chunks.length) chunks.push('');
+    const re = new RegExp(`^input_text\\.${prefix}_\\d+$`);
+    const existing = new Set(Object.keys(hass.states).filter(k => re.test(k)));
+    const isAdmin = WeeklyScheduleBase._isAdmin(hass);
+    const ensure = async (ent, helperName) => {
+      if (existing.has(ent) || created.has(ent)) return;
+      if (!isAdmin) throw new Error('WSC: servono nuovi helper input_text ma l\'utente non è admin');
+      await WeeklyScheduleBase._createInputText(hass, helperName);
+      created.add(ent);
+    };
+    // crea i chunk mancanti + il meta (richiede admin)
+    for (let i = 0; i < chunks.length; i++) await ensure(WeeklyScheduleBase._chunkEntity(key, i), `${name} ${i}`);
+    await ensure(WeeklyScheduleBase._metaEntity(key), `${name} Meta`);
+    // scrivi i chunk, poi il meta (i lettori mid-write falliscono il decompress → fallback)
+    for (let i = 0; i < chunks.length; i++)
+      await WeeklyScheduleBase._setInputText(hass, WeeklyScheduleBase._chunkEntity(key, i), chunks[i]);
+    await WeeklyScheduleBase._setInputText(hass, WeeklyScheduleBase._metaEntity(key), String(chunks.length));
+    // rimuovi i chunk residui di una vecchia scrittura più grande (best-effort, admin)
+    if (isAdmin) {
+      for (const ent of existing) {
+        const m = ent.match(/_(\d+)$/);
+        if (m && parseInt(m[1], 10) >= chunks.length) {
+          try { await WeeklyScheduleBase._deleteInputText(hass, ent); created.delete(ent); } catch {}
+        }
+      }
+    }
+  }
+
+  // ── WebSocket storage (weekly_schedule_card) ───────────────────────────────
+
+  // Vecchia lettura per-utente, tenuta SOLO per la migrazione una-tantum verso lo store condiviso.
+  async _userDataGet(key) {
+    const result = await this._hass.connection.sendMessagePromise({ type: 'frontend/get_user_data', key });
+    return result?.value || null;
+  }
 
   async _wsGet() {
-    const result = await this._hass.connection.sendMessagePromise({
-      type: 'frontend/get_user_data',
-      key: 'weekly_schedule_card',
-    });
-    return result?.value || { groups: [], profiles: [], activeProfiles: [] };
+    const shared = await WeeklyScheduleBase._sharedGet(this._hass, 'weekly_schedule_card');
+    if (shared) return shared;
+    // migrazione: vecchi dati per-utente → store condiviso (una volta, solo da admin)
+    let legacy = null;
+    try { legacy = await this._userDataGet('weekly_schedule_card'); } catch {}
+    const data = legacy || { groups: [], profiles: [], activeProfiles: [] };
+    if (legacy && WeeklyScheduleBase._isAdmin(this._hass)) {
+      try { await WeeklyScheduleBase._sharedSet(this._hass, 'weekly_schedule_card', data); }
+      catch (e) { console.error('WSC migration failed', e); }
+    }
+    return data;
   }
 
   async _wsSet(data) {
@@ -280,11 +390,7 @@ export default class WeeklyScheduleBase extends HTMLElement {
   // Scrittura reale dello storage + notifica alle altre card. Usata da _wsSet (fuori transazione)
   // o una sola volta a fine transazione (_withTx). NON aggiorna _storageData (già fatto da _wsSet).
   async _wsSetNow(data) {
-    await this._hass.connection.sendMessagePromise({
-      type: 'frontend/set_user_data',
-      key: 'weekly_schedule_card',
-      value: data,
-    });
+    await WeeklyScheduleBase._sharedSet(this._hass, 'weekly_schedule_card', data);
     try {
       window.dispatchEvent(new CustomEvent('wsc-storage-changed', { detail: { source: this, data } }));
     } catch {}
