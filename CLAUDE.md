@@ -350,6 +350,15 @@ notifications:
 
 ## Last modified
 always update last modified date with day an hour Rome utc
+2026-06-22 22:34 Rome (v1.2.2 release prep) — bumped `package.json` to 1.2.2; **fix doppia voce nel
+card-picker**: con la doppia risorsa (utenti che avevano aggiunto la risorsa standalone `quick-timer-card.js`
+come da istruzioni v1.2.0/1.2.1) la card appariva due volte nel menu "Aggiungi card" — il `customElements.define`
+era guardato (niente crash) ma il `customCards.push` no. Spostato il `push` DENTRO la guardia
+`if(!customElements.get('quick-timer-card'))` in `src/quick-timer-card.js` → solo il primo bundle caricato
+registra elemento + voce di menu. README/CLAUDE.md allineati (4 card inlined, v1.2.1→v1.2.2, "two cards"→"four",
+3 entry IIFE, albero src con quick-timer-card.js + lz-string.js). Aggiunto `.github/workflows/release.yml`
+(`workflow_dispatch`) che builda i 3 bundle e crea la release con gli asset (il proxy git locale blocca il
+push dei tag → la release va lanciata da Actions). Build OK, `check` verde sui 3 bundle.
 2026-06-22 Rome (fix: quick-timer-card missing for HACS users) — added `import './quick-timer-card.js'`
 in `src/weekly-schedule-card.js` so the main HACS bundle now includes all four custom elements
 (`weekly-schedule-card`, `weekly-schedule-view-card`, `weekly-schedule-mini-card`, `quick-timer-card`).
