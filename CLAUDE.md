@@ -5,8 +5,9 @@ Ecco il CLAUDE.md riscritto per minimizzare i token e massimizzare l'efficienza:
 
 ## Stack
 Vanilla JS custom element, **build con Rollup** (IIFE bundle).
-`src/*.js` → `npm run build` → `dist/*.js` (2 file IIFE auto-contenuti).
-Deploy: copiare `dist/weekly-schedule-card.js` + `dist/weekly-schedule-view-card.js` in HA `/config/www/`.
+`src/*.js` → `npm run build` → `dist/*.js` (3 file IIFE auto-contenuti).
+Deploy: copiare `dist/weekly-schedule-card.js` + `dist/weekly-schedule-view-card.js` + `dist/quick-timer-card.js` in HA `/config/www/`.
+Il bundle principale (`weekly-schedule-card.js`) include già la view card, la mini card **e la quick-timer-card** (via import in `src/weekly-schedule-card.js`) — HACS fornisce tutte e 4 le card con un solo file.
 **NON** copiare `base-card.js` in dist: viene inglobato nel bundle dal rollup.
 
 ## Workflow obbligatorio
@@ -346,6 +347,11 @@ notifications:
 
 ## Last modified
 always update last modified date with day an hour Rome utc
+2026-06-22 Rome (fix: quick-timer-card missing for HACS users) — added `import './quick-timer-card.js'`
+in `src/weekly-schedule-card.js` so the main HACS bundle now includes all four custom elements
+(`weekly-schedule-card`, `weekly-schedule-view-card`, `weekly-schedule-mini-card`, `quick-timer-card`).
+Previously HACS only delivered the main bundle (`hacs.json filename: weekly-schedule-card.js`) and
+the quick-timer-card was never inlined, leaving HACS users without it. Bundle grew ~15 KB (+6%).
 2026-06-22 Rome (v1.2.1 conditional-override fix) — fixed: conditional schedules whose condition is
 FALSE at slot start got the override flag stuck `off`, so when the condition later became true the
 ACTIVE action never re-applied. Root cause: the Scheduler's own slot-start apply is a ROOT context

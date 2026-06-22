@@ -143,10 +143,11 @@ presets: [5, 10, 15, 30, 45, 60]   # optional minute chips
 
 1. Add this repository as a **Custom Repository** in HACS → Frontend.
 2. Install. HACS deploys and registers the main bundle automatically.
-3. Since **v1.0.1** the main bundle bundles **all three** custom elements
+3. Since **v1.2.1** the main bundle bundles **all four** custom elements
    (`weekly-schedule-card`, `weekly-schedule-view-card`,
-   `weekly-schedule-mini-card`), so the single resource HACS registers exposes
-   every card — no extra Lovelace resource needed. Just hard-refresh after install.
+   `weekly-schedule-mini-card`, `quick-timer-card`), so the single resource
+   HACS registers exposes every card — no extra Lovelace resource needed.
+   Just hard-refresh after install.
 
 ### Manual
 
@@ -171,17 +172,18 @@ resources:
     type: module
 ```
 
-The main bundle inlines the view and mini cards, so this single resource is
-enough. If you prefer the lighter **standalone view bundle** (read-only, no
-editor code), register it instead/in addition:
+The main bundle inlines the view, mini and quick-timer cards, so this single
+resource is enough. If you prefer the lighter **standalone view bundle**
+(read-only, no editor code), register it instead/in addition:
 
 ```yaml
   - url: /local/weekly-schedule-view-card.js
     type: module
 ```
 
-The **`quick-timer-card`** ships as its **own** bundle (not inlined in the main
-one), so to use it register it as an extra resource:
+The **`quick-timer-card`** is included in the main bundle. If you want only
+the quick-timer card (without the full schedule editor), it also ships as a
+**standalone bundle** — register it as a separate resource:
 
 ```yaml
   - url: /local/quick-timer-card.js
