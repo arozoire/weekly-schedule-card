@@ -124,8 +124,13 @@ Letto in Jinja con `states('automation.wsc_ovrflag_<slug>') != 'off'` (unknown/m
 trigger con `id` (`slot` = current_slot/turn_on, `eval` = time_pattern+entità cond,
 `manual` = entità target), top-level condition rilassata (solo `state != 'off'`; in-slot per ramo),
 `mode: queued`. Action `choose`:
-- ramo **manual+detect**: in-slot + `trigger.to_state.context.parent_id is none` + guardia 5s
-  (`now() - schedule.last_changed > 5`) + flag non già off → `automation.turn_off` flag.
+- ramo **manual+detect** (v1.2.1 VALUE-BASED): in-slot + **condizione soddisfatta** (`condMetPlain`,
+  versione senza isteresi) + `parent_id is none AND not(matchExpr)` + flag non già off → `automation.turn_off`
+  flag. `matchExpr` = `_activeValueMatchExpr(ps)` (TRUE se l'entità è già al valore attivo: on/off,
+  climate temp/hvac, cover pos/stato — dimensioni ESATTE). Override = cambio root-context (UI **o**
+  fisico) verso un valore ≠ attivo; l'apply dello Scheduler porta al valore attivo → escluso (NIENTE
+  falso positivo). Se `matchExpr` è null (cover stop/dominio esotico) → fallback solo-UI:
+  `parent_id is none AND user_id is not none`. **Rimossa la racy guardia 5s su `last_changed`.**
 - ramo **manual no-op**: ogni altro trigger `manual` (cambio "macchina": nostro o scheduler) → `[]`
   (evita il fall-through al re-apply del default).
 - ramo **slot**: `automation.turn_on` flag (reset) + se in-slot → met→active / not-met→inactive.
@@ -143,8 +148,12 @@ template/turn_off puntano a un'entità inesistente e l'override non scatta mai. 
 "Annulla override" risolve l'automazione condizioni via `attributes.id` a runtime, non costruendo
 `automation.<id>`. (`initial_state:true` + trigger `{{ false }}` + `action:[]` accettati: OK.)
 
-**Da validare in HA**: `context.parent_id` dell'applicazione scheduler a inizio slot (decide se la
-guardia 5s serve o si toglie).
+**✅ RISOLTO (v1.2.1)**: l'apply dello Scheduler a inizio slot è un contesto ROOT (`parent_id is None`,
+identico a un cambio manuale) e la guardia 5s era racy (`last_changed` non cambia su slot back-to-back;
+race `slot`=flag-on vs falso `manual`=flag-off in `mode: queued`) → su alcuni schedule il flag restava
+`off` e con condizione poi vera l'ATTIVA non ripartiva. Fix: rilevamento **value-based** (sopra) — niente
+più `parent_id`+5s da soli. Limiti: override fine su brightness/color/speed NON rilevato; cover stop /
+domini esotici → detect solo da UI (`user_id`); cover position con tolleranza ±2 + guardia opening/closing.
 
 ## Profili storage — CONDIVISO tra utenti (input_text globali, v1.1.8)
 Persistenza in helper **`input_text` GLOBALI** (stati condivisi tra TUTTI gli utenti HA,
@@ -204,23 +213,37 @@ Per evitare N scritture+eventi per una singola operazione utente:
   `_duplicateProfile`, `_cancelNewProfile`, `_cleanupOrphanAutomations`. Le `_wsSet` FUORI
   transazione restano scritture immediate (rename profilo, gruppi, `_ensureDefaultProfile`, ecc.).
 
-## Quick Timer Card (`custom:quick-timer-card`, v1.2.0)
-Card a entità singola (`src/quick-timer-card.js`, `extends WeeklyScheduleBase`): **card HA nativa
-incorporata** (`tile` via `window.loadCardHelpers()`→`createCardElement`) per il controllo diretto +
-pannello **Timer** che applica un valore TEMPORANEO per durata/orario, poi ripristina lo stato di prima.
+## Quick Timer Card (`custom:quick-timer-card`, v1.2.1)
+Card a entità singola (`src/quick-timer-card.js`, `extends WeeklyScheduleBase`) in **UN'unica
+`ha-card` senza divisori** (`.qt-card` → `.qt-when` scelta durata in alto, `.qt-native` card HA
+incorporata al centro, `.qt-foot` Avvia/countdown in fondo).
+- **"Il controllo arma il timer"** (v1.2.1, ridisegno): NIENTE più UI di selezione valore. Il
+  valore (on/off, temp, %, colore) lo imposta l'utente col **controllo nativo** (set reale
+  sull'entità); il pannello sceglie solo per **quanto** tenerlo. Avvia NON applica azioni: crea
+  solo l'automazione di ripristino. Rimossi `_targetHtml`/`_onoffHtml`/`_readTarget`/`_targetLabel`.
+- **Card nativa configurabile** (v1.2.1): `_buildNativeCardConfig()` — blocco YAML `card:` con
+  config completa di qualsiasi card HA (es. `type: thermostat`), default = tile auto per dominio
+  (retrocompat `tile:`). `entity` di default = `config.entity`. Chrome della card incorporata
+  neutralizzata via CSS vars ereditate (`--ha-card-box-shadow/border-width/border-radius/background`).
+- **Baseline di ripristino** (v1.2.1): per tornare allo stato PRIMA della modifica, `_trackBaseline()`
+  (in `set hass`) tiene `_settledRestore` = restore dell'ultimo stato **stabile**; durante una
+  raffica di modifiche NON aggiorna (firma = `JSON.stringify(_buildRestoreActions)`), allo scadere
+  del debounce `_BASELINE_SETTLE_MS` (30s) il nuovo stato diventa baseline; congelato a timer attivo.
+  ⚠️ se modifichi e aspetti >30s prima di Avviare, il baseline avanza (ripristino = no-op).
 - **NIENTE scene**: ripristino con azioni esplicite `_buildRestoreActions(eid)` (legge `hass.states`
   per dominio) cucite in un'automazione **transitoria** `qt_timer_<slug>` (delay + guardia + restore).
-- **Overlap "vince l'ultimo attivato"**: guardia template nell'automazione (adatta quella auto-off
-  riga ~771) → salta il revert se uno `switch.schedule_*` è entrato in slot DOPO l'avvio
-  (`last_changed > now()-durata`).
+- **Overlap "vince l'ultimo attivato"**: guardia template nell'automazione → salta il revert se uno
+  `switch.schedule_*` è entrato in slot DOPO l'avvio (`last_changed > now()-durata`).
 - **Auto-pulizia**: automazione eliminata ~30s dopo `endTs` (buffer) o subito all'Annulla; GC su
   load (`_cleanupFinishedTimers`). A riposo nessun artefatto.
 - **Storage condiviso**: timer attivi in `_sharedSet('quick_timer_card', {timers})` (prefisso helper
   `wsc_qt_store`) → countdown/annulla cross-device. `set hass` refetch su cambio `input_text.wsc_qt_store_*`.
 - "Annulla" = **ripristina subito** (replay delle `restore` salvate nel record). Durata **o** Fine alle.
+- **Config solo YAML** (nessun `getConfigElement`). Opzioni: `entity` (obbl.), `card` (config card
+  nativa), `name`, `presets` (array minuti), `default_minutes`, `language`.
 - Override `setConfig`/`set hass`/`render`/`connected/disconnectedCallback` (NON usa schedule/profili).
-  Riusa `_detectDomain`,`_entityCaps`,`_buildScheduleActions`,`_colorPickerHTML`,`_hexToRgb`,
-  `_recreateAutomation`,`_setStyles`,`t`,`_esc`. LOCALES: blocco `qtimer.*` (en/it/fr) in base-card.
+  Riusa `_detectDomain`,`_entityCaps`,`_buildRestoreActions`,`_recreateAutomation`,`_setStyles`,`t`,`_esc`.
+  LOCALES: blocco `qtimer.*` (en/it/fr) in base-card.
 - Limiti: ripristino esplicito best-effort su attributi esotici (effetti/transizioni); `delay` non
   sopravvive a riavvio HA a metà timer; `loadCardHelpers` richiede Lovelace standard.
 
@@ -323,6 +346,30 @@ notifications:
 
 ## Last modified
 always update last modified date with day an hour Rome utc
+2026-06-22 Rome (v1.2.1 conditional-override fix) — fixed: conditional schedules whose condition is
+FALSE at slot start got the override flag stuck `off`, so when the condition later became true the
+ACTIVE action never re-applied. Root cause: the Scheduler's own slot-start apply is a ROOT context
+(`parent_id is None`, looks manual) and the 5s `last_changed` guard was racy (stale on back-to-back
+slots; `slot`=flag-on vs false `manual`=flag-off race under `mode: queued`). Fix = **value-based**
+override detection: new `_activeValueMatchExpr(ps)` (TRUE when the entity already holds the active
+value — exact dims only: on/off, climate temp/hvac, cover pos/state); detect branch now uses
+`parent_id is none AND not(matchExpr)` + condition-met (plain, no hysteresis), 5s guard removed.
+Catches UI **and** physical changes; the Scheduler apply (value==active) is excluded. Fallback to
+`user_id is not none` when no comparable value (cover stop / exotic domain). Limits: fine brightness/
+color/speed override not detected; cover position ±2 tolerance + moving guard. Build OK, `check` green.
+2026-06-22 Rome (v1.2.1 quick-timer redesign) — quick-timer-card rebuilt per user feedback:
+(1) **"control arms the timer"** — removed the value-selection UI; the user sets the value via the
+embedded native control (real set), the panel only picks the duration. Start no longer applies any
+action, it just creates the restore automation. New `_trackBaseline()` keeps `_settledRestore` =
+last *stable* state (debounce `_BASELINE_SETTLE_MS=30s`, frozen while a timer is active) so the
+restore targets the pre-edit state; `_heldLabel(eid)` for the active label. Dropped
+`_targetHtml/_onoffHtml/_readTarget/_targetLabel`. (2) **single seamless `ha-card`** (no divider):
+`.qt-when` (duration, top) → `.qt-native` (native card, middle) → `.qt-foot` (Start/countdown,
+bottom); embedded card chrome neutralized via inherited `--ha-card-*` CSS vars. (3) **YAML-only
+config** (no editor) — documented options. (4) **configurable native card**: `_buildTileConfig` →
+`_buildNativeCardConfig` supporting a YAML `card:` block (any HA card, e.g. `type: thermostat`),
+default auto-tile (back-compat `tile:`). Build OK (3 IIFE bundles), `check` green. To validate in
+HA: no spontaneous revert on direct control; hold+restore; cancel-now; `card:` override; tune 30s.
 2026-06-20 16:30 Rome (v1.2.0 quick-timer card) — **NEW `custom:quick-timer-card`**
 (`src/quick-timer-card.js`, 3rd rollup entry → `dist/quick-timer-card.js`). Single-entity card:
 native HA `tile` embedded via `loadCardHelpers` for direct control + a **Timer** panel that holds a

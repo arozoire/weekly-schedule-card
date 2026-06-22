@@ -1,10 +1,12 @@
 // src/quick-timer-card.js
-// Last modified: 2026-06-20 Rome (v1.2.0 quick-timer card)
+// Last modified: 2026-06-22 Rome (v1.2.1 quick-timer card redesign)
 //
-// Card legata a UNA entità: card HA nativa (tile) incorporata per il controllo diretto +
-// pannello "Timer" che applica un valore TEMPORANEO per una durata / fino a un orario, poi
-// ripristina lo stato precedente (azioni di ripristino esplicite cucite in un'automazione
-// transitoria — NIENTE scene). Overlap con schedule: vince l'ultimo attivato (guardia al revert).
+// Card legata a UNA entità, in UN'unica ha-card (no divisori): scelta durata in alto → card HA
+// nativa incorporata (configurabile via blocco `card:` in YAML, default tile) per impostare il
+// valore → pulsante Avvia in fondo. "Il controllo arma il timer": il valore lo imposta l'utente
+// col controllo nativo (set reale), Avvia crea solo un'automazione transitoria che dopo la durata
+// RIPRISTINA lo stato precedente (baseline: ultimo stato stabile, debounce 30s — NIENTE scene).
+// Overlap con schedule: vince l'ultimo attivato (guardia al revert).
 
 import WeeklyScheduleBase from './base-card.js';
 
@@ -18,6 +20,13 @@ class QuickTimerCard extends WeeklyScheduleBase {
     this._loadingTimers = false;
     this._timerMode = 'duration'; // 'duration' | 'until'
     this._timerMinutes = 30;
+    // baseline di ripristino: ultimo stato "stabile" dell'entità (azioni restore) usato come
+    // ripristino quando si arma il timer. Si aggiorna quando lo stato è fermo da SETTLE_MS.
+    this._settledRestore = null;
+    this._lastSig = null;
+    this._baselineDebounce = null;
+    this._baselineInit = false;
+    this._BASELINE_SETTLE_MS = 30000;
   }
 
   setConfig(config) {
@@ -27,6 +36,11 @@ class QuickTimerCard extends WeeklyScheduleBase {
     this._presets = Array.isArray(config.presets) && config.presets.length ? config.presets : [5, 10, 15, 30, 45, 60];
     this._timerMinutes = config.default_minutes || this._presets[0] || 30;
     this._childCard = null; // forza rebuild della card nativa al cambio config
+    // reset baseline (l'entità o la card potrebbero essere cambiate)
+    this._baselineInit = false;
+    this._settledRestore = null;
+    this._lastSig = null;
+    if (this._baselineDebounce) { clearTimeout(this._baselineDebounce); this._baselineDebounce = null; }
   }
 
   getCardSize() { return 4; }
@@ -38,6 +52,7 @@ class QuickTimerCard extends WeeklyScheduleBase {
     this._prevHass = hass;
     this._hass = hass;
     if (this._childCard) this._childCard.hass = hass;
+    this._trackBaseline();
 
     if (this._timers === null && !this._loadingTimers) {
       this._loadingTimers = true;
@@ -111,27 +126,66 @@ class QuickTimerCard extends WeeklyScheduleBase {
     return h > 0 ? `${h}:${p(m)}:${p(s)}` : `${p(m)}:${p(s)}`;
   }
 
+  // ── Baseline di ripristino ─────────────────────────────────────────────────
+  // Il controllo nativo cambia l'entità "live": per ripristinare lo stato PRIMA che
+  // l'utente toccasse il controllo, teniamo l'ultimo stato stabile. Durante una raffica
+  // di modifiche NON aggiorniamo il baseline (resta il valore pre-raffica); quando lo
+  // stato resta fermo per SETTLE_MS il nuovo stato diventa il baseline.
+
+  _trackBaseline() {
+    const eid = this._entity;
+    if (!eid || !this._hass) return;
+    const st = this._hass.states[eid];
+    if (!st) return;
+    if (this._activeTimer()) return;          // congelato: il restore è già nel record del timer
+    const restore = this._buildRestoreActions(eid);
+    const sig = JSON.stringify(restore);
+    if (!this._baselineInit) {
+      this._settledRestore = restore;
+      this._lastSig = sig;
+      this._baselineInit = true;
+      return;
+    }
+    if (sig === this._lastSig) return;        // nessun cambiamento
+    this._lastSig = sig;                      // NON tocco _settledRestore: resta lo stato pre-modifica
+    if (this._baselineDebounce) clearTimeout(this._baselineDebounce);
+    this._baselineDebounce = setTimeout(() => {
+      this._baselineDebounce = null;
+      if (!this._activeTimer()) this._settledRestore = this._buildRestoreActions(eid);
+    }, this._BASELINE_SETTLE_MS);
+  }
+
   // ── Render ────────────────────────────────────────────────────────────────
 
   render() {
     if (!this._hass) return;
     this._setStyles('qt', this._styles());
-    let wrap = this.shadowRoot.querySelector('.qt-wrap');
-    if (!wrap) {
-      wrap = document.createElement('div');
-      wrap.className = 'qt-wrap';
-      wrap.innerHTML = `<div class="qt-native"></div><ha-card class="qt-timer-card"><div class="qt-panel"></div></ha-card>`;
-      this.shadowRoot.appendChild(wrap);
+    let card = this.shadowRoot.querySelector('.qt-card');
+    if (!card) {
+      card = document.createElement('ha-card');
+      card.className = 'qt-card';
+      // ordine: scelta timer in alto → card nativa al centro → Avvia/countdown in fondo
+      card.innerHTML = `<div class="qt-when"></div><div class="qt-native"></div><div class="qt-foot"></div>`;
+      this.shadowRoot.appendChild(card);
     }
+    const when = card.querySelector('.qt-when');
+    const foot = card.querySelector('.qt-foot');
     if (!this._entity) {
-      wrap.querySelector('.qt-native').innerHTML = '';
-      wrap.querySelector('.qt-panel').innerHTML = `<div class="qt-title">${this.t('qtimer.timer')}</div><div class="qt-hint">${this.t('qtimer.no_entity')}</div>`;
+      card.querySelector('.qt-native').innerHTML = '';
+      when.innerHTML = '';
+      foot.innerHTML = `<div class="qt-title"><ha-icon icon="mdi:timer-outline"></ha-icon> ${this.t('qtimer.timer')}</div><div class="qt-hint">${this.t('qtimer.no_entity')}</div>`;
       return;
     }
     this._ensureChildCard();
-    const panel = wrap.querySelector('.qt-panel');
-    panel.innerHTML = this._panelHtml();
-    this._bindPanel(panel);
+    const active = this._activeTimer();
+    if (active) {
+      when.innerHTML = '';
+      foot.innerHTML = this._activeHtml(active);
+    } else {
+      when.innerHTML = `<div class="qt-title"><ha-icon icon="mdi:timer-outline"></ha-icon> ${this.t('qtimer.timer')}</div>${this._whenHtml()}`;
+      foot.innerHTML = `<button class="qt-start"><ha-icon icon="mdi:play"></ha-icon> ${this.t('qtimer.start')}</button>`;
+    }
+    this._bindPanel(card);
     this._syncTick();
   }
 
@@ -140,7 +194,7 @@ class QuickTimerCard extends WeeklyScheduleBase {
     this._childBuilding = true;
     try {
       const helpers = await window.loadCardHelpers();
-      const el = helpers.createCardElement(this._buildTileConfig());
+      const el = helpers.createCardElement(this._buildNativeCardConfig());
       el.hass = this._hass;
       this._childCard = el;
       const host = this.shadowRoot.querySelector('.qt-native');
@@ -152,7 +206,10 @@ class QuickTimerCard extends WeeklyScheduleBase {
     } finally { this._childBuilding = false; }
   }
 
-  _buildTileConfig() {
+  _buildNativeCardConfig() {
+    // YAML: blocco `card:` con la config completa di qualsiasi card HA (type + opzioni).
+    // L'entity di default è quella della quick-timer-card (l'eventuale entity nel blocco vince).
+    if (this._config.card) return { entity: this._entity, ...this._config.card };
     if (this._config.tile) return { type: 'tile', entity: this._entity, ...this._config.tile };
     const dom = this._detectDomain(this._entity);
     const caps = this._entityCaps(this._entity);
@@ -175,76 +232,15 @@ class QuickTimerCard extends WeeklyScheduleBase {
     return cfg;
   }
 
-  _panelHtml() {
-    const t = this._activeTimer();
-    if (t) {
-      return `<div class="qt-title"><ha-icon icon="mdi:timer-outline"></ha-icon> ${this.t('qtimer.timer')}</div>
-        <div class="qt-active">
-          <ha-icon class="qt-active-ic" icon="mdi:timer-sand"></ha-icon>
-          <div class="qt-active-info">
-            <div class="qt-countdown">${this._fmtRemaining(t.endTs - Date.now())}</div>
-            <div class="qt-active-lbl">${this.t('qtimer.holding')}${t.label ? ` · ${this._esc(t.label)}` : ''}</div>
-          </div>
-          <button class="qt-cancel">${this.t('qtimer.cancel')}</button>
-        </div>`;
-    }
-    return `<div class="qt-title"><ha-icon icon="mdi:timer-outline"></ha-icon> ${this.t('qtimer.timer')}</div>
-      <div class="qt-target">${this._targetHtml()}</div>
-      ${this._whenHtml()}
-      <button class="qt-start"><ha-icon icon="mdi:play"></ha-icon> ${this.t('qtimer.start')}</button>`;
-  }
-
-  _onoffHtml(defOn) {
-    return `<div class="qt-seg qt-onoff-wrap">
-      <button class="qt-onoff${defOn ? ' sel' : ''}" data-val="on">${this.t('qtimer.on')}</button>
-      <button class="qt-onoff${!defOn ? ' sel' : ''}" data-val="off">${this.t('qtimer.off')}</button>
-    </div>`;
-  }
-
-  _targetHtml() {
-    const eid = this._entity;
-    const dom = this._detectDomain(eid);
-    const caps = this._entityCaps(eid);
-    const a = this._hass.states[eid]?.attributes || {};
-    if (dom === 'climate') {
-      const cur = a.temperature ?? 21;
-      return `<label class="qt-lbl">${this.t('qtimer.temperature')}</label>
-        <div class="qt-row">
-          <input type="range" class="qt-temp-rng" min="5" max="35" step="0.5" value="${cur}">
-          <input type="number" class="qt-temp" min="5" max="100" step="0.5" value="${cur}"><span class="qt-unit">°C</span>
-        </div>`;
-    }
-    if (dom === 'light') {
-      let h = this._onoffHtml(true);
-      if (caps.lightBrightness) {
-        const bri = a.brightness != null ? Math.max(1, Math.round(a.brightness / 255 * 100)) : 100;
-        h += `<label class="qt-lbl">${this.t('qtimer.brightness')}</label><input type="range" class="qt-bri" min="1" max="100" value="${bri}">`;
-      }
-      if (caps.lightRgb) {
-        const cur = a.rgb_color ? this._rgbToHex(a.rgb_color) : '#FFFFFF';
-        h += `<label class="qt-lbl">${this.t('qtimer.color')}</label>${this._colorPickerHTML(cur, 'qt-col')}`;
-      }
-      return h;
-    }
-    if (dom === 'fan') {
-      let h = this._onoffHtml(true);
-      if (caps.fanSpeed) {
-        const sp = a.percentage ?? 100;
-        h += `<label class="qt-lbl">${this.t('qtimer.speed')}</label><input type="range" class="qt-speed" min="1" max="100" value="${sp}">`;
-      }
-      return h;
-    }
-    if (dom === 'cover') {
-      let h = `<div class="qt-seg qt-cover-seg">
-        <label><input type="radio" name="qt-cover" value="open"> ${this.t('qtimer.open')}</label>
-        <label><input type="radio" name="qt-cover" value="close" checked> ${this.t('qtimer.close')}</label>
-        <label><input type="radio" name="qt-cover" value="stop"> ${this.t('qtimer.stop')}</label>`;
-      if (caps.coverPosition) h += `<label><input type="radio" name="qt-cover" value="position"> ${this.t('qtimer.position')}</label>`;
-      h += `</div>`;
-      if (caps.coverPosition) { const pos = a.current_position ?? 50; h += `<input type="range" class="qt-pos" min="0" max="100" value="${pos}">`; }
-      return h;
-    }
-    return this._onoffHtml(true);
+  _activeHtml(t) {
+    return `<div class="qt-active">
+        <ha-icon class="qt-active-ic" icon="mdi:timer-sand"></ha-icon>
+        <div class="qt-active-info">
+          <div class="qt-countdown">${this._fmtRemaining(t.endTs - Date.now())}</div>
+          <div class="qt-active-lbl">${this.t('qtimer.holding')}${t.label ? ` · ${this._esc(t.label)}` : ''}</div>
+        </div>
+        <button class="qt-cancel">${this.t('qtimer.cancel')}</button>
+      </div>`;
   }
 
   _whenHtml() {
@@ -268,65 +264,26 @@ class QuickTimerCard extends WeeklyScheduleBase {
 
   // ── Binding ───────────────────────────────────────────────────────────────
 
-  _bindPanel(panel) {
-    panel.querySelector('.qt-cancel')?.addEventListener('click', () => this._cancelTimer(this._entity));
-    panel.querySelector('.qt-start')?.addEventListener('click', () => this._startTimer(panel));
+  _bindPanel(root) {
+    root.querySelector('.qt-cancel')?.addEventListener('click', () => this._cancelTimer(this._entity));
+    root.querySelector('.qt-start')?.addEventListener('click', () => this._startTimer(root));
 
-    panel.querySelectorAll('.qt-onoff-wrap').forEach(wrap => {
-      wrap.querySelectorAll('.qt-onoff').forEach(b => b.addEventListener('click', () => {
-        wrap.querySelectorAll('.qt-onoff').forEach(x => x.classList.remove('sel'));
-        b.classList.add('sel');
-      }));
-    });
-
-    const rng = panel.querySelector('.qt-temp-rng'), num = panel.querySelector('.qt-temp');
-    if (rng && num) {
-      rng.addEventListener('input', () => { num.value = rng.value; });
-      num.addEventListener('input', () => { rng.value = num.value; });
-    }
-
-    panel.querySelectorAll('.qt-chip').forEach(c => c.addEventListener('click', () => {
+    root.querySelectorAll('.qt-chip').forEach(c => c.addEventListener('click', () => {
       this._timerMinutes = parseInt(c.dataset.min, 10);
       this.render();
     }));
-    const custom = panel.querySelector('.qt-custom');
+    const custom = root.querySelector('.qt-custom');
     custom?.addEventListener('input', () => {
       const v = parseInt(custom.value, 10);
-      if (v > 0) { this._timerMinutes = v; panel.querySelectorAll('.qt-chip').forEach(x => x.classList.remove('sel')); }
+      if (v > 0) { this._timerMinutes = v; root.querySelectorAll('.qt-chip').forEach(x => x.classList.remove('sel')); }
     });
-    panel.querySelectorAll('.qt-when-tab').forEach(tb => tb.addEventListener('click', () => {
+    root.querySelectorAll('.qt-when-tab').forEach(tb => tb.addEventListener('click', () => {
       this._timerMode = tb.dataset.mode;
       this.render();
     }));
-    this._bindColorPalettes(panel);
   }
 
-  // ── Lettura target / durata ───────────────────────────────────────────────
-
-  _readTarget(panel) {
-    const eid = this._entity;
-    const dom = this._detectDomain(eid);
-    const ps = { entityConf: { entity: eid }, domain: dom };
-    const onSel = () => panel.querySelector('.qt-onoff.sel')?.dataset.val === 'on';
-    if (dom === 'climate') {
-      ps.enableTemp = true; ps.temp = parseFloat(panel.querySelector('.qt-temp')?.value) || 21;
-    } else if (dom === 'light') {
-      ps.turnOn = onSel();
-      if (ps.turnOn) {
-        const bri = panel.querySelector('.qt-bri'); if (bri) { ps.enableBrightness = true; ps.brightness = parseInt(bri.value, 10); }
-        const col = panel.querySelector('.qt-col .pal-value'); if (col) { ps.enableColor = true; ps.color = col.value; }
-      }
-    } else if (dom === 'fan') {
-      ps.turnOn = onSel();
-      if (ps.turnOn) { const sp = panel.querySelector('.qt-speed'); if (sp) { ps.enableSpeed = true; ps.speed = parseInt(sp.value, 10); } }
-    } else if (dom === 'cover') {
-      ps.coverAction = panel.querySelector('input[name="qt-cover"]:checked')?.value || 'close';
-      if (ps.coverAction === 'position') ps.position = parseInt(panel.querySelector('.qt-pos')?.value, 10);
-    } else {
-      ps.turnOn = onSel();
-    }
-    return ps;
-  }
+  // ── Lettura durata / etichetta ────────────────────────────────────────────
 
   _readDurationSeconds(panel) {
     if (this._timerMode === 'until') {
@@ -341,10 +298,18 @@ class QuickTimerCard extends WeeklyScheduleBase {
     return Math.round((this._timerMinutes || 0) * 60);
   }
 
-  _targetLabel(ps) {
-    if (ps.domain === 'climate') return `${ps.temp}°C`;
-    if (ps.domain === 'cover') return this.t('qtimer.cover_' + (ps.coverAction || 'close')) || ps.coverAction;
-    return ps.turnOn ? this.t('qtimer.on') : this.t('qtimer.off');
+  _heldLabel(eid) {
+    const st = this._hass.states[eid];
+    if (!st) return '';
+    const dom = this._detectDomain(eid);
+    const a = st.attributes || {};
+    if (dom === 'climate') return a.temperature != null ? `${a.temperature}°C` : (st.state || '');
+    if (dom === 'cover') return a.current_position != null ? `${a.current_position}%` : st.state;
+    if ((dom === 'light' || dom === 'fan') && st.state === 'on') {
+      const pct = dom === 'fan' ? a.percentage : (a.brightness != null ? Math.round(a.brightness / 255 * 100) : null);
+      return pct != null ? `${pct}%` : this.t('qtimer.on');
+    }
+    return st.state === 'off' ? this.t('qtimer.off') : this.t('qtimer.on');
   }
 
   // ── Azioni di ripristino esplicite (NIENTE scene) ─────────────────────────
@@ -423,25 +388,25 @@ class QuickTimerCard extends WeeklyScheduleBase {
 
   // ── Avvio / annullo / pulizia ─────────────────────────────────────────────
 
-  async _startTimer(panel) {
+  async _startTimer(root) {
     if (!this._entity) return;
     const eid = this._entity;
-    const durationS = this._readDurationSeconds(panel);
+    const durationS = this._readDurationSeconds(root);
     if (!durationS || durationS < 1) { await this._alert(this.t('qtimer.bad_duration')); return; }
-    const ps = this._readTarget(panel);
-    const targetActions = this._buildScheduleActions(ps);
+    // Il valore "tenuto" è quello impostato dall'utente col controllo nativo (già applicato):
+    // qui creiamo solo il ripristino verso il baseline (stato pre-modifica).
     const existing = this._activeTimer();
-    const restore = existing?.restore || this._buildRestoreActions(eid);
+    const restore = existing?.restore || this._settledRestore || this._buildRestoreActions(eid);
+    if (!restore || !restore.length) { await this._alert(this.t('qtimer.start_failed')); return; }
 
     try {
-      for (const a of targetActions) await this._callAction(a);
       const autoId = `qt_timer_${this._slug(eid)}`;
       await this._recreateAutomation(autoId, this._buildTimerAutomation(eid, autoId, durationS, restore));
       const ent = await this._resolveAutomationEntity(autoId);
       try { await this._hass.callService('automation', 'trigger', { entity_id: ent }); }
       catch (e) { console.error('QT trigger failed', e); }
       this._timers = this._timers || {};
-      this._timers[eid] = { endTs: Date.now() + durationS * 1000, autoId, restore, label: this._targetLabel(ps), durationS };
+      this._timers[eid] = { endTs: Date.now() + durationS * 1000, autoId, restore, label: this._heldLabel(eid), durationS };
       this._expiredRendered = false;
       await this._saveTimers();
     } catch (e) {
@@ -486,26 +451,25 @@ class QuickTimerCard extends WeeklyScheduleBase {
 
   _styles() {
     return `
-      .qt-wrap{display:flex;flex-direction:column;gap:8px}
-      .qt-timer-card{padding:14px 16px}
-      .qt-title{display:flex;align-items:center;gap:6px;font-weight:600;font-size:.95em;color:var(--primary-text-color);margin-bottom:10px}
+      .qt-card{display:flex;flex-direction:column}
+      .qt-when{padding:14px 16px 6px}
+      .qt-when:empty{padding:0}
+      /* card nativa incorporata: fusa nella card (niente bordo/ombra/sfondo propri) */
+      .qt-native{--ha-card-box-shadow:none;--ha-card-border-width:0px;--ha-card-border-radius:0px;--ha-card-background:transparent;--card-background-color:transparent}
+      .qt-foot{padding:6px 16px 14px}
+      .qt-title{display:flex;align-items:center;gap:6px;font-weight:600;font-size:.95em;color:var(--primary-text-color)}
       .qt-title ha-icon{--mdc-icon-size:20px;color:var(--primary-color)}
-      .qt-hint{font-size:.85em;color:var(--secondary-text-color)}
-      .qt-lbl{display:block;font-size:.75em;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--secondary-text-color);margin:8px 0 4px}
-      .qt-row{display:flex;align-items:center;gap:8px}
-      .qt-unit{font-size:.9em;color:var(--secondary-text-color)}
-      .qt-target input[type=range]{flex:1;width:100%}
-      .qt-temp{width:64px;padding:4px;border:1px solid var(--divider-color);border-radius:6px;background:var(--card-background-color);color:var(--primary-text-color)}
-      .qt-seg{display:flex;flex-wrap:wrap;gap:6px;margin:4px 0}
-      .qt-onoff,.qt-when-tab,.qt-chip{cursor:pointer;border:1px solid var(--divider-color);background:var(--card-background-color);color:var(--primary-text-color);border-radius:8px;padding:6px 12px;font-size:.85em;font-weight:600}
-      .qt-onoff.sel,.qt-when-tab.sel,.qt-chip.sel{background:var(--primary-color);color:var(--text-primary-color,#fff);border-color:var(--primary-color)}
-      .qt-cover-seg label{display:flex;align-items:center;gap:4px;font-size:.85em;color:var(--primary-text-color)}
+      .qt-hint{font-size:.85em;color:var(--secondary-text-color);margin-top:6px}
+      .qt-lbl{font-size:.75em;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--secondary-text-color)}
+      .qt-row{display:flex;align-items:center;gap:8px;margin-top:6px}
+      .qt-when-tab,.qt-chip{cursor:pointer;border:1px solid var(--divider-color);background:var(--card-background-color);color:var(--primary-text-color);border-radius:8px;padding:6px 12px;font-size:.85em;font-weight:600}
+      .qt-when-tab.sel,.qt-chip.sel{background:var(--primary-color);color:var(--text-primary-color,#fff);border-color:var(--primary-color)}
       .qt-when-tabs{display:flex;gap:6px;margin:10px 0 8px}
       .qt-chips{display:flex;flex-wrap:wrap;align-items:center;gap:6px}
       .qt-custom{width:64px;padding:6px;border:1px solid var(--divider-color);border-radius:8px;background:var(--card-background-color);color:var(--primary-text-color)}
       .qt-min{font-size:.85em;color:var(--secondary-text-color)}
       .qt-until{padding:6px;border:1px solid var(--divider-color);border-radius:8px;background:var(--card-background-color);color:var(--primary-text-color)}
-      .qt-start{display:flex;align-items:center;justify-content:center;gap:6px;width:100%;margin-top:12px;padding:10px;border:none;border-radius:10px;background:var(--primary-color);color:var(--text-primary-color,#fff);font-size:.9em;font-weight:600;cursor:pointer}
+      .qt-start{display:flex;align-items:center;justify-content:center;gap:6px;width:100%;padding:10px;border:none;border-radius:10px;background:var(--primary-color);color:var(--text-primary-color,#fff);font-size:.9em;font-weight:600;cursor:pointer}
       .qt-start ha-icon{--mdc-icon-size:18px}
       .qt-start:hover{filter:brightness(.95)}
       .qt-active{display:flex;align-items:center;gap:12px}
@@ -515,9 +479,6 @@ class QuickTimerCard extends WeeklyScheduleBase {
       .qt-active-lbl{font-size:.8em;color:var(--secondary-text-color)}
       .qt-cancel{border:1px solid var(--error-color,#f44336);color:var(--error-color,#f44336);background:none;border-radius:8px;padding:8px 14px;font-size:.85em;font-weight:600;cursor:pointer}
       .qt-cancel:hover{background:var(--error-color,#f44336);color:#fff}
-      .color-palette{display:flex;flex-wrap:wrap;gap:5px;margin:4px 0}
-      .pal-swatch{width:22px;height:22px;border-radius:50%;cursor:pointer;border:2px solid transparent}
-      .pal-swatch.sel{border-color:var(--primary-text-color)}
     `;
   }
 }

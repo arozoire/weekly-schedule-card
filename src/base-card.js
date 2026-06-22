@@ -1047,6 +1047,33 @@ export default class WeeklyScheduleBase extends HTMLElement {
     return null; // cover/altro: niente isteresi
   }
 
+  // Expr Jinja TRUE quando l'entità è GIÀ al valore attivo dello schedule. Serve al rilevamento
+  // override value-based: lo Scheduler (e i nostri apply) portano l'entità al valore attivo →
+  // match TRUE → nessun override; un cambio manuale (UI o interruttore fisico) la porta a un
+  // valore diverso → match FALSE → override. Solo dimensioni ESATTE (così l'apply dello Scheduler
+  // non genera mismatch spuri): on/off, climate temp/hvac, cover position/stato. NON brightness/
+  // color/speed (round-trip non garantito). null = nessun valore confrontabile → fallback solo-UI.
+  _activeValueMatchExpr(ps) {
+    if (!ps) return null;
+    const t = ps.entityConf?.entity;
+    if (!t) return null;
+    const dom = ps.domain;
+    if (dom === 'climate') {
+      if (ps.enableTemp) return `(state_attr('${t}','temperature') | float(-999)) == ${ps.temp}`;
+      if (ps.enableHvac && ps.hvacMode) return `is_state('${t}','${ps.hvacMode}')`;
+      return `not is_state('${t}','off')`;
+    }
+    if (dom === 'cover') {
+      if (ps.coverAction === 'position' && ps.position != null)
+        return `is_state('${t}','opening') or is_state('${t}','closing') or ((((state_attr('${t}','current_position') | int(-1)) - ${ps.position}) | abs) <= 2)`;
+      if (ps.coverAction === 'open')  return `not is_state('${t}','closed')`;
+      if (ps.coverAction === 'close') return `not is_state('${t}','open')`;
+      return null; // stop → nessun valore target confrontabile
+    }
+    // switch / light / fan / input_boolean / humidifier / generic → on/off (esatto)
+    return `is_state('${t}','${ps.turnOn ? 'on' : 'off'}')`;
+  }
+
   _buildHACondition(c, activeExpr = null) {
     const numOps = ['>', '<', '>=', '<='];
     if (numOps.includes(c.operator)) {
@@ -1326,6 +1353,16 @@ export default class WeeklyScheduleBase extends HTMLElement {
       triggers.push({ platform: 'state', entity_id: ps.entityConf.entity, id: 'manual' });
       const inSlotTpl = { condition: 'template', value_template: `{{ state_attr('${scheduleEntityId}', 'current_slot') != None }}` };
       const noOverrideTpl = { condition: 'template', value_template: `{{ states('${flagEnt}') != 'off' }}` };
+      // Rilevamento override VALUE-BASED (UI + interruttore fisico): un override è un cambio a
+      // contesto ROOT (parent_id none) che porta l'entità a un valore DIVERSO da quello attivo.
+      // L'apply dello Scheduler porta al valore attivo → escluso (niente falso positivo). Il gate
+      // "condizione soddisfatta" usa la versione PLAIN (no isteresi) per non accoppiare gli stati.
+      const matchExpr = this._activeValueMatchExpr(ps);
+      const plainConds = validConds.map(c => this._buildHACondition(c, null));
+      const condMetPlain = plainConds.length === 1 ? plainConds[0] : { condition: condCombinator === 'or' ? 'or' : 'and', conditions: plainConds };
+      const detectTpl = matchExpr
+        ? `{{ trigger.platform == 'state' and trigger.to_state is not none and trigger.to_state.context.parent_id is none and not (${matchExpr}) }}`
+        : `{{ trigger.platform == 'state' and trigger.to_state is not none and trigger.to_state.context.parent_id is none and trigger.to_state.context.user_id is not none }}`;
       // ATTIVA gated on flag (gateActive), SAFETY (not-met → inactive) always.
       const applyByCond = (gateActive) => {
         const branches = [];
@@ -1335,12 +1372,14 @@ export default class WeeklyScheduleBase extends HTMLElement {
       };
       action = [{
         choose: [
-          // 1) manual change of target entity → activate override flag (suspend ATTIVA re-apply)
+          // 1) manual change of target entity (UI o fisico) verso un valore ≠ attivo, con condizione
+          //    soddisfatta e in-slot → attiva il flag override (sospende il re-apply dell'ATTIVA).
           {
             conditions: [
               { condition: 'trigger', id: 'manual' },
               inSlotTpl,
-              { condition: 'template', value_template: `{{ trigger.platform == 'state' and trigger.to_state is not none and trigger.to_state.context.parent_id is none and (now() - states['${scheduleEntityId}'].last_changed).total_seconds() > 5 }}` },
+              condMetPlain,
+              { condition: 'template', value_template: detectTpl },
               noOverrideTpl,
             ],
             sequence: [{ service: 'automation.turn_off', target: { entity_id: flagEnt } }],
