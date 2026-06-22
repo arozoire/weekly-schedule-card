@@ -1,0 +1,48 @@
+name: Create Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version tag (e.g. v1.2.2)'
+        required: true
+        default: 'v1.2.2'
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - run: npm ci
+
+      - run: npm run build
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.event.inputs.version }}
+          name: ${{ github.event.inputs.version }}
+          files: |
+            dist/weekly-schedule-card.js
+            dist/weekly-schedule-view-card.js
+            dist/quick-timer-card.js
+          body: |
+            ## v1.2.2 — quick-timer-card inclusa nel bundle HACS
+
+            La `quick-timer-card` è ora **inclusa nel bundle principale** (`weekly-schedule-card.js`).
+            Gli utenti HACS non devono più aggiungere una risorsa separata: aggiornamento via HACS → hard-refresh → pronto.
+
+            ### Cosa cambia
+            - `custom:quick-timer-card` disponibile dopo un normale update HACS (nessuna risorsa extra)
+            - Il bundle standalone `quick-timer-card.js` resta per installazioni manuali solo-timer
+
+            ### Aggiornare
+            - **HACS**: Update → Ctrl-F5.
+            - **Manuale**: scarica `weekly-schedule-card.js` (Assets) → in `/config/www/` → Ctrl-F5.
