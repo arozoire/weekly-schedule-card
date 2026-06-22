@@ -20,13 +20,16 @@ Il bundle principale (`weekly-schedule-card.js`) include già la view card, la m
 ## File struttura
 ```
 src/
-  base-card.js                   # classe condivisa, import-ata da entrambe le card
-  weekly-schedule-card.js        # card principale con editing (extends base)
+  base-card.js                   # classe condivisa, import-ata dalle card
+  weekly-schedule-card.js        # card principale con editing (extends base); importa view + quick-timer
   weekly-schedule-view-card.js   # card solo visualizzazione (extends base)
-rollup.config.js                 # 2 entry IIFE
+  quick-timer-card.js            # card timer mono-entità (extends base)
+  lz-string.js                   # compressione storage (vendored, MIT)
+rollup.config.js                 # 3 entry IIFE
 dist/
-  weekly-schedule-card.js        # IIFE bundle (base + card)
+  weekly-schedule-card.js        # IIFE bundle (base + card + view + mini + quick-timer)
   weekly-schedule-view-card.js   # IIFE bundle (base + view-card)
+  quick-timer-card.js            # IIFE bundle (base + quick-timer-card), standalone solo-timer
 ```
 
 ## Architettura core

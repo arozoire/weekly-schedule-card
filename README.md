@@ -39,9 +39,13 @@ all on top of the [Scheduler Component](https://github.com/nielsfaber/scheduler-
 
 ---
 
-## The two cards
+## The cards
 
-This repository ships **two** Lovelace custom elements built from the same source.
+This repository ships **four** Lovelace custom elements built from the same
+source: the two main cards below — `weekly-schedule-card` (editing) and
+`weekly-schedule-view-card` (read-only) — plus two bonuses, the
+`weekly-schedule-mini-card` (active-now summary) and the `quick-timer-card`
+(temporary timer). All four are inlined in the main bundle.
 
 ### `weekly-schedule-card` — editing
 
@@ -108,11 +112,12 @@ right now, grouped by parent entity, with live attribute values.
   <img src="docs/images/05-mini.png" alt="Mini card — active schedules" width="480">
 </p>
 
-### `quick-timer-card` — temporary timer (standalone bonus)
+### `quick-timer-card` — temporary timer
 
-A separate single-entity card (its own `dist/quick-timer-card.js` bundle, **not**
-part of the main bundle): the **standard HA entity card** (native `tile`, embedded
-via `loadCardHelpers`) for direct control, plus a **Timer** panel. Pick a value and
+A single-entity card (bundled into the main bundle since **v1.2.2**; also shipped
+as its own `dist/quick-timer-card.js` for timer-only installs): the **standard HA
+entity card** (native `tile`, embedded via `loadCardHelpers`) for direct control,
+plus a **Timer** panel. Pick a value and
 a **duration _or_ end time** → it applies the value, then restores the entity to its
 **previous state** when the timer ends. Examples: thermostat 21 °C for 45 min,
 lights red for 5 min, irrigation on for 10 min.
@@ -133,7 +138,9 @@ name: Bedroom            # optional
 presets: [5, 10, 15, 30, 45, 60]   # optional minute chips
 ```
 
-> Needs its own Lovelace resource (`/local/quick-timer-card.js`) — see below.
+> Included in the main bundle (since v1.2.2) — no extra resource needed. A
+> standalone `/local/quick-timer-card.js` resource is also available for
+> timer-only installs (see below).
 
 ---
 
@@ -143,7 +150,7 @@ presets: [5, 10, 15, 30, 45, 60]   # optional minute chips
 
 1. Add this repository as a **Custom Repository** in HACS → Frontend.
 2. Install. HACS deploys and registers the main bundle automatically.
-3. Since **v1.2.1** the main bundle bundles **all four** custom elements
+3. Since **v1.2.2** the main bundle bundles **all four** custom elements
    (`weekly-schedule-card`, `weekly-schedule-view-card`,
    `weekly-schedule-mini-card`, `quick-timer-card`), so the single resource
    HACS registers exposes every card — no extra Lovelace resource needed.
@@ -161,7 +168,7 @@ dist/quick-timer-card.js           →  /config/www/quick-timer-card.js   (only 
 
 ### Register resources
 
-For **HACS installs** the main bundle already registers all three cards — you
+For **HACS installs** the main bundle already registers all four cards — you
 don't need to add anything. For **manual `/config/www/` installs**, register at
 least the main bundle in **Settings → Dashboards → Resources** (or your
 `lovelace.yaml`):
@@ -552,7 +559,7 @@ The automation is created / updated / deleted in lockstep with the schedule.
 
 | Symptom | Likely cause / fix |
 |---------|--------------------|
-| Card not rendering / `custom element doesn't exist` | Both resources registered? Hard refresh? |
+| Card not rendering / `custom element doesn't exist` | Main bundle resource registered? Hard refresh (Ctrl/Cmd+Shift+R)? |
 | No schedules visible | Install [Scheduler Component](https://github.com/nielsfaber/scheduler-component) (required) |
 | Popup doesn't open on view card | Check console — `_openEditPopup` must be inherited from the editing bundle |
 | Conditions don't trigger | Check the generated `automation.wsc_*` — it must be enabled |
