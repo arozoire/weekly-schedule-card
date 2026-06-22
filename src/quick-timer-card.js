@@ -485,14 +485,16 @@ class QuickTimerCard extends WeeklyScheduleBase {
 
 if (!customElements.get('quick-timer-card')) {
   customElements.define('quick-timer-card', QuickTimerCard);
+  // push inside the guard: when both the main bundle and the standalone bundle are
+  // registered as resources, only the first one defines the element AND adds the
+  // card-picker entry — avoids a duplicate "Quick Timer Card" in the Add-card menu.
+  window.customCards = window.customCards || [];
+  window.customCards.push({
+    type: 'quick-timer-card',
+    name: 'Quick Timer Card',
+    description: 'Standard HA entity card + a temporary timer (hold a value for a duration, then restore).',
+    preview: false,
+  });
 }
-
-window.customCards = window.customCards || [];
-window.customCards.push({
-  type: 'quick-timer-card',
-  name: 'Quick Timer Card',
-  description: 'Standard HA entity card + a temporary timer (hold a value for a duration, then restore).',
-  preview: false,
-});
 
 export default QuickTimerCard;
