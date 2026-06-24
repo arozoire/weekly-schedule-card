@@ -131,6 +131,9 @@ lights red for 5 min, irrigation on for 10 min.
 - **Cancel = restore now.** Active timers are stored in **shared** state, so the
   countdown/cancel show on every device.
 
+Configure it from the **visual card editor** (entity, name, default duration, preset
+chips, language) — or in YAML. The advanced embedded-card override (`card:`) stays YAML-only:
+
 ```yaml
 type: custom:quick-timer-card
 entity: climate.bedroom
@@ -334,6 +337,7 @@ See [Conditions & Notifications](#conditions--notifications) and
 | `light`   | on/off + optional `brightness` slider + optional **RGB color** | `light.turn_on` (`brightness_pct` / `rgb_color`) / `light.turn_off` |
 | `fan`     | on/off + optional **speed %** | `fan.turn_on` (`percentage`) / `fan.turn_off` |
 | `cover`   | **open / close / stop / set position** (mutually exclusive). The position slider is directional — dragging **right closes more** (0 % = closed, 100 % = open) | `cover.open_cover` / `close_cover` / `stop_cover` / `set_cover_position` |
+| `valve`   | **open / close / stop / set position** — same controls as `cover` | `valve.open_valve` / `close_valve` / `stop_valve` / `set_valve_position` |
 | `switch`  | on/off toggle | `switch.turn_on` / `switch.turn_off` |
 | _other_   | recognized as `unknown`; basic on/off only | `homeassistant.turn_on` / `turn_off` |
 

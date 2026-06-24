@@ -9,7 +9,7 @@ const LOCALES = {
   en: {
     card:{ title:'Weekly Schedule',new_profile:'New profile',groups:'Groups',no_entities:'No entities configured',no_entities_sub:'Add entities via YAML config, or create a Group to get started.',manage_groups:'Manage Groups',layout_rows_view:'Rows view',layout_cols_view:'Columns view',no_schedule_now:'No schedule active now',empty_schedule:'No schedule' },
     layout:{ focus:'Focus',compact:'Compact' },
-    qtimer:{ timer:'Timer',no_entity:'Set an entity in the card config.',on:'On',off:'Off',temperature:'Temperature',brightness:'Brightness',color:'Color',speed:'Speed',open:'Open',close:'Close',stop:'Stop',position:'Position',duration:'Duration',until:'Until',custom:'custom',minutes:'min',start:'Start timer',cancel:'Cancel (restore now)',holding:'Holding',bad_duration:'Set a valid duration / end time.',start_failed:'Could not start the timer (see console).',cover_open:'Open',cover_close:'Close',cover_stop:'Stop',cover_position:'Position' },
+    qtimer:{ timer:'Timer',no_entity:'Set an entity in the card config.',on:'On',off:'Off',temperature:'Temperature',brightness:'Brightness',color:'Color',speed:'Speed',open:'Open',close:'Close',stop:'Stop',position:'Position',duration:'Duration',until:'Until',custom:'custom',minutes:'min',start:'Start timer',cancel:'Cancel (restore now)',holding:'Holding',bad_duration:'Set a valid duration / end time.',start_failed:'Could not start the timer (see console).',cover_open:'Open',cover_close:'Close',cover_stop:'Stop',cover_position:'Position',editor:{entity:'Entity',name:'Name',default_minutes:'Default duration (min)',presets:'Presets (min)',presets_help:'Comma-separated minutes, e.g. 5, 10, 15, 30, 45, 60',language:'Language',lang_auto:'Auto',no_form:'Config form unavailable — edit in YAML.'} },
     popup:{ new_schedule:'New Schedule',edit_schedule:'Edit Schedule',schedule_active:'Schedule Active',time_slot:'Time slot',snap:'Snap',days:'Days',start:'Start',end:'End',drag_hint:'Drag handles to resize.',next_slot:'＋ Next slot',temperature:'Temperature',hvac_mode:'HVAC Mode',preset_mode:'Preset Mode',fan_mode:'Fan Mode',swing_mode:'Swing Mode',climate_actions:'Climate Actions',light_action:'Light Action',action:'Action',brightness:'Brightness',auto_off:'Auto at slot end',none:'None',turn_off:'Turn Off',turn_on:'Turn On',set_temp:'Set temp',conditions:'Conditions',add_condition:'+ Condition',notifications:'Notifications',notify_service_label:'Service (e.g. notify.mobile_app_phone)',notify_message_label:'Message',name:'Name',name_placeholder:'Schedule name (optional)',save:'Save',delete:'Delete',cancel:'Cancel',ok:'OK' },
     days:{ mon:'Mon',tue:'Tue',wed:'Wed',thu:'Thu',fri:'Fri',sat:'Sat',sun:'Sun',all:'All',workdays:'Workdays',weekend:'Weekend' },
     profile:{ exclusive_label:'🔒 Exclusive (deactivates other exclusive profiles)',shared_label:'🔓 Shared (coexists with other profiles)',new_profile:'New Profile',create:'Create',name_placeholder:'Profile name',new_profile_mode:'new profile',rename:'Rename',duplicate:'Duplicate',delete:'Delete',viewing:'Viewing',active:'Active',activate:'Activate',deactivate:'Deactivate' },
@@ -26,7 +26,7 @@ const LOCALES = {
   it: {
     card:{ title:'Pianificazione Settimanale',new_profile:'Nuovo profilo',groups:'Gruppi',no_entities:'Nessuna entità configurata',no_entities_sub:'Aggiungi entità via YAML o crea un Gruppo per iniziare.',manage_groups:'Gestisci Gruppi',layout_rows_view:'Vista righe',layout_cols_view:'Vista colonne',no_schedule_now:'Nessuno schedule attivo ora',empty_schedule:'Nessuno schedule' },
     layout:{ focus:'Focus',compact:'Compatta' },
-    qtimer:{ timer:'Timer',no_entity:'Imposta un\'entità nella configurazione della card.',on:'Acceso',off:'Spento',temperature:'Temperatura',brightness:'Luminosità',color:'Colore',speed:'Velocità',open:'Apri',close:'Chiudi',stop:'Ferma',position:'Posizione',duration:'Durata',until:'Fine alle',custom:'pers.',minutes:'min',start:'Avvia timer',cancel:'Annulla (ripristina ora)',holding:'Mantiene',bad_duration:'Imposta una durata / orario di fine valido.',start_failed:'Impossibile avviare il timer (vedi console).',cover_open:'Apri',cover_close:'Chiudi',cover_stop:'Ferma',cover_position:'Posizione' },
+    qtimer:{ timer:'Timer',no_entity:'Imposta un\'entità nella configurazione della card.',on:'Acceso',off:'Spento',temperature:'Temperatura',brightness:'Luminosità',color:'Colore',speed:'Velocità',open:'Apri',close:'Chiudi',stop:'Ferma',position:'Posizione',duration:'Durata',until:'Fine alle',custom:'pers.',minutes:'min',start:'Avvia timer',cancel:'Annulla (ripristina ora)',holding:'Mantiene',bad_duration:'Imposta una durata / orario di fine valido.',start_failed:'Impossibile avviare il timer (vedi console).',cover_open:'Apri',cover_close:'Chiudi',cover_stop:'Ferma',cover_position:'Posizione',editor:{entity:'Entità',name:'Nome',default_minutes:'Durata predefinita (min)',presets:'Preset (min)',presets_help:'Minuti separati da virgola, es. 5, 10, 15, 30, 45, 60',language:'Lingua',lang_auto:'Auto',no_form:'Form di configurazione non disponibile — modifica in YAML.'} },
     popup:{ new_schedule:'Nuovo Schedule',edit_schedule:'Modifica Schedule',schedule_active:'Schedule Attivo',time_slot:'Fascia oraria',snap:'Snap',days:'Giorni',start:'Inizio',end:'Fine',drag_hint:'Trascina le maniglie per ridimensionare.',next_slot:'＋ Slot successivo',temperature:'Temperatura',hvac_mode:'Modalità HVAC',preset_mode:'Modalità preset',fan_mode:'Modalità ventola',swing_mode:'Modalità oscillazione',climate_actions:'Azioni clima',light_action:'Azione luce',action:'Azione',brightness:'Luminosità',auto_off:'Azione al termine slot',none:'Nessuna',turn_off:'Spegni',turn_on:'Accendi',set_temp:'Imposta temp',conditions:'Condizioni',add_condition:'+ Condizione',notifications:'Notifiche',notify_service_label:'Servizio (es. notify.mobile_app_phone)',notify_message_label:'Messaggio',name:'Nome',name_placeholder:'Nome schedule (opzionale)',save:'Salva',delete:'Elimina',cancel:'Annulla',ok:'OK' },
     days:{ mon:'Lun',tue:'Mar',wed:'Mer',thu:'Gio',fri:'Ven',sat:'Sab',sun:'Dom',all:'Tutti',workdays:'Feriali',weekend:'Weekend' },
     profile:{ exclusive_label:'🔒 Esclusivo (disattiva altri profili esclusivi)',shared_label:'🔓 Condiviso (coesiste con altri profili)',new_profile:'Nuovo Profilo',create:'Crea',name_placeholder:'Nome profilo',new_profile_mode:'nuovo profilo',rename:'Rinomina',duplicate:'Duplica',delete:'Elimina',viewing:'Stai visualizzando',active:'Attivo',activate:'Attiva',deactivate:'Disattiva' },
@@ -43,7 +43,7 @@ const LOCALES = {
   fr: {
     card:{ title:'Planning Hebdomadaire',new_profile:'Nouveau profil',groups:'Groupes',no_entities:'Aucune entité configurée',no_entities_sub:'Ajoutez des entités via la config YAML, ou créez un Groupe pour commencer.',manage_groups:'Gérer les Groupes',layout_rows_view:'Vue lignes',layout_cols_view:'Vue colonnes',no_schedule_now:'Aucun planning actif',empty_schedule:'Aucun planning' },
     layout:{ focus:'Focus',compact:'Compacte' },
-    qtimer:{ timer:'Minuteur',no_entity:'Définissez une entité dans la configuration de la carte.',on:'Allumé',off:'Éteint',temperature:'Température',brightness:'Luminosité',color:'Couleur',speed:'Vitesse',open:'Ouvrir',close:'Fermer',stop:'Arrêter',position:'Position',duration:'Durée',until:'Jusqu\'à',custom:'perso',minutes:'min',start:'Démarrer',cancel:'Annuler (restaurer)',holding:'Maintient',bad_duration:'Définissez une durée / heure de fin valide.',start_failed:'Impossible de démarrer le minuteur (voir console).',cover_open:'Ouvrir',cover_close:'Fermer',cover_stop:'Arrêter',cover_position:'Position' },
+    qtimer:{ timer:'Minuteur',no_entity:'Définissez une entité dans la configuration de la carte.',on:'Allumé',off:'Éteint',temperature:'Température',brightness:'Luminosité',color:'Couleur',speed:'Vitesse',open:'Ouvrir',close:'Fermer',stop:'Arrêter',position:'Position',duration:'Durée',until:'Jusqu\'à',custom:'perso',minutes:'min',start:'Démarrer',cancel:'Annuler (restaurer)',holding:'Maintient',bad_duration:'Définissez une durée / heure de fin valide.',start_failed:'Impossible de démarrer le minuteur (voir console).',cover_open:'Ouvrir',cover_close:'Fermer',cover_stop:'Arrêter',cover_position:'Position',editor:{entity:'Entité',name:'Nom',default_minutes:'Durée par défaut (min)',presets:'Préréglages (min)',presets_help:'Minutes séparées par des virgules, ex. 5, 10, 15, 30, 45, 60',language:'Langue',lang_auto:'Auto',no_form:'Formulaire de configuration indisponible — modifiez en YAML.'} },
     popup:{ new_schedule:'Nouveau Schedule',edit_schedule:'Modifier Schedule',schedule_active:'Schedule Actif',time_slot:'Créneau horaire',snap:'Snap',days:'Jours',start:'Début',end:'Fin',drag_hint:'Glissez les poignées pour redimensionner.',next_slot:'＋ Créneau suivant',temperature:'Température',hvac_mode:'Mode HVAC',preset_mode:'Mode preset',fan_mode:'Mode ventilateur',swing_mode:'Mode oscillation',climate_actions:'Actions climatisation',light_action:'Action lumière',action:'Action',brightness:'Luminosité',auto_off:'Action en fin de créneau',none:'Aucune',turn_off:'Éteindre',turn_on:'Allumer',set_temp:'Définir temp',conditions:'Conditions',add_condition:'+ Condition',notifications:'Notifications',notify_service_label:'Service (ex. notify.mobile_app_phone)',notify_message_label:'Message',name:'Nom',name_placeholder:'Nom du schedule (optionnel)',save:'Sauvegarder',delete:'Supprimer',cancel:'Annuler',ok:'OK' },
     days:{ mon:'Lun',tue:'Mar',wed:'Mer',thu:'Jeu',fri:'Ven',sat:'Sam',sun:'Dim',all:'Tous',workdays:'Jours ouvrés',weekend:'Week-end' },
     profile:{ exclusive_label:"🔒 Exclusif (désactive les autres profils exclusifs)",shared_label:"🔓 Partagé (coexiste avec d'autres profils)",new_profile:'Nouveau Profil',create:'Créer',name_placeholder:'Nom du profil',new_profile_mode:'nouveau profil',rename:'Renommer',duplicate:'Dupliquer',delete:'Supprimer',viewing:'En vue',active:'Actif',activate:'Activer',deactivate:'Désactiver' },
@@ -1063,7 +1063,7 @@ export default class WeeklyScheduleBase extends HTMLElement {
       if (ps.enableHvac && ps.hvacMode) return `is_state('${t}','${ps.hvacMode}')`;
       return `not is_state('${t}','off')`;
     }
-    if (dom === 'cover') {
+    if (dom === 'cover' || dom === 'valve') {
       if (ps.coverAction === 'position' && ps.position != null)
         return `is_state('${t}','opening') or is_state('${t}','closing') or ((((state_attr('${t}','current_position') | int(-1)) - ${ps.position}) | abs) <= 2)`;
       if (ps.coverAction === 'open')  return `not is_state('${t}','closed')`;
@@ -1108,6 +1108,13 @@ export default class WeeklyScheduleBase extends HTMLElement {
 
   // Build HA service actions array for schedule's PRIMARY (active) action set.
   // Used both by scheduler timeslot actions AND condition automation activeAction.
+  // cover & valve share open/close/stop/position semantics — only the service names differ
+  _posServices(dom) {
+    return dom === 'valve'
+      ? { open: 'valve.open_valve', close: 'valve.close_valve', stop: 'valve.stop_valve', setpos: 'valve.set_valve_position' }
+      : { open: 'cover.open_cover', close: 'cover.close_cover', stop: 'cover.stop_cover', setpos: 'cover.set_cover_position' };
+  }
+
   _buildScheduleActions(ps) {
     const eid = ps.entityConf.entity;
     const dom = ps.domain;
@@ -1135,12 +1142,13 @@ export default class WeeklyScheduleBase extends HTMLElement {
       } else {
         out.push({ service: 'fan.turn_off', target: { entity_id: eid } });
       }
-    } else if (dom === 'cover') {
+    } else if (dom === 'cover' || dom === 'valve') {
+      const sv = this._posServices(dom);
       if (ps.coverAction === 'position') {
-        out.push({ service: 'cover.set_cover_position', target: { entity_id: eid }, data: { position: ps.position } });
+        out.push({ service: sv.setpos, target: { entity_id: eid }, data: { position: ps.position } });
       } else {
-        const map = { open: 'open_cover', close: 'close_cover', stop: 'stop_cover' };
-        out.push({ service: `cover.${map[ps.coverAction] || 'close_cover'}`, target: { entity_id: eid } });
+        const map = { open: sv.open, close: sv.close, stop: sv.stop };
+        out.push({ service: map[ps.coverAction] || sv.close, target: { entity_id: eid } });
       }
     } else {
       out.push({ service: ps.turnOn ? `${dom}.turn_on` : `${dom}.turn_off`, target: { entity_id: eid } });
@@ -1169,10 +1177,10 @@ export default class WeeklyScheduleBase extends HTMLElement {
       case 'set_color':     return [{ service: 'light.turn_on', target: tgt, data: { rgb_color: this._hexToRgb(v) } }];
       case 'set_color_temp': return [{ service: 'light.turn_on', target: tgt, data: { color_temp_kelvin: parseInt(v) } }];
       case 'set_speed':     return [{ service: 'fan.set_percentage', target: tgt, data: { percentage: parseInt(v) } }];
-      case 'set_position':  return [{ service: 'cover.set_cover_position', target: tgt, data: { position: parseInt(v) } }];
-      case 'open':          return [{ service: 'cover.open_cover', target: tgt }];
-      case 'close':         return [{ service: 'cover.close_cover', target: tgt }];
-      case 'stop':          return [{ service: 'cover.stop_cover', target: tgt }];
+      case 'set_position':  return [{ service: this._posServices(dom).setpos, target: tgt, data: { position: parseInt(v) } }];
+      case 'open':          return [{ service: this._posServices(dom).open, target: tgt }];
+      case 'close':         return [{ service: this._posServices(dom).close, target: tgt }];
+      case 'stop':          return [{ service: this._posServices(dom).stop, target: tgt }];
     }
     return null;
   }
@@ -1225,7 +1233,7 @@ export default class WeeklyScheduleBase extends HTMLElement {
     } else if (dom === 'fan') {
       onoff();
       if (c.fanSpeed) out.push({ v: 'set_speed', label: this.t('endact.speed') });
-    } else if (dom === 'cover') {
+    } else if (dom === 'cover' || dom === 'valve') {
       out.push({ v: 'close', label: this.t('endact.close') });
       out.push({ v: 'open', label: this.t('endact.open') });
       out.push({ v: 'stop', label: this.t('endact.stop') });
@@ -1957,6 +1965,7 @@ export default class WeeklyScheduleBase extends HTMLElement {
       light:        ['mdi:lightbulb',        '#FFC107'],
       fan:          ['mdi:fan',              '#00BCD4'],
       cover:        ['mdi:window-shutter',   '#9C27B0'],
+      valve:        ['mdi:pipe-valve',       '#009688'],
       input_boolean:['mdi:checkbox-marked',  '#4CAF50'],
       media_player: ['mdi:television-play',  '#FF5722'],
     };
@@ -2293,7 +2302,7 @@ export default class WeeklyScheduleBase extends HTMLElement {
       color: ad.rgb_color ? this._rgbToHex(ad.rgb_color) : '#FFFFFF',
       enableSpeed: ad.percentage !== undefined,
       speed: ad.percentage ?? 50,
-      coverAction: (svc.includes('set_cover_position') ? 'position' : svc.includes('open_cover') ? 'open' : svc.includes('stop_cover') ? 'stop' : 'close'),
+      coverAction: (/set_(cover|valve)_position/.test(svc) ? 'position' : /open_(cover|valve)/.test(svc) ? 'open' : /stop_(cover|valve)/.test(svc) ? 'stop' : 'close'),
       position: ad.position ?? 50,
       stopAction: (() => {
         const stored = this._getStoredStop(entityId);
@@ -2465,7 +2474,7 @@ export default class WeeklyScheduleBase extends HTMLElement {
           </div>
         </div>` : ''}
       </div>` :
-    ps.domain === 'cover' ? `
+    (ps.domain === 'cover' || ps.domain === 'valve') ? `
       <div>
         <div class="section-label">${this.t('popup.action')}</div>
         <div class="radio-row" style="flex-wrap:wrap;gap:10px">

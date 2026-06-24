@@ -45,6 +45,7 @@ class QuickTimerCard extends WeeklyScheduleBase {
 
   getCardSize() { return 4; }
   static getStubConfig() { return { entity: '' }; }
+  static getConfigElement() { return document.createElement('quick-timer-card-editor'); }
 
   get hass() { return this._hass; }
   set hass(hass) {
@@ -304,7 +305,7 @@ class QuickTimerCard extends WeeklyScheduleBase {
     const dom = this._detectDomain(eid);
     const a = st.attributes || {};
     if (dom === 'climate') return a.temperature != null ? `${a.temperature}°C` : (st.state || '');
-    if (dom === 'cover') return a.current_position != null ? `${a.current_position}%` : st.state;
+    if (dom === 'cover' || dom === 'valve') return a.current_position != null ? `${a.current_position}%` : st.state;
     if ((dom === 'light' || dom === 'fan') && st.state === 'on') {
       const pct = dom === 'fan' ? a.percentage : (a.brightness != null ? Math.round(a.brightness / 255 * 100) : null);
       return pct != null ? `${pct}%` : this.t('qtimer.on');
@@ -338,6 +339,10 @@ class QuickTimerCard extends WeeklyScheduleBase {
     if (dom === 'cover') {
       if (a.current_position != null) return [{ service: 'cover.set_cover_position', target: tgt, data: { position: a.current_position } }];
       return [{ service: `cover.${st.state === 'open' ? 'open_cover' : 'close_cover'}`, target: tgt }];
+    }
+    if (dom === 'valve') {
+      if (a.current_position != null) return [{ service: 'valve.set_valve_position', target: tgt, data: { position: a.current_position } }];
+      return [{ service: `valve.${st.state === 'open' ? 'open_valve' : 'close_valve'}`, target: tgt }];
     }
     if (dom === 'climate') {
       const out = [];
@@ -483,6 +488,104 @@ class QuickTimerCard extends WeeklyScheduleBase {
   }
 }
 
+// ── UI config editor ──────────────────────────────────────────────────────────
+// Lightweight ha-form editor. Extends the base only to reuse t()/_esc(); every card
+// lifecycle method is overridden so no schedule/storage machinery runs. The advanced
+// `card:`/`tile:` embedded-card config is preserved but not exposed (YAML-only).
+class QuickTimerCardEditor extends WeeklyScheduleBase {
+  setConfig(config) {
+    const reseed = !this._config || config.entity !== this._config.entity;
+    this._config = config;
+    this._lang = null;                 // recompute language from config
+    this._renderEditor(reseed);
+  }
+  get hass() { return this._hass; }
+  set hass(hass) { this._hass = hass; if (this._form) this._form.hass = hass; }
+  connectedCallback() { this._renderEditor(true); }
+  disconnectedCallback() {}
+  render() {}                          // suppress base-card render
+
+  _data() {
+    const c = this._config || {};
+    return {
+      entity: c.entity || '',
+      name: c.name || '',
+      default_minutes: c.default_minutes ?? undefined,
+      presets: Array.isArray(c.presets) ? c.presets.join(', ') : '',
+      language: c.language || '',
+    };
+  }
+
+  _schema() {
+    return [
+      { name: 'entity', required: true, selector: { entity: {} } },
+      { name: 'name', selector: { text: {} } },
+      { name: 'default_minutes', selector: { number: { min: 1, mode: 'box' } } },
+      { name: 'presets', selector: { text: {} } },
+      { name: 'language', selector: { select: { mode: 'dropdown', options: [
+        { value: '', label: this.t('qtimer.editor.lang_auto') },
+        { value: 'en', label: 'English' },
+        { value: 'it', label: 'Italiano' },
+        { value: 'fr', label: 'Français' },
+      ] } } },
+    ];
+  }
+
+  // ha-form may not be loaded yet; pulling the entities-card editor registers it.
+  async _ensureHaForm() {
+    if (customElements.get('ha-form')) return;
+    try {
+      const helpers = await window.loadCardHelpers();
+      const card = await helpers.createCardElement({ type: 'entities', entities: [] });
+      if (card?.constructor?.getConfigElement) await card.constructor.getConfigElement();
+    } catch (e) { /* best-effort */ }
+  }
+
+  async _renderEditor(reseed) {
+    if (this._form) { if (reseed) this._form.data = this._data(); return; }
+    if (this._building) return;
+    this._building = true;
+    await this._ensureHaForm();
+    this._building = false;
+    if (this._form) { if (reseed) this._form.data = this._data(); return; }
+    if (!customElements.get('ha-form')) {
+      this.shadowRoot.innerHTML = `<div style="padding:12px;color:var(--secondary-text-color)">${this._esc(this.t('qtimer.editor.no_form'))}</div>`;
+      return;
+    }
+    const form = document.createElement('ha-form');
+    form.schema = this._schema();
+    form.data = this._data();
+    if (this._hass) form.hass = this._hass;
+    form.computeLabel = (s) => this.t('qtimer.editor.' + s.name);
+    form.addEventListener('value-changed', (e) => this._valueChanged(e));
+    const wrap = document.createElement('div');
+    wrap.style.cssText = 'padding:8px 4px';
+    wrap.appendChild(form);
+    const help = document.createElement('div');
+    help.style.cssText = 'font-size:.8em;color:var(--secondary-text-color);margin-top:8px;padding:0 4px';
+    help.textContent = this.t('qtimer.editor.presets_help');
+    wrap.appendChild(help);
+    this.shadowRoot.appendChild(wrap);
+    this._form = form;
+  }
+
+  _valueChanged(ev) {
+    ev.stopPropagation();
+    if (!this._config) return;
+    const v = ev.detail.value || {};
+    const cfg = { ...this._config };       // preserve type, card:/tile:, etc.
+    if (v.entity) cfg.entity = v.entity; else delete cfg.entity;
+    if (v.name) cfg.name = v.name; else delete cfg.name;
+    if (v.default_minutes != null && v.default_minutes !== '') cfg.default_minutes = Number(v.default_minutes);
+    else delete cfg.default_minutes;
+    const arr = String(v.presets ?? '').split(',').map(x => parseInt(x.trim(), 10)).filter(n => Number.isFinite(n) && n > 0);
+    if (arr.length) cfg.presets = arr; else delete cfg.presets;
+    if (v.language) cfg.language = v.language; else delete cfg.language;
+    this._config = cfg;
+    this.dispatchEvent(new CustomEvent('config-changed', { detail: { config: cfg }, bubbles: true, composed: true }));
+  }
+}
+
 if (!customElements.get('quick-timer-card')) {
   customElements.define('quick-timer-card', QuickTimerCard);
   // push inside the guard: when both the main bundle and the standalone bundle are
@@ -495,6 +598,10 @@ if (!customElements.get('quick-timer-card')) {
     description: 'Standard HA entity card + a temporary timer (hold a value for a duration, then restore).',
     preview: false,
   });
+}
+
+if (!customElements.get('quick-timer-card-editor')) {
+  customElements.define('quick-timer-card-editor', QuickTimerCardEditor);
 }
 
 export default QuickTimerCard;

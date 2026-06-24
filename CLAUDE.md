@@ -90,11 +90,17 @@ Automazione HA `wsc_autooff_<eid>` (`_syncAutoOffAutomation`, storage `link.auto
   Rimossi `_syncAutoChild`/`_findChildByParentTag`/`_saveAutoChildId`.
 
 ## Editor azioni per dominio (v1.0.6)
-`_actionFieldsForEntity` non c'è: la logica è in `domainSection` (climate/light/fan/cover/switch) +
+`_actionFieldsForEntity` non c'è: la logica è in `domainSection` (climate/light/fan/cover/valve/switch) +
 `_entityCaps(eid)` (capacità reali: supported_color_modes, percentage, current_position, *_modes).
 Azione PRINCIPALE per dominio: climate (temp/hvac/preset/fan/swing), light (on/off + brightness +
-**colore rgb** se supportato), fan (on/off + **velocità %**), cover (**apri/chiudi/ferma + posizione %**),
+**colore rgb** se supportato), fan (on/off + **velocità %**), cover/valve (**apri/chiudi/ferma + posizione %**),
 switch (on/off). Builder unico `_buildScheduleActions`. Colore via `_colorPickerHTML` (palette → rgb).
+**valve = cover** (v1.2.3): stessi controlli/UI/campi `ps.coverAction`/`ps.position`/selettori
+`name="cover-action"`+`.position-slider`; cambiano solo i nomi servizio via `_posServices(dom)`
+(`open_valve`/`close_valve`/`stop_valve`/`set_valve_position`). Esteso in `_buildScheduleActions`,
+`_buildStopActions`, `_endActionTypes`, `domainSection`, parse-back (`coverAction` regex cover|valve)
+e `_activeValueMatchExpr` (override). `_entityCaps.coverPosition` è già generico → vale per valve.
+Prima valve cadeva nel ramo default → `valve.turn_on/off` (servizi inesistenti) → schedule rotto.
 
 ## Condizioni (event-driven + isteresi — WIP, da testare in HA)
 Non supportate da Scheduler Component → automazione HA generata (`wsc_cond_*`).
@@ -243,11 +249,21 @@ incorporata al centro, `.qt-foot` Avvia/countdown in fondo).
 - **Storage condiviso**: timer attivi in `_sharedSet('quick_timer_card', {timers})` (prefisso helper
   `wsc_qt_store`) → countdown/annulla cross-device. `set hass` refetch su cambio `input_text.wsc_qt_store_*`.
 - "Annulla" = **ripristina subito** (replay delle `restore` salvate nel record). Durata **o** Fine alle.
-- **Config solo YAML** (nessun `getConfigElement`). Opzioni: `entity` (obbl.), `card` (config card
-  nativa), `name`, `presets` (array minuti), `default_minutes`, `language`.
+- **Config via UI editor O YAML** (v1.2.3): `static getConfigElement()` → elemento
+  `quick-timer-card-editor` (`class QuickTimerCardEditor extends WeeklyScheduleBase`, in fondo a
+  `quick-timer-card.js`, registrato guardato; finisce anche nel bundle main perché importato).
+  Usa **`ha-form`** (schema `_schema()`, dati `_data()`, `_valueChanged` → `config-changed`).
+  L'editor gestisce `entity`/`name`/`default_minutes`/`presets` (text CSV → array int)/`language`
+  (select, '' = auto). Il blocco `card:`/`tile:` (config card nativa) resta **solo-YAML**:
+  l'editor lo **preserva** (spread `...this._config`) ma non lo espone. Estende il base solo per
+  `t()`/`_esc()`: override TOTALE di `setConfig`/`get|set hass`/`connected|disconnectedCallback`/
+  `render` (vuoto) → niente macchina-card. `ha-form` caricato best-effort via `_ensureHaForm()`
+  (tira l'editor della entities-card); reseed dati solo a cambio `entity`/primo render (no cursor-jump).
 - Override `setConfig`/`set hass`/`render`/`connected/disconnectedCallback` (NON usa schedule/profili).
   Riusa `_detectDomain`,`_entityCaps`,`_buildRestoreActions`,`_recreateAutomation`,`_setStyles`,`t`,`_esc`.
-  LOCALES: blocco `qtimer.*` (en/it/fr) in base-card.
+  LOCALES: blocco `qtimer.*` (en/it/fr) in base-card, incl. `qtimer.editor.*` (label del form).
+- **valve** (v1.2.3): `_buildRestoreActions`/`_heldLabel` hanno il ramo `valve` (come `cover`,
+  servizi `valve.*`); prima cadeva nel default → `valve.turn_on/off` (inesistenti) → restore rotto.
 - Limiti: ripristino esplicito best-effort su attributi esotici (effetti/transizioni); `delay` non
   sopravvive a riavvio HA a metà timer; `loadCardHelpers` richiede Lovelace standard.
 
@@ -350,6 +366,25 @@ notifications:
 
 ## Last modified
 always update last modified date with day an hour Rome utc
+2026-06-24 Rome (v1.2.3 — quick-timer UI editor + valve support) — two user requests: (1) **quick-timer-card now UI-configurable** (was YAML-only): added
+`static getConfigElement()` + new `quick-timer-card-editor` element (`extends WeeklyScheduleBase`
+only to reuse `t()`/`_esc()`; all card lifecycle overridden) using **`ha-form`** (entity / name /
+default_minutes / presets-as-CSV→int[] / language-select). Advanced `card:`/`tile:` block stays
+YAML-only but is preserved by the editor (`...this._config`). `ha-form` loaded best-effort via
+`_ensureHaForm()`; data reseeded only on entity-change/first render (no cursor-jump). New
+`qtimer.editor.*` LOCALES (en/it/fr). The editor is inlined in the main bundle too (imported).
+(2) **valve fixed everywhere** — valve was falling through to the default branch → `valve.turn_on/off`
+(non-existent services) → broken schedules AND broken quick-timer restore. Since **valve ≡ cover**
+(open/close/stop/set_position, `current_position`, position data key, open/closed state), treated
+`cover`+`valve` together via new helper **`_posServices(dom)`** (branches only service names) in
+`base-card.js`: `_buildScheduleActions`, `_buildStopActions`, `_endActionTypes`, `domainSection`
+(reuses cover UI/`name="cover-action"`/`.position-slider` → no listener changes), edit parse-back
+(`coverAction` regex `cover|valve`), `_activeValueMatchExpr` (override), + `_domainIconMdi` valve icon.
+`_entityCaps.coverPosition` already generic → no change. `quick-timer-card.js`: valve branch in
+`_buildRestoreActions`/`_heldLabel`. Fixes editing card + view card (shared popup/builders). Build OK,
+`check` green on all 3 bundles. **Released v1.2.3** (package.json bump, commit, push main, tag + GitHub
+release with the 3 dist assets via `gh release create --target main`). To validate in HA: editor
+round-trips to YAML + `card:` preserved; valve schedule create/edit/auto-off + quick-timer hold/restore.
 2026-06-22 22:34 Rome (v1.2.2 release prep) — bumped `package.json` to 1.2.2; **fix doppia voce nel
 card-picker**: con la doppia risorsa (utenti che avevano aggiunto la risorsa standalone `quick-timer-card.js`
 come da istruzioni v1.2.0/1.2.1) la card appariva due volte nel menu "Aggiungi card" — il `customElements.define`
