@@ -366,6 +366,26 @@ notifications:
 
 ## Last modified
 always update last modified date with day an hour Rome utc
+2026-06-24 11:23 Rome (v1.2.5 — fix persistenza storage + healing orfani + avviso overlap) —
+due bug riportati dall'utente, stessa radice. **Causa:** il refetch async in `set hass` (rami
+`addedOrRemoved`/`storeChanged`) si risolveva DOPO una scrittura locale e sovrascriveva `_storageData`
+con uno stato vecchio → annullava la modifica (delete gruppo revertito; schedule appena creato non
+finiva in `profile.schedules` → invisibile sulle card ma attivo + visibile in mini/popup, perché quelle
+viste non filtrano per profilo). **Fix A (radice):** contatore `_wsWriteCount` (incrementato in
+`_wsSetNow`); il refetch cattura `ver` prima e applica il risultato SOLO se `data && _wsWriteCount===ver`
+(nessuna scrittura locale nel frattempo) + usa `_sharedGet` diretto (null/mid-write → non sovrascrive;
+prima `_wsGet` fabbricava `{profiles:[]}`). **Fix C (healing):** in `_ensureDefaultProfile`, ogni
+`switch.schedule_*` (non `weekly_schedule_auto`) non rivendicato da ALCUN profilo viene adottato nel
+profilo `default` (rete di sicurezza: nessun orfano resta invisibile; idempotente). NB: il path di
+**edit non ri-aggancia** al profilo (solo create) → l'adozione è il meccanismo di recupero.
+**Fix D (overlap):** `_schedulesOverlap(A,B)` (giorno condiviso + slot che si intersecano) +
+`_overlapWarningBannerHtml(tabs)` → banner giallo nella editing card se due schedule ABILITATI sulla
+stessa entità si sovrappongono (copre l'orfano adottato che cade nello stesso periodo). LOCALES
+`entstatus.overlap_title` (en/it/fr). **Scartato Fix B** (filtro render "mostra orfani": mascherava;
+C ripara il dato). **Orfano-creazione = stesso bug del refetch** (Fix A lo previene); orfano-già-esistente
+= Fix C lo adotta. Item 5 (v1.2.4) resta. **Released v1.2.5** (package.json bump, commit, push main, tag +
+GitHub release con i 3 dist asset via `gh release create --target main`). Da validare in HA: create
+persiste, delete gruppo persiste, fan_only orfano compare dopo reload, banner overlap.
 2026-06-24 10:45 Rome (v1.2.4 — batch UX/robustezza) — 6 interventi su richiesta utente:
 (1) **Label blocchi = risultato** (non più friendly_name lungo): nuovo helper `_blockLabel(s, entityConf)`
 in base-card (climate→temp/mode, light→on/off/% , fan→%, cover/valve→%/apri/chiudi/ferma, switch→on/off;

@@ -19,7 +19,7 @@ const LOCALES = {
     cond:{ add:'Add condition',entity:'Entity',operator:'Operator',value:'Value',and_all:'All (AND)',or_any:'Any (OR)',recheck:'Re-check interval',hysteresis:'Deadband ± (empty = 5% of value)' },
     notify:{ restore_auto:'Restore auto text',trigger_label:'When to notify',trigger_none:'Never',trigger_start:'On start',trigger_end:'On end',trigger_both:'Start + end',msg_start_label:'Start message',msg_end_label:'End message',default_start:'Schedule started',default_end:'Schedule ended',on:'on',off:'off',from_to:'From {start} to {end}',was_active:'Was active {start}–{end}',end_off:'auto turn off',end_on:'auto turn on',end_temp:'set {value}°C',end_none:'no action',conditions_label:'Conditions',recheck:'Recheck every {n} min',at_end:'At end: {action}',completed:'schedule completed',set_to:'set to',brightness:'brightness' },
     blk:{ on:'On',off:'Off',open:'Open',close:'Closed',stop:'Stop' },
-    entstatus:{ unavailable:'unavailable',missing:'removed',banner_title:'Some entities are unavailable or removed:' },
+    entstatus:{ unavailable:'unavailable',missing:'removed',banner_title:'Some entities are unavailable or removed:',overlap_title:'Overlapping schedules on the same entity:' },
     sched_name:{ all_day:'all-day',workdays_abbr:'wd' },
     linked:{ title:'Linked objects',auto_off:'Auto-off automation',cond_auto:'Condition automation',extras_auto:'Extras automation',notify:'Notification',override_flag:'Override flag',open:'Open',edit_yaml:'Edit YAML',missing:'missing' },
     endact:{ brightness:'Set brightness',color:'Set color',color_temp:'Set color temp',speed:'Set speed',position:'Set position',open:'Open',close:'Close',stop:'Stop' },
@@ -38,7 +38,7 @@ const LOCALES = {
     cond:{ add:'Aggiungi condizione',entity:'Entità',operator:'Operatore',value:'Valore',and_all:'Tutte (AND)',or_any:'Una qualsiasi (OR)',recheck:'Intervallo rivalutazione',hysteresis:'Banda morta ± (vuoto = 5% del valore)' },
     notify:{ restore_auto:'Ripristina testo automatico',trigger_label:'Quando notificare',trigger_none:'Mai',trigger_start:"All'inizio",trigger_end:'Alla fine',trigger_both:'Inizio + fine',msg_start_label:'Messaggio inizio',msg_end_label:'Messaggio fine',default_start:'Schedule attivato',default_end:'Schedule terminato',on:'acceso',off:'spento',from_to:'Dalle {start} alle {end}',was_active:'Era attivo {start}–{end}',end_off:'spegnimento automatico',end_on:'accensione automatica',end_temp:'imposta {value}°C',end_none:'nessuna azione',conditions_label:'Condizioni',recheck:'Controllo ogni {n} min',at_end:'Alla fine: {action}',completed:'schedule completato',set_to:'impostato a',brightness:'luminosità' },
     blk:{ on:'On',off:'Off',open:'Aperto',close:'Chiuso',stop:'Stop' },
-    entstatus:{ unavailable:'non disponibile',missing:'rimossa',banner_title:'Alcune entità non sono disponibili o sono state rimosse:' },
+    entstatus:{ unavailable:'non disponibile',missing:'rimossa',banner_title:'Alcune entità non sono disponibili o sono state rimosse:',overlap_title:'Schedule sovrapposti sulla stessa entità:' },
     sched_name:{ all_day:'tutto-gg',workdays_abbr:'fer' },
     linked:{ title:'Oggetti collegati',auto_off:'Automazione auto-off',cond_auto:'Automazione condizioni',extras_auto:'Automazione extra',notify:'Notifica',override_flag:'Flag override',open:'Apri',edit_yaml:'Modifica YAML',missing:'mancante' },
     endact:{ brightness:'Imposta luminosità',color:'Imposta colore',color_temp:'Imposta temp. colore',speed:'Imposta velocità',position:'Imposta posizione',open:'Apri',close:'Chiudi',stop:'Ferma' },
@@ -57,7 +57,7 @@ const LOCALES = {
     cond:{ add:'Ajouter condition',entity:'Entité',operator:'Opérateur',value:'Valeur',and_all:'Toutes (AND)',or_any:"N'importe laquelle (OR)",recheck:'Intervalle de réévaluation',hysteresis:'Bande morte ± (vide = 5% de la valeur)' },
     notify:{ restore_auto:'Restaurer texte auto',trigger_label:'Quand notifier',trigger_none:'Jamais',trigger_start:'Au début',trigger_end:'À la fin',trigger_both:'Début + fin',msg_start_label:'Message début',msg_end_label:'Message fin',default_start:'Schedule démarré',default_end:'Schedule terminé',on:'allumé',off:'éteint',from_to:'De {start} à {end}',was_active:'Était actif {start}–{end}',end_off:'extinction automatique',end_on:'allumage automatique',end_temp:'régler {value}°C',end_none:'aucune action',conditions_label:'Conditions',recheck:'Revérification chaque {n} min',at_end:'À la fin: {action}',completed:'planification terminée',set_to:'réglé à',brightness:'luminosité' },
     blk:{ on:'On',off:'Off',open:'Ouvert',close:'Fermé',stop:'Stop' },
-    entstatus:{ unavailable:'indisponible',missing:'supprimée',banner_title:'Certaines entités sont indisponibles ou supprimées :' },
+    entstatus:{ unavailable:'indisponible',missing:'supprimée',banner_title:'Certaines entités sont indisponibles ou supprimées :',overlap_title:'Plannings qui se chevauchent sur la même entité :' },
     sched_name:{ all_day:'tt-jour',workdays_abbr:'jo' },
     linked:{ title:'Objets liés',auto_off:'Automatisation auto-off',cond_auto:'Automatisation conditions',extras_auto:'Automatisation extra',notify:'Notification',override_flag:'Indicateur surcharge',open:'Ouvrir',edit_yaml:'Modifier YAML',missing:'manquant' },
     endact:{ brightness:'Définir luminosité',color:'Définir couleur',color_temp:'Définir temp. couleur',speed:'Définir vitesse',position:'Définir position',open:'Ouvrir',close:'Fermer',stop:'Arrêter' },
@@ -90,6 +90,7 @@ export default class WeeklyScheduleBase extends HTMLElement {
     this._prevHass = null;
     this._txDepth = 0;   // profondità transazione storage (batching _wsSet)
     this._txDirty = false;
+    this._wsWriteCount = 0; // versione scritture: un refetch che si risolve dopo una nostra scrittura è stantìo
   }
 
   // ── HTML escaping (XSS) ───────────────────────────────────────────────────
@@ -120,8 +121,10 @@ export default class WeeklyScheduleBase extends HTMLElement {
       for (const k of storeKeys) { if (prev.states[k]?.state !== hass.states[k]?.state) { storeChanged = true; break; } }
       if (addedOrRemoved || storeChanged) {
         this._loadingStorage = true;
-        this._wsGet().then(data => {
-          if (data) this._storageData = data;
+        const ver = this._wsWriteCount; // se scriviamo localmente durante il fetch, scartiamo il risultato
+        WeeklyScheduleBase._sharedGet(hass, 'weekly_schedule_card').then(data => {
+          // applica SOLO se: lettura valida (non null/mid-write) E nessuna scrittura locale nel frattempo
+          if (data && this._wsWriteCount === ver) this._storageData = data;
           this._loadingStorage = false;
           if (!this._popupState && !this._profilesMode && !this._groupsMode && !this._dialogOpen) this.render();
         }).catch(() => { this._loadingStorage = false; });
@@ -407,6 +410,7 @@ export default class WeeklyScheduleBase extends HTMLElement {
   // Scrittura reale dello storage + notifica alle altre card. Usata da _wsSet (fuori transazione)
   // o una sola volta a fine transazione (_withTx). NON aggiorna _storageData (già fatto da _wsSet).
   async _wsSetNow(data) {
+    this._wsWriteCount++; // invalida ogni refetch in volo iniziato prima di questa scrittura
     await WeeklyScheduleBase._sharedSet(this._hass, 'weekly_schedule_card', data);
     try {
       window.dispatchEvent(new CustomEvent('wsc-storage-changed', { detail: { source: this, data } }));
@@ -456,6 +460,22 @@ export default class WeeklyScheduleBase extends HTMLElement {
       }
       data.groups = [];
       dirty = true;
+    }
+    // Rete di sicurezza orfani: ogni switch.schedule_* (non auto-child) non rivendicato da ALCUN
+    // profilo torna nel default → nessuno schedule resta invisibile/orfano (anche se creato da un bug).
+    if (this._hass) {
+      const claimed = new Set();
+      for (const p of data.profiles) for (const id of p.schedules || []) claimed.add(id);
+      const def = data.profiles.find(p => p.id === 'default') || data.profiles[0];
+      if (def) {
+        if (!def.schedules) def.schedules = [];
+        for (const k of Object.keys(this._hass.states)) {
+          if (!k.startsWith('switch.schedule_')) continue;
+          if (this._hass.states[k].attributes?.tags?.includes('weekly_schedule_auto')) continue;
+          if (claimed.has(k)) continue;
+          def.schedules.push(k); claimed.add(k); dirty = true;
+        }
+      }
     }
     if (dirty) this._wsSet(data).catch(() => {});
     if (!this._selectedProfileId || !data.profiles.find(p => p.id === this._selectedProfileId))
@@ -1982,6 +2002,42 @@ export default class WeeklyScheduleBase extends HTMLElement {
       <div style="font-size:.8em;line-height:1.4">
         <div style="font-weight:600;color:var(--primary-text-color);margin-bottom:2px">${this.t('entstatus.banner_title')}</div>
         <div style="color:var(--secondary-text-color)">${items}</div>
+      </div>
+    </div>`;
+  }
+
+  // TRUE se A e B condividono almeno un giorno e hanno slot orari che si intersecano.
+  _schedulesOverlap(A, B) {
+    const aw = A.attributes.weekdays || [], bw = B.attributes.weekdays || [];
+    let shared = false;
+    for (let di = 0; di < 7; di++) if (this._appliesToDay(aw, di) && this._appliesToDay(bw, di)) { shared = true; break; }
+    if (!shared) return false;
+    const ivs = s => (s.attributes.timeslots || []).map(t => { const [a, b] = t.split(' - '); let e = this._parseTime(b); if (e === 0) e = 1440; return [this._parseTime(a), e]; });
+    const ia = ivs(A), ib = ivs(B);
+    for (const [as, ae] of ia) for (const [bs, be] of ib) if (as < be && ae > bs) return true;
+    return false;
+  }
+
+  // Banner: coppie di schedule ABILITATI sulla stessa entità (nel profilo) con orari sovrapposti.
+  _overlapWarningBannerHtml(tabs) {
+    const ents = new Set();
+    for (const t of tabs || []) { if (t.entity) ents.add(t.entity); for (const e of t.entities || []) if (e.entity) ents.add(e.entity); }
+    const items = [];
+    for (const eid of ents) {
+      const scheds = this._getProfileSchedules(eid).filter(s => s.state !== 'off');
+      for (let i = 0; i < scheds.length; i++) for (let j = i + 1; j < scheds.length; j++) {
+        if (!this._schedulesOverlap(scheds[i], scheds[j])) continue;
+        const na = scheds[i].attributes.friendly_name || scheds[i].entity_id;
+        const nb = scheds[j].attributes.friendly_name || scheds[j].entity_id;
+        items.push(`«${this._esc(na)}» ⟷ «${this._esc(nb)}»`);
+      }
+    }
+    if (!items.length) return '';
+    return `<div style="display:flex;gap:8px;align-items:flex-start;margin:0 0 8px;padding:8px 10px;border-radius:8px;background:rgba(255,152,0,.12);border:1px solid rgba(255,152,0,.5)">
+      <ha-icon icon="mdi:alert-outline" style="--mdc-icon-size:18px;color:#FF9800;flex-shrink:0"></ha-icon>
+      <div style="font-size:.8em;line-height:1.4">
+        <div style="font-weight:600;color:var(--primary-text-color);margin-bottom:2px">${this.t('entstatus.overlap_title')}</div>
+        <div style="color:var(--secondary-text-color)">${items.join(' · ')}</div>
       </div>
     </div>`;
   }

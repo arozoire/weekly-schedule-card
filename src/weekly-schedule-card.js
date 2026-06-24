@@ -273,6 +273,7 @@ class WeeklyScheduleCard extends WeeklyScheduleBase {
         </div>`}
 
         ${this._entityWarningBannerHtml(allTabs)}
+        ${this._overlapWarningBannerHtml(allTabs)}
 
         ${allTabs.length>1?`<div class="tab-bar">${allTabs.map((t,i)=>{
           const dot=t.color||(t.entities?.[0]?.color)||null;
