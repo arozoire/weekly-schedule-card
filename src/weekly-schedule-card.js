@@ -209,8 +209,7 @@ class WeeklyScheduleCard extends WeeklyScheduleBase {
                       const hasCond=evalRes.hasCond;
                       const isActive=s.attributes.current_slot!==null&&s.attributes.current_slot!==undefined;
                       const isMuted=isActive&&!isOff&&hasCond&&!evalRes.satisfied;
-                      const temp=s.attributes.actions?.[0]?.data?.temperature??null;
-                      const lbl=this._detectDomain(ec.entity)==='climate'&&temp!=null?`${temp}°`:s.attributes.friendly_name;
+                      const lbl=this._blockLabel(s,ec);
                       const glowStyle=isActive?`;--blk-glow:${color};--blk-glow-soft:${color}80`:'';
                       return `<div class="gantt-block ${isOff?'off':''}${isActive?' active':''}${isMuted?' muted':''}" data-entity="${s.entity_id}" style="left:${this._minutesToPercent(sMin)}%;width:${this._minutesToPercent(eMin-sMin)}%;background-color:${color};color:${this._textColorFor(color)}${glowStyle}">${(eMin-sMin)>60?this._esc(lbl):''}${isMuted?'<ha-icon class="blk-muted-ico" icon="mdi:volume-off"></ha-icon>':''}${hasStop?'<ha-icon class="blk-stop" icon="mdi:stop"></ha-icon>':''}${hasCond?'<ha-icon class="blk-stop" icon="mdi:flash" style="right:12px"></ha-icon>':''}</div>`;
                     })).join('')}
@@ -225,8 +224,8 @@ class WeeklyScheduleCard extends WeeklyScheduleBase {
     const legend = isGroup
       ? `<div class="ent-legend">${(tab.entities||[]).map(ec=>'<div class="ent-legend-item"><div class="ent-legend-dot" style="background:' + (ec.color||'#9E9E9E') + '"></div><span>' + this._esc(ec.name||ec.entity) + '</span></div>').join('')}</div>`
       : `<div class="legend">${this._getProfileSchedules(tab.entity).map(s=>{
-          const color=this._blockColor(s,tab),isOff=s.state==='off',temp=s.attributes.actions?.[0]?.data?.temperature??null;
-          return `<div class="legend-item" data-entity="${s.entity_id}" role="button" tabindex="0" style="${isOff?'opacity:.55':''}"><div class="legend-dot" style="background-color:${color}"></div><span>${this._esc(s.attributes.friendly_name||s.entity_id)}${this._detectDomain(tab.entity)==='climate'&&temp!=null?` — ${temp}°`:''}${isOff?' (off)':''}</span></div>`;
+          const color=this._blockColor(s,tab),isOff=s.state==='off';
+          return `<div class="legend-item" data-entity="${s.entity_id}" role="button" tabindex="0" style="${isOff?'opacity:.55':''}"><div class="legend-dot" style="background-color:${color}"></div><span>${this._esc(s.attributes.friendly_name||s.entity_id)} — ${this._esc(this._blockLabel(s,tab))}${isOff?' (off)':''}</span></div>`;
         }).join('')}</div>`;
 
     this._setStyles('main', this._mainStyles(H));
@@ -272,6 +271,8 @@ class WeeklyScheduleCard extends WeeklyScheduleBase {
           </div>
           <div class="hdr-sep"></div>
         </div>`}
+
+        ${this._entityWarningBannerHtml(allTabs)}
 
         ${allTabs.length>1?`<div class="tab-bar">${allTabs.map((t,i)=>{
           const dot=t.color||(t.entities?.[0]?.color)||null;
@@ -538,9 +539,12 @@ class WeeklyScheduleMiniCard extends HTMLElement {
 
   _actionLabel(s, entityId) {
     const actions=s.attributes.actions||[]; if(!actions.length)return '';
-    const svc=actions[0]?.service||'', data=actions[0]?.data||{};
+    const a=actions[0]||{}, svc=a.service||'', data=a.data||a.service_data||{};
     const dom=(entityId||'').split('.')[0];
-    if(dom==='climate'&&data.temperature!=null)return `${data.temperature}°C`;
+    if(dom==='climate'){ if(data.temperature!=null)return `${data.temperature}°C`; if(data.hvac_mode)return String(data.hvac_mode).replace(/_/g,' '); }
+    if(dom==='light'){ if(svc.includes('turn_off'))return 'Off'; if(data.brightness_pct!=null)return `${data.brightness_pct}%`; if(data.brightness!=null)return `${Math.round(data.brightness/255*100)}%`; return 'On'; }
+    if(dom==='fan'){ if(svc.includes('turn_off'))return 'Off'; if(data.percentage!=null)return `${data.percentage}%`; return 'On'; }
+    if(dom==='cover'||dom==='valve'){ if(svc.includes('position')&&data.position!=null)return `${data.position}%`; if(svc.includes('open'))return 'Open'; if(svc.includes('close'))return 'Closed'; if(svc.includes('stop'))return 'Stop'; }
     if(svc.includes('turn_on'))return 'On'; if(svc.includes('turn_off'))return 'Off';
     return svc.split('.')[1]||'';
   }
@@ -568,17 +572,21 @@ class WeeklyScheduleMiniCard extends HTMLElement {
     const activeIds=new Set(activeAll.map(s=>s.entity_id));
     const others=allSched.filter(s=>!activeIds.has(s.entity_id));
 
+    const lang=this._hass?.language||'en';
+    const delTitle=lang==='it'?'Elimina':lang==='fr'?'Supprimer':'Delete';
+    const confirmDel=lang==='it'?'Eliminare questo schedule?':lang==='fr'?'Supprimer ce planning ?':'Delete this schedule?';
     const rowHtml=(s,badge)=>{
       const ents=s.attributes.entities||[];
       const firstEnt=typeof ents[0]==='string'?ents[0]:ents[0]?.entity_id||'';
       const icon=this._domainIcon(firstEnt);
       const name=WeeklyScheduleBase._esc(s.attributes.friendly_name||s.entity_id);
       const action=this._actionLabel(s,firstEnt);
-      return `<div class="mini-row">
+      return `<div class="mini-row" data-sched="${s.entity_id}" role="button" tabindex="0">
         <div class="mini-icon-wrap">${icon}</div>
         <span class="mini-name">${name}</span>
         ${badge?`<span class="mini-badge">${badge}</span>`:''}
         ${action?`<span class="mini-action">${action}</span>`:''}
+        <button class="mini-del" data-sched="${s.entity_id}" title="${delTitle}"><ha-icon icon="mdi:trash-can-outline" style="--mdi-icon-size:16px"></ha-icon></button>
       </div>`;
     };
     const activeRows=running.map(s=>rowHtml(s,'')).join('');
@@ -586,7 +594,6 @@ class WeeklyScheduleMiniCard extends HTMLElement {
 
     // Group others by primary entity
     const groups=new Map();
-    const lang=this._hass?.language||'en';
     const offLbl=lang==='it'?'off':lang==='fr'?'éteint':'off';
     const idleLbl=lang==='it'?'non attivo':lang==='fr'?'inactif':'idle';
     for(const s of others){
@@ -621,6 +628,9 @@ class WeeklyScheduleMiniCard extends HTMLElement {
         .mini-icon-wrap{width:36px;height:36px;border-radius:10px;background:rgba(3,169,244,.12);display:flex;align-items:center;justify-content:center;font-size:1.1em;flex-shrink:0}
         .mini-name{flex:1;font-size:.83em;color:var(--primary-text-color);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
         .mini-action{font-size:.78em;color:var(--primary-color,#03a9f4);font-weight:600;flex-shrink:0}
+        .mini-row{cursor:pointer}
+        .mini-del{border:none;background:none;color:var(--secondary-text-color);cursor:pointer;padding:2px;border-radius:6px;flex-shrink:0;opacity:.55;display:flex;align-items:center}
+        .mini-del:hover{color:var(--error-color,#f44336);opacity:1;background:rgba(244,67,54,.12)}
         .mini-badge{font-size:.62em;background:var(--divider-color,#e0e0e0);color:var(--secondary-text-color);padding:1px 6px;border-radius:8px;flex-shrink:0;text-transform:uppercase;letter-spacing:.04em}
         .mini-empty{text-align:center;padding:16px 0;font-size:.8em;color:var(--secondary-text-color)}
         .mini-expand{display:flex;align-items:center;justify-content:center;gap:6px;width:100%;margin-top:8px;padding:8px;border:none;background:none;color:var(--primary-color,#03a9f4);cursor:pointer;font-size:.78em;font-weight:600;border-radius:8px}
@@ -648,6 +658,20 @@ class WeeklyScheduleMiniCard extends HTMLElement {
       this._expanded=!this._expanded;
       this._render();
     });
+
+    // Click riga → more-info dello schedule (apri/modifica); pulsante cestino → elimina.
+    this.shadowRoot.querySelectorAll('.mini-row').forEach(row=>row.addEventListener('click',e=>{
+      if(e.target.closest('.mini-del'))return;
+      const id=row.dataset.sched; if(!id)return;
+      this.dispatchEvent(new CustomEvent('hass-more-info',{detail:{entityId:id},bubbles:true,composed:true}));
+    }));
+    this.shadowRoot.querySelectorAll('.mini-del').forEach(btn=>btn.addEventListener('click',async e=>{
+      e.stopPropagation();
+      const id=btn.dataset.sched; if(!id)return;
+      if(!window.confirm(confirmDel))return;
+      try{ await this._hass.callService('scheduler','remove',{entity_id:id}); }
+      catch(err){ console.error('WSC mini delete failed',err); }
+    }));
 
     if(!this._interval) this._interval=setInterval(()=>this._render(),60000);
   }

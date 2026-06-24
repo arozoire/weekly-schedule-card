@@ -366,6 +366,31 @@ notifications:
 
 ## Last modified
 always update last modified date with day an hour Rome utc
+2026-06-24 10:45 Rome (v1.2.4 — batch UX/robustezza) — 6 interventi su richiesta utente:
+(1) **Label blocchi = risultato** (non più friendly_name lungo): nuovo helper `_blockLabel(s, entityConf)`
+in base-card (climate→temp/mode, light→on/off/% , fan→%, cover/valve→%/apri/chiudi/ferma, switch→on/off;
+deriva l'entità target da entityConf o da entities/actions dello schedule). Usato in `_getBlocksForDay`
+(compact/focus), gantt rows + legenda (weekly-schedule-card.js), tooltip (rimosso il vecchio actionText
+climate/light-only). **Colonne restano SENZA testo** (decisione utente). LOCALES `blk.*` (en/it/fr).
+(2) **Climate `fan_only`/senza-temp non compariva**: `_buildRenderCache.schedulesByEntity` ora indicizza
+gli schedule **anche** per gli `entity_id` trovati nelle `actions` (entity_id/target/service_data), non
+solo da `attributes.entities` (che lo Scheduler può lasciare vuoto per azioni hvac-only). Fix difensivo.
+(3) **Helper storage nascosti**: nuovo `_hideInputText` (entity_registry `hidden_by:'user'`) chiamato alla
+creazione in `_sharedSet.ensure()`; retro-fix una-tantum all'avvio `_hideStoreHelpers()` (admin, solo se non
+già nascosti). NB: restano in Impostazioni→Helper, spariscono da liste/dashboard/selettori.
+(4) **Sweep zombi conservativo** all'avvio: `_sweepZombieAutomations(data)` (chiamato in coda a
+`_cleanupOrphanAutomations`) — cancella `automation.wsc_*` NON tracciate in nessun scheduleLink E che
+referenziano solo `switch.schedule_*` assenti (GET config + regex `switch.schedule_\w+`); skip se 0 ref o
+se ≥1 referenziato esiste. Solo admin.
+(5) **Avviso entità sparite/unavailable**: `_entityStatus(eid)` ('ok'|'unavailable'|'missing') +
+`_entityWarningBannerHtml(tabs)` (banner rosso in cima alla editing card che elenca entità problematiche di
+schedule/gruppi del profilo). Solo segnalazione. LOCALES `entstatus.*` (en/it/fr).
+(6) **Mini card edit/delete**: ogni riga è cliccabile → `hass-more-info` dello `switch.schedule_*` (apri/
+modifica), + pulsante cestino `.mini-del` → `window.confirm` → `scheduler.remove` (le automazioni collegate
+le ripulisce poi lo sweep/cleanup alla load della editing card). `_actionLabel` della mini card migliorato
+(cover/valve/fan/luci %). Build OK, `check` verde sui 3 bundle. **Released v1.2.4** (l'utente si è
+fidato senza test in HA) — package.json bump, commit, push main, tag + GitHub release con i 3 dist asset
+via `gh release create --target main`. Da validare in HA quando possibile (specie item 5 climate fan_only).
 2026-06-24 Rome (v1.2.3 — quick-timer UI editor + valve support) — two user requests: (1) **quick-timer-card now UI-configurable** (was YAML-only): added
 `static getConfigElement()` + new `quick-timer-card-editor` element (`extends WeeklyScheduleBase`
 only to reuse `t()`/`_esc()`; all card lifecycle overridden) using **`ha-form`** (entity / name /

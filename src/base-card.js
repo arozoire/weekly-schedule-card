@@ -18,6 +18,8 @@ const LOCALES = {
     warnings:{ temp_unusual:'⚠️ Unusual value — check device compatibility',temp_very_high:'🔴 Warning: very high temperature',out_of_slider_range:'Outside typical range for this entity' },
     cond:{ add:'Add condition',entity:'Entity',operator:'Operator',value:'Value',and_all:'All (AND)',or_any:'Any (OR)',recheck:'Re-check interval',hysteresis:'Deadband ± (empty = 5% of value)' },
     notify:{ restore_auto:'Restore auto text',trigger_label:'When to notify',trigger_none:'Never',trigger_start:'On start',trigger_end:'On end',trigger_both:'Start + end',msg_start_label:'Start message',msg_end_label:'End message',default_start:'Schedule started',default_end:'Schedule ended',on:'on',off:'off',from_to:'From {start} to {end}',was_active:'Was active {start}–{end}',end_off:'auto turn off',end_on:'auto turn on',end_temp:'set {value}°C',end_none:'no action',conditions_label:'Conditions',recheck:'Recheck every {n} min',at_end:'At end: {action}',completed:'schedule completed',set_to:'set to',brightness:'brightness' },
+    blk:{ on:'On',off:'Off',open:'Open',close:'Closed',stop:'Stop' },
+    entstatus:{ unavailable:'unavailable',missing:'removed',banner_title:'Some entities are unavailable or removed:' },
     sched_name:{ all_day:'all-day',workdays_abbr:'wd' },
     linked:{ title:'Linked objects',auto_off:'Auto-off automation',cond_auto:'Condition automation',extras_auto:'Extras automation',notify:'Notification',override_flag:'Override flag',open:'Open',edit_yaml:'Edit YAML',missing:'missing' },
     endact:{ brightness:'Set brightness',color:'Set color',color_temp:'Set color temp',speed:'Set speed',position:'Set position',open:'Open',close:'Close',stop:'Stop' },
@@ -35,6 +37,8 @@ const LOCALES = {
     warnings:{ temp_unusual:'⚠️ Valore insolito — verifica compatibilità con il tuo dispositivo',temp_very_high:'🔴 Attenzione: temperatura molto alta',out_of_slider_range:'Fuori dal range tipico per questa entità' },
     cond:{ add:'Aggiungi condizione',entity:'Entità',operator:'Operatore',value:'Valore',and_all:'Tutte (AND)',or_any:'Una qualsiasi (OR)',recheck:'Intervallo rivalutazione',hysteresis:'Banda morta ± (vuoto = 5% del valore)' },
     notify:{ restore_auto:'Ripristina testo automatico',trigger_label:'Quando notificare',trigger_none:'Mai',trigger_start:"All'inizio",trigger_end:'Alla fine',trigger_both:'Inizio + fine',msg_start_label:'Messaggio inizio',msg_end_label:'Messaggio fine',default_start:'Schedule attivato',default_end:'Schedule terminato',on:'acceso',off:'spento',from_to:'Dalle {start} alle {end}',was_active:'Era attivo {start}–{end}',end_off:'spegnimento automatico',end_on:'accensione automatica',end_temp:'imposta {value}°C',end_none:'nessuna azione',conditions_label:'Condizioni',recheck:'Controllo ogni {n} min',at_end:'Alla fine: {action}',completed:'schedule completato',set_to:'impostato a',brightness:'luminosità' },
+    blk:{ on:'On',off:'Off',open:'Aperto',close:'Chiuso',stop:'Stop' },
+    entstatus:{ unavailable:'non disponibile',missing:'rimossa',banner_title:'Alcune entità non sono disponibili o sono state rimosse:' },
     sched_name:{ all_day:'tutto-gg',workdays_abbr:'fer' },
     linked:{ title:'Oggetti collegati',auto_off:'Automazione auto-off',cond_auto:'Automazione condizioni',extras_auto:'Automazione extra',notify:'Notifica',override_flag:'Flag override',open:'Apri',edit_yaml:'Modifica YAML',missing:'mancante' },
     endact:{ brightness:'Imposta luminosità',color:'Imposta colore',color_temp:'Imposta temp. colore',speed:'Imposta velocità',position:'Imposta posizione',open:'Apri',close:'Chiudi',stop:'Ferma' },
@@ -52,6 +56,8 @@ const LOCALES = {
     warnings:{ temp_unusual:"⚠️ Valeur inhabituelle — vérifiez la compatibilité avec votre appareil",temp_very_high:"🔴 Attention : température très élevée",out_of_slider_range:'Hors de la plage typique pour cette entité' },
     cond:{ add:'Ajouter condition',entity:'Entité',operator:'Opérateur',value:'Valeur',and_all:'Toutes (AND)',or_any:"N'importe laquelle (OR)",recheck:'Intervalle de réévaluation',hysteresis:'Bande morte ± (vide = 5% de la valeur)' },
     notify:{ restore_auto:'Restaurer texte auto',trigger_label:'Quand notifier',trigger_none:'Jamais',trigger_start:'Au début',trigger_end:'À la fin',trigger_both:'Début + fin',msg_start_label:'Message début',msg_end_label:'Message fin',default_start:'Schedule démarré',default_end:'Schedule terminé',on:'allumé',off:'éteint',from_to:'De {start} à {end}',was_active:'Était actif {start}–{end}',end_off:'extinction automatique',end_on:'allumage automatique',end_temp:'régler {value}°C',end_none:'aucune action',conditions_label:'Conditions',recheck:'Revérification chaque {n} min',at_end:'À la fin: {action}',completed:'planification terminée',set_to:'réglé à',brightness:'luminosité' },
+    blk:{ on:'On',off:'Off',open:'Ouvert',close:'Fermé',stop:'Stop' },
+    entstatus:{ unavailable:'indisponible',missing:'supprimée',banner_title:'Certaines entités sont indisponibles ou supprimées :' },
     sched_name:{ all_day:'tt-jour',workdays_abbr:'jo' },
     linked:{ title:'Objets liés',auto_off:'Automatisation auto-off',cond_auto:'Automatisation conditions',extras_auto:'Automatisation extra',notify:'Notification',override_flag:'Indicateur surcharge',open:'Ouvrir',edit_yaml:'Modifier YAML',missing:'manquant' },
     endact:{ brightness:'Définir luminosité',color:'Définir couleur',color_temp:'Définir temp. couleur',speed:'Définir vitesse',position:'Définir position',open:'Ouvrir',close:'Fermer',stop:'Arrêter' },
@@ -129,6 +135,7 @@ export default class WeeklyScheduleBase extends HTMLElement {
         this._ensureDefaultProfile();
         this._loadingStorage = false;
         this._cleanupOrphanAutomations().catch(() => {});
+        this._hideStoreHelpers().catch(() => {});
         if (!this._popupState && !this._profilesMode && !this._groupsMode && !this._dialogOpen) this.render();
       }).catch(() => {
         this._storageData = { groups: [], profiles: [], activeProfiles: [] };
@@ -286,6 +293,12 @@ export default class WeeklyScheduleBase extends HTMLElement {
   static async _createInputText(hass, name) {
     return hass.connection.sendMessagePromise({ type: 'input_text/create', name, min: 0, max: 255, mode: 'text' });
   }
+  // Nasconde l'helper da liste entità / dashboard / selettori (resta in Impostazioni → Helper).
+  // Best-effort: richiede admin; subito dopo la create l'entità è già registrata lato server.
+  static async _hideInputText(hass, entityId) {
+    try { await hass.connection.sendMessagePromise({ type: 'config/entity_registry/update', entity_id: entityId, hidden_by: 'user' }); }
+    catch (e) { /* best-effort */ }
+  }
   static async _deleteInputText(hass, entityId) {
     return hass.connection.sendMessagePromise({ type: 'input_text/delete', input_text_id: entityId.replace(/^input_text\./, '') });
   }
@@ -341,6 +354,7 @@ export default class WeeklyScheduleBase extends HTMLElement {
       if (existing.has(ent) || created.has(ent)) return;
       if (!isAdmin) throw new Error('WSC: servono nuovi helper input_text ma l\'utente non è admin');
       await WeeklyScheduleBase._createInputText(hass, helperName);
+      await WeeklyScheduleBase._hideInputText(hass, ent);
       created.add(ent);
     };
     // crea i chunk mancanti + il meta (richiede admin)
@@ -693,6 +707,26 @@ export default class WeeklyScheduleBase extends HTMLElement {
   //     no longer exists → remove it. Catches children orphaned by whole-profile deletions
   //     (their links are gone from storage, so pass 1 can't see them).
   // Guard: only run once HA states are loaded.
+  // Retro-fix una-tantum: nasconde gli helper di storage già esistenti (creati prima che
+  // hidden_by venisse impostato alla creazione). Solo admin; tocca solo quelli non già nascosti
+  // (rispetta un eventuale un-hide manuale entro la sessione).
+  async _hideStoreHelpers() {
+    if (this._hideHelpersDone) return;
+    const hass = this._hass;
+    if (!hass || !WeeklyScheduleBase._isAdmin(hass)) return;
+    const states = hass.states;
+    if (!states || Object.keys(states).length === 0) return;
+    this._hideHelpersDone = true;
+    const re = /^input_text\.wsc_(qt_)?store_/;
+    for (const ent of Object.keys(states).filter(k => re.test(k))) {
+      try {
+        const reg = await hass.connection.sendMessagePromise({ type: 'config/entity_registry/get', entity_id: ent });
+        if (reg && !reg.hidden_by)
+          await hass.connection.sendMessagePromise({ type: 'config/entity_registry/update', entity_id: ent, hidden_by: 'user' });
+      } catch (e) { /* best-effort */ }
+    }
+  }
+
   async _cleanupOrphanAutomations() {
     if (this._orphanCleanupDone) return;
     const states = this._hass?.states;
@@ -745,6 +779,39 @@ export default class WeeklyScheduleBase extends HTMLElement {
     if (deletions.length || childRemovals.size)
       console.log(`[WSC] Cleaned up ${deletions.length} orphan automation(s), ${childRemovals.size} orphan child schedule(s)`);
     });
+    await this._sweepZombieAutomations(data);
+  }
+
+  // Sweep "zombi" CONSERVATIVO: automazioni `wsc_*` NON tracciate in nessun scheduleLink E che
+  // referenziano solo `switch.schedule_*` ormai assenti da hass.states → orfane → DELETE.
+  // Solo admin. Se non si capisce quale schedule referenzia (0 ref) → NON si cancella.
+  async _sweepZombieAutomations(data) {
+    const hass = this._hass;
+    if (!hass || !WeeklyScheduleBase._isAdmin(hass)) return;
+    const states = hass.states;
+    const tracked = new Set();
+    for (const p of data.profiles || [])
+      for (const l of p.scheduleLinks || [])
+        for (const k of ['condAutoId', 'extrasAutoId', 'notifyAutoId', 'autoOffAutoId', 'overrideFlagAutoId'])
+          if (l[k]) tracked.add(l[k]);
+    const candidates = Object.values(states).filter(s =>
+      s.entity_id.startsWith('automation.') &&
+      typeof s.attributes?.id === 'string' &&
+      s.attributes.id.startsWith('wsc_') &&
+      !tracked.has(s.attributes.id));
+    let removed = 0;
+    for (const a of candidates) {
+      const id = a.attributes.id;
+      try {
+        const cfg = await hass.callApi('GET', `config/automation/config/${id}`);
+        const uniq = [...new Set((JSON.stringify(cfg).match(/switch\.schedule_[a-z0-9_]+/gi) || []))];
+        if (!uniq.length) continue;                   // non si capisce cosa referenzia → skip
+        if (uniq.some(eid => states[eid])) continue;  // almeno uno schedule referenziato esiste → non orfana
+        await hass.callApi('DELETE', `config/automation/config/${id}`);
+        removed++;
+      } catch (e) { /* skip su errore */ }
+    }
+    if (removed) console.log(`[WSC] Zombie sweep: removed ${removed} orphan wsc_* automation(s)`);
   }
 
   // ── Auto-off automation (end-of-slot action; replaces the old child schedule) ──
@@ -1884,6 +1951,41 @@ export default class WeeklyScheduleBase extends HTMLElement {
     return [...entityTabs, ...groupTabs];
   }
 
+  // 'ok' | 'unavailable' (esiste ma stato unavailable) | 'missing' (non più in hass.states)
+  _entityStatus(eid) {
+    if (!eid) return 'ok';
+    const s = this._hass?.states?.[eid];
+    if (!s) return 'missing';
+    if (s.state === 'unavailable') return 'unavailable';
+    return 'ok';
+  }
+
+  // Banner che elenca le entità (degli schedule / dei gruppi nei tab passati) sparite o non
+  // disponibili. '' se nessun problema. Solo segnalazione, nessuna azione automatica.
+  _entityWarningBannerHtml(tabs) {
+    const seen = new Map(); // eid -> { status, name }
+    const add = (eid, name) => {
+      if (!eid || seen.has(eid)) return;
+      const st = this._entityStatus(eid);
+      if (st !== 'ok') seen.set(eid, { status: st, name: name || eid });
+    };
+    for (const t of tabs || []) {
+      add(t.entity, t.name);
+      for (const e of t.entities || []) add(e.entity, e.name);
+    }
+    if (!seen.size) return '';
+    const items = [...seen.entries()].map(([eid, info]) =>
+      `<span title="${this._escAttr(eid)}">${this._esc(info.name)} (${this.t('entstatus.' + info.status)})</span>`
+    ).join(' · ');
+    return `<div style="display:flex;gap:8px;align-items:flex-start;margin:0 0 8px;padding:8px 10px;border-radius:8px;background:rgba(244,67,54,.10);border:1px solid rgba(244,67,54,.4)">
+      <ha-icon icon="mdi:alert" style="--mdc-icon-size:18px;color:var(--error-color,#f44336);flex-shrink:0"></ha-icon>
+      <div style="font-size:.8em;line-height:1.4">
+        <div style="font-weight:600;color:var(--primary-text-color);margin-bottom:2px">${this.t('entstatus.banner_title')}</div>
+        <div style="color:var(--secondary-text-color)">${items}</div>
+      </div>
+    </div>`;
+  }
+
   _currentTab() {
     const tabs = this._getAllTabs();
     return tabs[Math.min(this._activeTab, tabs.length - 1)] || tabs[0] || { type: 'entity', ...this._entities[0] };
@@ -1906,20 +2008,30 @@ export default class WeeklyScheduleBase extends HTMLElement {
 
   _buildRenderCache() {
     // schedulesByEntity: stessa semantica di _getSchedules (.includes su entry stringa).
+    // Le entità si raccolgono da attributes.entities UNITE a quelle trovate nelle actions
+    // (entity_id / target.entity_id / service_data.entity_id): per certe azioni — es. climate
+    // `set_hvac_mode` senza temperatura (fan_only) — lo Scheduler Component può lasciare
+    // `entities` vuoto, e senza questo fallback lo schedule non comparirebbe per la sua entità.
     const schedulesByEntity = new Map();
     const states = this._hass?.states;
     if (states) {
       for (const s of Object.values(states)) {
         if (!s.entity_id.startsWith('switch.schedule_')) continue;
-        const ents = s.attributes?.entities;
-        if (!Array.isArray(ents)) continue;
         const seenEid = new Set(); // come .filter: ogni schedule al più una volta per entità
-        for (const e of ents) {
-          if (typeof e !== 'string' || seenEid.has(e)) continue;
+        const addEid = e => {
+          if (typeof e !== 'string' || seenEid.has(e)) return;
           seenEid.add(e);
           let arr = schedulesByEntity.get(e);
           if (!arr) schedulesByEntity.set(e, arr = []);
           arr.push(s);
+        };
+        const ents = s.attributes?.entities;
+        if (Array.isArray(ents)) for (const e of ents) addEid(e);
+        const acts = s.attributes?.actions;
+        if (Array.isArray(acts)) for (const a of acts) {
+          addEid(a?.entity_id);
+          addEid(a?.target?.entity_id);
+          addEid(a?.service_data?.entity_id);
         }
       }
     }
@@ -2030,6 +2142,47 @@ export default class WeeklyScheduleBase extends HTMLElement {
     return entityConf?.color || '#9E9E9E';
   }
 
+  // Etichetta CORTA = RISULTATO dello schedule (non il friendly_name lungo). Per dominio:
+  // climate→temp/mode, light→on/off o %, fan→% , cover/valve→%/apri/chiudi/ferma, switch→on/off.
+  // entityConf opzionale: se assente deriva l'entità target dallo schedule (entities/actions).
+  _blockLabel(s, entityConf) {
+    const eid = entityConf?.entity
+      || (Array.isArray(s.attributes?.entities) ? s.attributes.entities[0] : null)
+      || s.attributes?.actions?.[0]?.entity_id
+      || s.attributes?.actions?.[0]?.target?.entity_id
+      || s.entity_id;
+    const dom = this._detectDomain(eid);
+    const a = s.attributes?.actions?.[0] || {};
+    const svc = a.service || '';
+    const d = a.data || a.service_data || {};
+    const isOffSvc = svc.endsWith('turn_off');
+    if (dom === 'climate') {
+      if (d.temperature != null) return `${d.temperature}°`;
+      if (d.hvac_mode) return String(d.hvac_mode).replace(/_/g, ' ');
+      if (d.preset_mode) return String(d.preset_mode);
+      return isOffSvc ? this.t('blk.off') : this.t('blk.on');
+    }
+    if (dom === 'light') {
+      if (isOffSvc) return this.t('blk.off');
+      if (d.brightness_pct != null) return `${d.brightness_pct}%`;
+      if (d.brightness != null) return `${Math.round(d.brightness / 255 * 100)}%`;
+      return this.t('blk.on');
+    }
+    if (dom === 'fan') {
+      if (isOffSvc) return this.t('blk.off');
+      if (d.percentage != null) return `${d.percentage}%`;
+      return this.t('blk.on');
+    }
+    if (dom === 'cover' || dom === 'valve') {
+      if (svc.includes('position') && d.position != null) return `${d.position}%`;
+      if (svc.includes('open')) return this.t('blk.open');
+      if (svc.includes('close')) return this.t('blk.close');
+      if (svc.includes('stop')) return this.t('blk.stop');
+      return s.state;
+    }
+    return isOffSvc ? this.t('blk.off') : this.t('blk.on');
+  }
+
   _getBlocksForDay(dayIndex, schedules, entityConf) {
     const blocks = [];
     for (const s of schedules) {
@@ -2041,9 +2194,7 @@ export default class WeeklyScheduleBase extends HTMLElement {
       const hasCond = evalRes.hasCond;
       const isActive = s.attributes.current_slot !== null && s.attributes.current_slot !== undefined;
       const isMuted = isActive && !isOff && hasCond && !evalRes.satisfied;
-      const temp = s.attributes.actions?.[0]?.data?.temperature ?? null;
-      const label = this._detectDomain(entityConf?.entity) === 'climate' && temp != null
-        ? `${temp}°` : s.attributes.friendly_name;
+      const label = this._blockLabel(s, entityConf);
       for (const slot of s.attributes.timeslots || []) {
         const [a, b] = slot.split(' - ');
         const sMin = this._parseTime(a);
@@ -2171,14 +2322,7 @@ export default class WeeklyScheduleBase extends HTMLElement {
     const DAY_MAP = {mon:'Lun',tue:'Mar',wed:'Mer',thu:'Gio',fri:'Ven',sat:'Sab',sun:'Dom'};
     const days = (s.attributes.weekdays||[]).map(d=>DAY_MAP[d]||d).join(', ');
     const slots = (s.attributes.timeslots||[]).join(', ');
-    const act = s.attributes.actions?.[0];
-    let actionText = '';
-    if (act) {
-      const svc = act.service||'', d2 = act.data||{};
-      if (svc.includes('climate')) actionText = d2.temperature!=null?`🌡 ${d2.temperature}°C`:'';
-      else if (svc.includes('light')) actionText = `💡 ${d2.brightness_pct!=null?d2.brightness_pct+'%':(svc.includes('turn_on')?'On':'Off')}`;
-      else actionText = svc.split('.')[1]||'';
-    }
+    const actionText = s.attributes.actions?.[0] ? this._blockLabel(s) : '';
     const state = s.state==='off'?' (disattivo)':'';
     const el = document.createElement('div');
     el.className = 'sched-tooltip';
