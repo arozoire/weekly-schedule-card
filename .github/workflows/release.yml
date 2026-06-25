@@ -4,9 +4,9 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: 'Version tag (e.g. v1.2.2)'
+        description: 'Version tag (e.g. v1.2.6)'
         required: true
-        default: 'v1.2.2'
+        default: 'v1.2.6'
 
 jobs:
   release:
@@ -34,14 +34,15 @@ jobs:
             dist/weekly-schedule-view-card.js
             dist/quick-timer-card.js
           body: |
-            ## v1.2.2 — quick-timer-card inclusa nel bundle HACS
+            ## ${{ github.event.inputs.version }} — nuovi domini controllabili
 
-            La `quick-timer-card` è ora **inclusa nel bundle principale** (`weekly-schedule-card.js`).
-            Gli utenti HACS non devono più aggiungere una risorsa separata: aggiornamento via HACS → hard-refresh → pronto.
+            Schedule, quick-timer card e selezione entità dei gruppi ora supportano
+            **4 nuovi domini** oltre a climate/light/switch/fan/cover/valve:
 
-            ### Cosa cambia
-            - `custom:quick-timer-card` disponibile dopo un normale update HACS (nessuna risorsa extra)
-            - Il bundle standalone `quick-timer-card.js` resta per installazioni manuali solo-timer
+            - **lock** — blocca/sblocca
+            - **input_boolean** — on/off
+            - **humidifier** — on/off + umidità + modalità
+            - **water_heater** — temperatura + modalità operativa
 
             ### Aggiornare
             - **HACS**: Update → Ctrl-F5.
