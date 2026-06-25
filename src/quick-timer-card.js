@@ -304,8 +304,10 @@ class QuickTimerCard extends WeeklyScheduleBase {
     if (!st) return '';
     const dom = this._detectDomain(eid);
     const a = st.attributes || {};
-    if (dom === 'climate') return a.temperature != null ? `${a.temperature}°C` : (st.state || '');
+    if (dom === 'climate' || dom === 'water_heater') return a.temperature != null ? `${a.temperature}°C` : (st.state || '');
     if (dom === 'cover' || dom === 'valve') return a.current_position != null ? `${a.current_position}%` : st.state;
+    if (dom === 'lock') return st.state || '';
+    if (dom === 'humidifier' && st.state === 'on') return a.humidity != null ? `${a.humidity}%` : this.t('qtimer.on');
     if ((dom === 'light' || dom === 'fan') && st.state === 'on') {
       const pct = dom === 'fan' ? a.percentage : (a.brightness != null ? Math.round(a.brightness / 255 * 100) : null);
       return pct != null ? `${pct}%` : this.t('qtimer.on');
@@ -350,6 +352,22 @@ class QuickTimerCard extends WeeklyScheduleBase {
       if (a.temperature != null) out.push({ service: 'climate.set_temperature', target: tgt, data: { temperature: a.temperature } });
       if (a.preset_mode) out.push({ service: 'climate.set_preset_mode', target: tgt, data: { preset_mode: a.preset_mode } });
       return out;
+    }
+    if (dom === 'lock') {
+      return [{ service: `lock.${st.state === 'locked' ? 'lock' : 'unlock'}`, target: tgt }];
+    }
+    if (dom === 'humidifier') {
+      if (st.state !== 'on') return [{ service: 'humidifier.turn_off', target: tgt }];
+      const out = [{ service: 'humidifier.turn_on', target: tgt }];
+      if (a.humidity != null) out.push({ service: 'humidifier.set_humidity', target: tgt, data: { humidity: a.humidity } });
+      if (a.mode) out.push({ service: 'humidifier.set_mode', target: tgt, data: { mode: a.mode } });
+      return out;
+    }
+    if (dom === 'water_heater') {
+      const out = [];
+      if (st.state && st.state !== 'unavailable' && st.state !== 'unknown') out.push({ service: 'water_heater.set_operation_mode', target: tgt, data: { operation_mode: st.state } });
+      if (a.temperature != null) out.push({ service: 'water_heater.set_temperature', target: tgt, data: { temperature: a.temperature } });
+      return out.length ? out : [{ service: 'water_heater.turn_off', target: tgt }];
     }
     return [{ service: `${dom}.turn_${on ? 'on' : 'off'}`, target: tgt }];
   }

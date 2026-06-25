@@ -366,6 +366,33 @@ notifications:
 
 ## Last modified
 always update last modified date with day an hour Rome utc
+2026-06-25 Rome (v1.2.6 — nuovi domini controllabili: lock, input_boolean, humidifier, water_heater) —
+estesi gli schedule + quick-timer + gruppi a 4 nuovi domini target (prima solo climate/light/switch/fan/
+cover/valve). **Root pattern:** il ramo default di `_buildScheduleActions` faceva `${dom}.turn_on/off`,
+che si rompe quando l'on/off non passa da turn_on/off (come valve). Interventi in `base-card.js`:
+(1) `_getAvailableEntities` DOMAINS += lock/input_boolean/humidifier/water_heater → selezionabili nei
+gruppi/picker. (2) nuovo helper `_onoffServices(dom)` (lock → `lock.lock`/`lock.unlock`, default →
+turn_on/off) usato in `_buildScheduleActions` (default) e `_buildStopActions` (turn_on/off). (3) rami
+dedicati in `_buildScheduleActions`: **humidifier** (turn_on + `set_humidity` + `set_mode`), **water_heater**
+(`set_temperature` + `set_operation_mode`); **lock**/**input_boolean** via on/off. (4) `_buildStopActions`
+nuovi casi `set_humidity`/`set_hum_mode`/`set_operation_mode` + `set_temperature` domain-aware (water_heater
+vs climate). (5) `_entityCaps` += humMin/humMax/humModes (available_modes), whOpModes (operation_list),
+whTempMin/whTempMax (min/max_temp). (6) `_endActionTypes`/`_endActionDefault`/`_endActionValueHtml` per i
+nuovi tipi (lock→Lock/Unlock, humidity slider, hum_mode/operation_mode select). (7) `domainSection` popup:
+rami lock (radio Blocca/Sblocca via name="switch-action"), humidifier (on/off + slider umidità min/max +
+select modalità), water_heater (temperatura climate-style + select modalità operativa); listener nuovi
+chk-humidity/humidity-slider, chk-hummode/hummode-select, chk-opmode/opmode-select; gate temp esteso a
+water_heater + `tempBounds` (climate 5–35, water_heater da device 30–80) usato in markup e `updateTempUI`.
+(8) parse-back edit: legge `humidity`/`mode`/`operation_mode` dalle actions, turnOn esclude `.unlock`,
+nuovi ps fields (enableHumidity/humidity/enableHumMode/humMode/enableOpMode/opMode). (9) `_activeValueMatchExpr`
+(override) + `_hysteresisActiveExpr`: lock (locked/unlocked), water_heater (temp/opmode), humidifier (on/off).
+(10) `_blockLabel` + default notify/name. (11) `_domainIconMdi` + badge CSS `.dom-lock/.dom-input_boolean/
+.dom-humidifier/.dom-water_heater`. **quick-timer-card.js**: `_buildRestoreActions`/`_heldLabel` rami nuovi.
+**weekly-schedule-card.js** (mini): `_domainIcon`/`_actionLabel` estesi. LOCALES popup/endact/blk (en/it/fr).
+Build OK, `check` verde sui 3 bundle. **Da validare in HA**: schedule lock (lock/unlock + auto-off), humidifier
+(umidità/modalità), water_heater (temp/modalità operativa), input_boolean on/off; quick-timer hold+restore;
+selezione nei gruppi. Limite: end-action set_temperature widget max 35° (digitabile oltre); slider umidità usa
+range device.
 2026-06-24 11:23 Rome (v1.2.5 — fix persistenza storage + healing orfani + avviso overlap) —
 due bug riportati dall'utente, stessa radice. **Causa:** il refetch async in `set hass` (rami
 `addedOrRemoved`/`storeChanged`) si risolveva DOPO una scrittura locale e sovrascriveva `_storageData`
