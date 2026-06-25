@@ -3963,7 +3963,7 @@ export default class WeeklyScheduleBase extends HTMLElement {
       .ent-item .color-palette{display:none;padding:2px 0}
       .ent-item.sel .color-palette{display:flex}
       .dom-badge{font-size:.62em;font-weight:700;padding:1px 6px;border-radius:6px;color:white;flex-shrink:0;min-width:44px;text-align:center}
-      .dom-climate{background:#FF7043}.dom-switch{background:#42A5F5}.dom-light{background:#F9A825}.dom-fan{background:#26C6DA}.dom-cover{background:#AB47BC}
+      .dom-climate{background:#FF7043}.dom-switch{background:#42A5F5}.dom-light{background:#F9A825}.dom-fan{background:#26C6DA}.dom-cover{background:#AB47BC}.dom-valve{background:#7E57C2}
       .ent-name{flex:1;font-size:.83em;color:var(--primary-text-color);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
       .ent-label-inp{padding:4px 8px;border-radius:6px;border:1px solid var(--divider-color,#ccc);font-size:.78em;color:var(--primary-text-color);background:var(--card-background-color,#fff);font-family:inherit;width:80px;flex-shrink:0}`;
   }
@@ -4088,7 +4088,7 @@ export default class WeeklyScheduleBase extends HTMLElement {
   }
 
   _getAvailableEntities() {
-    const DOMAINS = ['climate', 'switch', 'light', 'fan', 'cover'];
+    const DOMAINS = ['climate', 'switch', 'light', 'fan', 'cover', 'valve'];
     return Object.values(this._hass?.states || {})
       .filter(s => {
         const d = s.entity_id.split('.')[0];
