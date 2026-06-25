@@ -534,7 +534,8 @@ class WeeklyScheduleMiniCard extends HTMLElement {
   _domainIcon(entityId) {
     const d=(entityId||'').split('.')[0];
     if(d==='climate')return '🌡'; if(d==='light')return '💡';
-    if(d==='switch')return '🔌'; if(d==='cover')return '🪟';
+    if(d==='switch'||d==='input_boolean')return '🔌'; if(d==='cover'||d==='valve')return '🪟';
+    if(d==='lock')return '🔒'; if(d==='humidifier')return '💧'; if(d==='water_heater')return '♨️';
     return '📅';
   }
 
@@ -546,6 +547,9 @@ class WeeklyScheduleMiniCard extends HTMLElement {
     if(dom==='light'){ if(svc.includes('turn_off'))return 'Off'; if(data.brightness_pct!=null)return `${data.brightness_pct}%`; if(data.brightness!=null)return `${Math.round(data.brightness/255*100)}%`; return 'On'; }
     if(dom==='fan'){ if(svc.includes('turn_off'))return 'Off'; if(data.percentage!=null)return `${data.percentage}%`; return 'On'; }
     if(dom==='cover'||dom==='valve'){ if(svc.includes('position')&&data.position!=null)return `${data.position}%`; if(svc.includes('open'))return 'Open'; if(svc.includes('close'))return 'Closed'; if(svc.includes('stop'))return 'Stop'; }
+    if(dom==='lock'){ return svc.endsWith('unlock')?'Unlocked':'Locked'; }
+    if(dom==='humidifier'){ if(svc.includes('turn_off'))return 'Off'; if(data.humidity!=null)return `${data.humidity}%`; if(data.mode)return String(data.mode); return 'On'; }
+    if(dom==='water_heater'){ if(data.temperature!=null)return `${data.temperature}°C`; if(data.operation_mode)return String(data.operation_mode).replace(/_/g,' '); }
     if(svc.includes('turn_on'))return 'On'; if(svc.includes('turn_off'))return 'Off';
     return svc.split('.')[1]||'';
   }

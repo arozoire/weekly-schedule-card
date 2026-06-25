@@ -10,7 +10,7 @@ const LOCALES = {
     card:{ title:'Weekly Schedule',new_profile:'New profile',groups:'Groups',no_entities:'No entities configured',no_entities_sub:'Add entities via YAML config, or create a Group to get started.',manage_groups:'Manage Groups',layout_rows_view:'Rows view',layout_cols_view:'Columns view',no_schedule_now:'No schedule active now',empty_schedule:'No schedule' },
     layout:{ focus:'Focus',compact:'Compact' },
     qtimer:{ timer:'Timer',no_entity:'Set an entity in the card config.',on:'On',off:'Off',temperature:'Temperature',brightness:'Brightness',color:'Color',speed:'Speed',open:'Open',close:'Close',stop:'Stop',position:'Position',duration:'Duration',until:'Until',custom:'custom',minutes:'min',start:'Start timer',cancel:'Cancel (restore now)',holding:'Holding',bad_duration:'Set a valid duration / end time.',start_failed:'Could not start the timer (see console).',cover_open:'Open',cover_close:'Close',cover_stop:'Stop',cover_position:'Position',editor:{entity:'Entity',name:'Name',default_minutes:'Default duration (min)',presets:'Presets (min)',presets_help:'Comma-separated minutes, e.g. 5, 10, 15, 30, 45, 60',language:'Language',lang_auto:'Auto',no_form:'Config form unavailable — edit in YAML.'} },
-    popup:{ new_schedule:'New Schedule',edit_schedule:'Edit Schedule',schedule_active:'Schedule Active',time_slot:'Time slot',snap:'Snap',days:'Days',start:'Start',end:'End',drag_hint:'Drag handles to resize.',next_slot:'＋ Next slot',temperature:'Temperature',hvac_mode:'HVAC Mode',preset_mode:'Preset Mode',fan_mode:'Fan Mode',swing_mode:'Swing Mode',climate_actions:'Climate Actions',light_action:'Light Action',action:'Action',brightness:'Brightness',auto_off:'Auto at slot end',none:'None',turn_off:'Turn Off',turn_on:'Turn On',set_temp:'Set temp',conditions:'Conditions',add_condition:'+ Condition',notifications:'Notifications',notify_service_label:'Service (e.g. notify.mobile_app_phone)',notify_message_label:'Message',name:'Name',name_placeholder:'Schedule name (optional)',save:'Save',delete:'Delete',cancel:'Cancel',ok:'OK' },
+    popup:{ new_schedule:'New Schedule',edit_schedule:'Edit Schedule',schedule_active:'Schedule Active',time_slot:'Time slot',snap:'Snap',days:'Days',start:'Start',end:'End',drag_hint:'Drag handles to resize.',next_slot:'＋ Next slot',temperature:'Temperature',hvac_mode:'HVAC Mode',preset_mode:'Preset Mode',fan_mode:'Fan Mode',swing_mode:'Swing Mode',climate_actions:'Climate Actions',light_action:'Light Action',action:'Action',brightness:'Brightness',auto_off:'Auto at slot end',none:'None',turn_off:'Turn Off',turn_on:'Turn On',set_temp:'Set temp',lock:'Lock',unlock:'Unlock',humidity:'Humidity',mode:'Mode',operation_mode:'Operation mode',conditions:'Conditions',add_condition:'+ Condition',notifications:'Notifications',notify_service_label:'Service (e.g. notify.mobile_app_phone)',notify_message_label:'Message',name:'Name',name_placeholder:'Schedule name (optional)',save:'Save',delete:'Delete',cancel:'Cancel',ok:'OK' },
     days:{ mon:'Mon',tue:'Tue',wed:'Wed',thu:'Thu',fri:'Fri',sat:'Sat',sun:'Sun',all:'All',workdays:'Workdays',weekend:'Weekend' },
     profile:{ exclusive_label:'🔒 Exclusive (deactivates other exclusive profiles)',shared_label:'🔓 Shared (coexists with other profiles)',new_profile:'New Profile',create:'Create',name_placeholder:'Profile name',new_profile_mode:'new profile',rename:'Rename',duplicate:'Duplicate',delete:'Delete',viewing:'Viewing',active:'Active',activate:'Activate',deactivate:'Deactivate' },
     group:{ title:'Groups',back:'← Back',edit:'Edit',create:'Create Group',tab_color:'Tab color',select_entities:'Select entities',no_groups:'No groups yet.',create_new:'Create new group',delete_confirm:'Delete this group?',name:'Group name',enter_name:'Enter a group name.',select_entity:'Please select at least one entity.',create_placeholder:'e.g. Home Climate',removed_active:'active schedule(s) found on removed entit(ies). Deactivate?' },
@@ -18,18 +18,18 @@ const LOCALES = {
     warnings:{ temp_unusual:'⚠️ Unusual value — check device compatibility',temp_very_high:'🔴 Warning: very high temperature',out_of_slider_range:'Outside typical range for this entity' },
     cond:{ add:'Add condition',entity:'Entity',operator:'Operator',value:'Value',and_all:'All (AND)',or_any:'Any (OR)',recheck:'Re-check interval',hysteresis:'Deadband ± (empty = 5% of value)' },
     notify:{ restore_auto:'Restore auto text',trigger_label:'When to notify',trigger_none:'Never',trigger_start:'On start',trigger_end:'On end',trigger_both:'Start + end',msg_start_label:'Start message',msg_end_label:'End message',default_start:'Schedule started',default_end:'Schedule ended',on:'on',off:'off',from_to:'From {start} to {end}',was_active:'Was active {start}–{end}',end_off:'auto turn off',end_on:'auto turn on',end_temp:'set {value}°C',end_none:'no action',conditions_label:'Conditions',recheck:'Recheck every {n} min',at_end:'At end: {action}',completed:'schedule completed',set_to:'set to',brightness:'brightness' },
-    blk:{ on:'On',off:'Off',open:'Open',close:'Closed',stop:'Stop' },
+    blk:{ on:'On',off:'Off',open:'Open',close:'Closed',stop:'Stop',locked:'Locked',unlocked:'Unlocked' },
     entstatus:{ unavailable:'unavailable',missing:'removed',banner_title:'Some entities are unavailable or removed:',overlap_title:'Overlapping schedules on the same entity:' },
     sched_name:{ all_day:'all-day',workdays_abbr:'wd' },
     linked:{ title:'Linked objects',auto_off:'Auto-off automation',cond_auto:'Condition automation',extras_auto:'Extras automation',notify:'Notification',override_flag:'Override flag',open:'Open',edit_yaml:'Edit YAML',missing:'missing' },
-    endact:{ brightness:'Set brightness',color:'Set color',color_temp:'Set color temp',speed:'Set speed',position:'Set position',open:'Open',close:'Close',stop:'Stop' },
+    endact:{ brightness:'Set brightness',color:'Set color',color_temp:'Set color temp',speed:'Set speed',position:'Set position',open:'Open',close:'Close',stop:'Stop',lock:'Lock',unlock:'Unlock',humidity:'Set humidity',mode:'Set mode',operation_mode:'Set operation mode' },
     override:{ enable:'Allow manual override',hint:'If you change the entity by hand during a slot, the schedule stops re-applying its value until the next slot (conditional schedules only).',active:'Manual override active',inactive:'No override',cancel:'Cancel override now' }
   },
   it: {
     card:{ title:'Pianificazione Settimanale',new_profile:'Nuovo profilo',groups:'Gruppi',no_entities:'Nessuna entità configurata',no_entities_sub:'Aggiungi entità via YAML o crea un Gruppo per iniziare.',manage_groups:'Gestisci Gruppi',layout_rows_view:'Vista righe',layout_cols_view:'Vista colonne',no_schedule_now:'Nessuno schedule attivo ora',empty_schedule:'Nessuno schedule' },
     layout:{ focus:'Focus',compact:'Compatta' },
     qtimer:{ timer:'Timer',no_entity:'Imposta un\'entità nella configurazione della card.',on:'Acceso',off:'Spento',temperature:'Temperatura',brightness:'Luminosità',color:'Colore',speed:'Velocità',open:'Apri',close:'Chiudi',stop:'Ferma',position:'Posizione',duration:'Durata',until:'Fine alle',custom:'pers.',minutes:'min',start:'Avvia timer',cancel:'Annulla (ripristina ora)',holding:'Mantiene',bad_duration:'Imposta una durata / orario di fine valido.',start_failed:'Impossibile avviare il timer (vedi console).',cover_open:'Apri',cover_close:'Chiudi',cover_stop:'Ferma',cover_position:'Posizione',editor:{entity:'Entità',name:'Nome',default_minutes:'Durata predefinita (min)',presets:'Preset (min)',presets_help:'Minuti separati da virgola, es. 5, 10, 15, 30, 45, 60',language:'Lingua',lang_auto:'Auto',no_form:'Form di configurazione non disponibile — modifica in YAML.'} },
-    popup:{ new_schedule:'Nuovo Schedule',edit_schedule:'Modifica Schedule',schedule_active:'Schedule Attivo',time_slot:'Fascia oraria',snap:'Snap',days:'Giorni',start:'Inizio',end:'Fine',drag_hint:'Trascina le maniglie per ridimensionare.',next_slot:'＋ Slot successivo',temperature:'Temperatura',hvac_mode:'Modalità HVAC',preset_mode:'Modalità preset',fan_mode:'Modalità ventola',swing_mode:'Modalità oscillazione',climate_actions:'Azioni clima',light_action:'Azione luce',action:'Azione',brightness:'Luminosità',auto_off:'Azione al termine slot',none:'Nessuna',turn_off:'Spegni',turn_on:'Accendi',set_temp:'Imposta temp',conditions:'Condizioni',add_condition:'+ Condizione',notifications:'Notifiche',notify_service_label:'Servizio (es. notify.mobile_app_phone)',notify_message_label:'Messaggio',name:'Nome',name_placeholder:'Nome schedule (opzionale)',save:'Salva',delete:'Elimina',cancel:'Annulla',ok:'OK' },
+    popup:{ new_schedule:'Nuovo Schedule',edit_schedule:'Modifica Schedule',schedule_active:'Schedule Attivo',time_slot:'Fascia oraria',snap:'Snap',days:'Giorni',start:'Inizio',end:'Fine',drag_hint:'Trascina le maniglie per ridimensionare.',next_slot:'＋ Slot successivo',temperature:'Temperatura',hvac_mode:'Modalità HVAC',preset_mode:'Modalità preset',fan_mode:'Modalità ventola',swing_mode:'Modalità oscillazione',climate_actions:'Azioni clima',light_action:'Azione luce',action:'Azione',brightness:'Luminosità',auto_off:'Azione al termine slot',none:'Nessuna',turn_off:'Spegni',turn_on:'Accendi',set_temp:'Imposta temp',lock:'Blocca',unlock:'Sblocca',humidity:'Umidità',mode:'Modalità',operation_mode:'Modalità operativa',conditions:'Condizioni',add_condition:'+ Condizione',notifications:'Notifiche',notify_service_label:'Servizio (es. notify.mobile_app_phone)',notify_message_label:'Messaggio',name:'Nome',name_placeholder:'Nome schedule (opzionale)',save:'Salva',delete:'Elimina',cancel:'Annulla',ok:'OK' },
     days:{ mon:'Lun',tue:'Mar',wed:'Mer',thu:'Gio',fri:'Ven',sat:'Sab',sun:'Dom',all:'Tutti',workdays:'Feriali',weekend:'Weekend' },
     profile:{ exclusive_label:'🔒 Esclusivo (disattiva altri profili esclusivi)',shared_label:'🔓 Condiviso (coesiste con altri profili)',new_profile:'Nuovo Profilo',create:'Crea',name_placeholder:'Nome profilo',new_profile_mode:'nuovo profilo',rename:'Rinomina',duplicate:'Duplica',delete:'Elimina',viewing:'Stai visualizzando',active:'Attivo',activate:'Attiva',deactivate:'Disattiva' },
     group:{ title:'Gruppi',back:'← Indietro',edit:'Modifica',create:'Crea Gruppo',tab_color:'Colore tab',select_entities:'Seleziona entità',no_groups:'Nessun gruppo.',create_new:'Crea nuovo gruppo',delete_confirm:'Eliminare questo gruppo?',name:'Nome gruppo',enter_name:'Inserisci un nome gruppo.',select_entity:"Seleziona almeno un'entità.",create_placeholder:'es. Clima Casa',removed_active:'schedule attivi su entità rimosse. Disattivarli?' },
@@ -37,18 +37,18 @@ const LOCALES = {
     warnings:{ temp_unusual:'⚠️ Valore insolito — verifica compatibilità con il tuo dispositivo',temp_very_high:'🔴 Attenzione: temperatura molto alta',out_of_slider_range:'Fuori dal range tipico per questa entità' },
     cond:{ add:'Aggiungi condizione',entity:'Entità',operator:'Operatore',value:'Valore',and_all:'Tutte (AND)',or_any:'Una qualsiasi (OR)',recheck:'Intervallo rivalutazione',hysteresis:'Banda morta ± (vuoto = 5% del valore)' },
     notify:{ restore_auto:'Ripristina testo automatico',trigger_label:'Quando notificare',trigger_none:'Mai',trigger_start:"All'inizio",trigger_end:'Alla fine',trigger_both:'Inizio + fine',msg_start_label:'Messaggio inizio',msg_end_label:'Messaggio fine',default_start:'Schedule attivato',default_end:'Schedule terminato',on:'acceso',off:'spento',from_to:'Dalle {start} alle {end}',was_active:'Era attivo {start}–{end}',end_off:'spegnimento automatico',end_on:'accensione automatica',end_temp:'imposta {value}°C',end_none:'nessuna azione',conditions_label:'Condizioni',recheck:'Controllo ogni {n} min',at_end:'Alla fine: {action}',completed:'schedule completato',set_to:'impostato a',brightness:'luminosità' },
-    blk:{ on:'On',off:'Off',open:'Aperto',close:'Chiuso',stop:'Stop' },
+    blk:{ on:'On',off:'Off',open:'Aperto',close:'Chiuso',stop:'Stop',locked:'Bloccato',unlocked:'Sbloccato' },
     entstatus:{ unavailable:'non disponibile',missing:'rimossa',banner_title:'Alcune entità non sono disponibili o sono state rimosse:',overlap_title:'Schedule sovrapposti sulla stessa entità:' },
     sched_name:{ all_day:'tutto-gg',workdays_abbr:'fer' },
     linked:{ title:'Oggetti collegati',auto_off:'Automazione auto-off',cond_auto:'Automazione condizioni',extras_auto:'Automazione extra',notify:'Notifica',override_flag:'Flag override',open:'Apri',edit_yaml:'Modifica YAML',missing:'mancante' },
-    endact:{ brightness:'Imposta luminosità',color:'Imposta colore',color_temp:'Imposta temp. colore',speed:'Imposta velocità',position:'Imposta posizione',open:'Apri',close:'Chiudi',stop:'Ferma' },
+    endact:{ brightness:'Imposta luminosità',color:'Imposta colore',color_temp:'Imposta temp. colore',speed:'Imposta velocità',position:'Imposta posizione',open:'Apri',close:'Chiudi',stop:'Ferma',lock:'Blocca',unlock:'Sblocca',humidity:'Imposta umidità',mode:'Imposta modalità',operation_mode:'Imposta modalità operativa' },
     override:{ enable:'Consenti override manuale',hint:'Se cambi l\'entità a mano durante uno slot, lo schedule smette di ri-applicare il suo valore fino al prossimo slot (solo schedule con condizioni).',active:'Override manuale attivo',inactive:'Nessun override',cancel:'Annulla override adesso' }
   },
   fr: {
     card:{ title:'Planning Hebdomadaire',new_profile:'Nouveau profil',groups:'Groupes',no_entities:'Aucune entité configurée',no_entities_sub:'Ajoutez des entités via la config YAML, ou créez un Groupe pour commencer.',manage_groups:'Gérer les Groupes',layout_rows_view:'Vue lignes',layout_cols_view:'Vue colonnes',no_schedule_now:'Aucun planning actif',empty_schedule:'Aucun planning' },
     layout:{ focus:'Focus',compact:'Compacte' },
     qtimer:{ timer:'Minuteur',no_entity:'Définissez une entité dans la configuration de la carte.',on:'Allumé',off:'Éteint',temperature:'Température',brightness:'Luminosité',color:'Couleur',speed:'Vitesse',open:'Ouvrir',close:'Fermer',stop:'Arrêter',position:'Position',duration:'Durée',until:'Jusqu\'à',custom:'perso',minutes:'min',start:'Démarrer',cancel:'Annuler (restaurer)',holding:'Maintient',bad_duration:'Définissez une durée / heure de fin valide.',start_failed:'Impossible de démarrer le minuteur (voir console).',cover_open:'Ouvrir',cover_close:'Fermer',cover_stop:'Arrêter',cover_position:'Position',editor:{entity:'Entité',name:'Nom',default_minutes:'Durée par défaut (min)',presets:'Préréglages (min)',presets_help:'Minutes séparées par des virgules, ex. 5, 10, 15, 30, 45, 60',language:'Langue',lang_auto:'Auto',no_form:'Formulaire de configuration indisponible — modifiez en YAML.'} },
-    popup:{ new_schedule:'Nouveau Schedule',edit_schedule:'Modifier Schedule',schedule_active:'Schedule Actif',time_slot:'Créneau horaire',snap:'Snap',days:'Jours',start:'Début',end:'Fin',drag_hint:'Glissez les poignées pour redimensionner.',next_slot:'＋ Créneau suivant',temperature:'Température',hvac_mode:'Mode HVAC',preset_mode:'Mode preset',fan_mode:'Mode ventilateur',swing_mode:'Mode oscillation',climate_actions:'Actions climatisation',light_action:'Action lumière',action:'Action',brightness:'Luminosité',auto_off:'Action en fin de créneau',none:'Aucune',turn_off:'Éteindre',turn_on:'Allumer',set_temp:'Définir temp',conditions:'Conditions',add_condition:'+ Condition',notifications:'Notifications',notify_service_label:'Service (ex. notify.mobile_app_phone)',notify_message_label:'Message',name:'Nom',name_placeholder:'Nom du schedule (optionnel)',save:'Sauvegarder',delete:'Supprimer',cancel:'Annuler',ok:'OK' },
+    popup:{ new_schedule:'Nouveau Schedule',edit_schedule:'Modifier Schedule',schedule_active:'Schedule Actif',time_slot:'Créneau horaire',snap:'Snap',days:'Jours',start:'Début',end:'Fin',drag_hint:'Glissez les poignées pour redimensionner.',next_slot:'＋ Créneau suivant',temperature:'Température',hvac_mode:'Mode HVAC',preset_mode:'Mode preset',fan_mode:'Mode ventilateur',swing_mode:'Mode oscillation',climate_actions:'Actions climatisation',light_action:'Action lumière',action:'Action',brightness:'Luminosité',auto_off:'Action en fin de créneau',none:'Aucune',turn_off:'Éteindre',turn_on:'Allumer',set_temp:'Définir temp',lock:'Verrouiller',unlock:'Déverrouiller',humidity:'Humidité',mode:'Mode',operation_mode:'Mode de fonctionnement',conditions:'Conditions',add_condition:'+ Condition',notifications:'Notifications',notify_service_label:'Service (ex. notify.mobile_app_phone)',notify_message_label:'Message',name:'Nom',name_placeholder:'Nom du schedule (optionnel)',save:'Sauvegarder',delete:'Supprimer',cancel:'Annuler',ok:'OK' },
     days:{ mon:'Lun',tue:'Mar',wed:'Mer',thu:'Jeu',fri:'Ven',sat:'Sam',sun:'Dim',all:'Tous',workdays:'Jours ouvrés',weekend:'Week-end' },
     profile:{ exclusive_label:"🔒 Exclusif (désactive les autres profils exclusifs)",shared_label:"🔓 Partagé (coexiste avec d'autres profils)",new_profile:'Nouveau Profil',create:'Créer',name_placeholder:'Nom du profil',new_profile_mode:'nouveau profil',rename:'Renommer',duplicate:'Dupliquer',delete:'Supprimer',viewing:'En vue',active:'Actif',activate:'Activer',deactivate:'Désactiver' },
     group:{ title:'Groupes',back:'← Retour',edit:'Modifier',create:'Créer Groupe',tab_color:'Couleur onglet',select_entities:'Sélectionner entités',no_groups:'Aucun groupe.',create_new:'Créer nouveau groupe',delete_confirm:'Supprimer ce groupe ?',name:'Nom du groupe',enter_name:'Entrez un nom de groupe.',select_entity:'Sélectionnez au moins une entité.',create_placeholder:'ex. Climat Maison',removed_active:'planning(s) actif(s) sur entité(s) retirée(s). Désactiver ?' },
@@ -56,11 +56,11 @@ const LOCALES = {
     warnings:{ temp_unusual:"⚠️ Valeur inhabituelle — vérifiez la compatibilité avec votre appareil",temp_very_high:"🔴 Attention : température très élevée",out_of_slider_range:'Hors de la plage typique pour cette entité' },
     cond:{ add:'Ajouter condition',entity:'Entité',operator:'Opérateur',value:'Valeur',and_all:'Toutes (AND)',or_any:"N'importe laquelle (OR)",recheck:'Intervalle de réévaluation',hysteresis:'Bande morte ± (vide = 5% de la valeur)' },
     notify:{ restore_auto:'Restaurer texte auto',trigger_label:'Quand notifier',trigger_none:'Jamais',trigger_start:'Au début',trigger_end:'À la fin',trigger_both:'Début + fin',msg_start_label:'Message début',msg_end_label:'Message fin',default_start:'Schedule démarré',default_end:'Schedule terminé',on:'allumé',off:'éteint',from_to:'De {start} à {end}',was_active:'Était actif {start}–{end}',end_off:'extinction automatique',end_on:'allumage automatique',end_temp:'régler {value}°C',end_none:'aucune action',conditions_label:'Conditions',recheck:'Revérification chaque {n} min',at_end:'À la fin: {action}',completed:'planification terminée',set_to:'réglé à',brightness:'luminosité' },
-    blk:{ on:'On',off:'Off',open:'Ouvert',close:'Fermé',stop:'Stop' },
+    blk:{ on:'On',off:'Off',open:'Ouvert',close:'Fermé',stop:'Stop',locked:'Verrouillé',unlocked:'Déverrouillé' },
     entstatus:{ unavailable:'indisponible',missing:'supprimée',banner_title:'Certaines entités sont indisponibles ou supprimées :',overlap_title:'Plannings qui se chevauchent sur la même entité :' },
     sched_name:{ all_day:'tt-jour',workdays_abbr:'jo' },
     linked:{ title:'Objets liés',auto_off:'Automatisation auto-off',cond_auto:'Automatisation conditions',extras_auto:'Automatisation extra',notify:'Notification',override_flag:'Indicateur surcharge',open:'Ouvrir',edit_yaml:'Modifier YAML',missing:'manquant' },
-    endact:{ brightness:'Définir luminosité',color:'Définir couleur',color_temp:'Définir temp. couleur',speed:'Définir vitesse',position:'Définir position',open:'Ouvrir',close:'Fermer',stop:'Arrêter' },
+    endact:{ brightness:'Définir luminosité',color:'Définir couleur',color_temp:'Définir temp. couleur',speed:'Définir vitesse',position:'Définir position',open:'Ouvrir',close:'Fermer',stop:'Arrêter',lock:'Verrouiller',unlock:'Déverrouiller',humidity:'Définir humidité',mode:'Définir mode',operation_mode:'Définir mode de fonctionnement' },
     override:{ enable:'Autoriser la commande manuelle',hint:'Si vous changez l\'entité à la main pendant un créneau, le planning cesse de réappliquer sa valeur jusqu\'au prochain créneau (plannings avec conditions uniquement).',active:'Commande manuelle active',inactive:'Aucune surcharge',cancel:'Annuler la surcharge' }
   }
 };
@@ -933,6 +933,13 @@ export default class WeeklyScheduleBase extends HTMLElement {
         bLine = ` (${this.t('notify.brightness')} ${ps.brightness}%)`;
       }
       firstLine = `💡 ${entityName} ${stateLbl}${bLine}`;
+    } else if (ps.domain === 'water_heater') {
+      firstLine = ps.enableTemp ? `♨️ ${entityName} ${this.t('notify.set_to')} ${ps.temp}°C` : `♨️ ${entityName} ${ps.turnOn ? onLbl : offLbl}`;
+    } else if (ps.domain === 'humidifier') {
+      const hLine = (ps.turnOn && ps.enableHumidity) ? ` (${ps.humidity}%)` : '';
+      firstLine = `💧 ${entityName} ${ps.turnOn ? onLbl : offLbl}${hLine}`;
+    } else if (ps.domain === 'lock') {
+      firstLine = `🔒 ${entityName} ${ps.turnOn ? this.t('blk.locked') : this.t('blk.unlocked')}`;
     } else {
       firstLine = `🔌 ${entityName} ${ps.turnOn ? onLbl : offLbl}`;
     }
@@ -956,6 +963,15 @@ export default class WeeklyScheduleBase extends HTMLElement {
     } else if (ps.domain === 'light') {
       if (ps.turnOn) act = ps.enableBrightness ? `${ps.brightness}%` : 'On';
       else act = 'Off';
+    } else if (ps.domain === 'water_heater') {
+      if (ps.enableTemp) act = `${ps.temp}°`;
+      else if (ps.enableOpMode && ps.opMode) act = ps.opMode;
+      else act = ps.turnOn ? 'On' : 'Off';
+    } else if (ps.domain === 'humidifier') {
+      if (ps.turnOn) act = ps.enableHumidity ? `${ps.humidity}%` : 'On';
+      else act = 'Off';
+    } else if (ps.domain === 'lock') {
+      act = ps.turnOn ? this.t('blk.locked') : this.t('blk.unlocked');
     } else {
       act = ps.turnOn ? 'On' : 'Off';
     }
@@ -1129,8 +1145,9 @@ export default class WeeklyScheduleBase extends HTMLElement {
     if (!ps) return null;
     const t = ps.entityConf?.entity;
     if (!t) return null;
-    if (ps.domain === 'climate' && ps.enableTemp) return `(state_attr('${t}','temperature') | float(-999)) == ${ps.temp}`;
-    if (['switch', 'light', 'fan', 'input_boolean'].includes(ps.domain)) return `is_state('${t}','${ps.turnOn ? 'on' : 'off'}')`;
+    if ((ps.domain === 'climate' || ps.domain === 'water_heater') && ps.enableTemp) return `(state_attr('${t}','temperature') | float(-999)) == ${ps.temp}`;
+    if (['switch', 'light', 'fan', 'input_boolean', 'humidifier'].includes(ps.domain)) return `is_state('${t}','${ps.turnOn ? 'on' : 'off'}')`;
+    if (ps.domain === 'lock') return `is_state('${t}','${ps.turnOn ? 'locked' : 'unlocked'}')`;
     return null; // cover/altro: niente isteresi
   }
 
@@ -1156,6 +1173,12 @@ export default class WeeklyScheduleBase extends HTMLElement {
       if (ps.coverAction === 'open')  return `not is_state('${t}','closed')`;
       if (ps.coverAction === 'close') return `not is_state('${t}','open')`;
       return null; // stop → nessun valore target confrontabile
+    }
+    if (dom === 'lock') return `is_state('${t}','${ps.turnOn ? 'locked' : 'unlocked'}')`;
+    if (dom === 'water_heater') {
+      if (ps.enableTemp) return `(state_attr('${t}','temperature') | float(-999)) == ${ps.temp}`;
+      if (ps.enableOpMode && ps.opMode) return `is_state('${t}','${ps.opMode}')`;
+      return null;
     }
     // switch / light / fan / input_boolean / humidifier / generic → on/off (esatto)
     return `is_state('${t}','${ps.turnOn ? 'on' : 'off'}')`;
@@ -1202,6 +1225,13 @@ export default class WeeklyScheduleBase extends HTMLElement {
       : { open: 'cover.open_cover', close: 'cover.close_cover', stop: 'cover.stop_cover', setpos: 'cover.set_cover_position' };
   }
 
+  // on/off service names per domain — lock uses lock/unlock instead of turn_on/turn_off.
+  _onoffServices(dom) {
+    return dom === 'lock'
+      ? { on: 'lock.lock', off: 'lock.unlock' }
+      : { on: `${dom}.turn_on`, off: `${dom}.turn_off` };
+  }
+
   _buildScheduleActions(ps) {
     const eid = ps.entityConf.entity;
     const dom = ps.domain;
@@ -1237,8 +1267,21 @@ export default class WeeklyScheduleBase extends HTMLElement {
         const map = { open: sv.open, close: sv.close, stop: sv.stop };
         out.push({ service: map[ps.coverAction] || sv.close, target: { entity_id: eid } });
       }
+    } else if (dom === 'humidifier') {
+      if (ps.turnOn) {
+        out.push({ service: 'humidifier.turn_on', target: { entity_id: eid } });
+        if (ps.enableHumidity) out.push({ service: 'humidifier.set_humidity', target: { entity_id: eid }, data: { humidity: ps.humidity } });
+        if (ps.enableHumMode && ps.humMode) out.push({ service: 'humidifier.set_mode', target: { entity_id: eid }, data: { mode: ps.humMode } });
+      } else {
+        out.push({ service: 'humidifier.turn_off', target: { entity_id: eid } });
+      }
+    } else if (dom === 'water_heater') {
+      if (ps.enableTemp) out.push({ service: 'water_heater.set_temperature', target: { entity_id: eid }, data: { temperature: ps.temp } });
+      if (ps.enableOpMode && ps.opMode) out.push({ service: 'water_heater.set_operation_mode', target: { entity_id: eid }, data: { operation_mode: ps.opMode } });
+      if (!out.length) out.push({ service: ps.turnOn ? 'water_heater.turn_on' : 'water_heater.turn_off', target: { entity_id: eid } });
     } else {
-      out.push({ service: ps.turnOn ? `${dom}.turn_on` : `${dom}.turn_off`, target: { entity_id: eid } });
+      const sv = this._onoffServices(dom);
+      out.push({ service: ps.turnOn ? sv.on : sv.off, target: { entity_id: eid } });
     }
     return out;
   }
@@ -1253,9 +1296,12 @@ export default class WeeklyScheduleBase extends HTMLElement {
     const v = ps.stopValue;
     const tgt = { entity_id: eid };
     switch (t) {
-      case 'turn_on':       return [{ service: `${dom}.turn_on`, target: tgt }];
-      case 'turn_off':      return [{ service: `${dom}.turn_off`, target: tgt }];
-      case 'set_temperature': return [{ service: 'climate.set_temperature', target: tgt, data: { temperature: parseFloat(v) } }];
+      case 'turn_on':       return [{ service: this._onoffServices(dom).on, target: tgt }];
+      case 'turn_off':      return [{ service: this._onoffServices(dom).off, target: tgt }];
+      case 'set_temperature': return [{ service: `${dom === 'water_heater' ? 'water_heater' : 'climate'}.set_temperature`, target: tgt, data: { temperature: parseFloat(v) } }];
+      case 'set_humidity':  return [{ service: 'humidifier.set_humidity', target: tgt, data: { humidity: parseInt(v) } }];
+      case 'set_hum_mode':  return [{ service: 'humidifier.set_mode', target: tgt, data: { mode: v } }];
+      case 'set_operation_mode': return [{ service: 'water_heater.set_operation_mode', target: tgt, data: { operation_mode: v } }];
       case 'set_hvac_mode': return [{ service: 'climate.set_hvac_mode', target: tgt, data: { hvac_mode: v } }];
       case 'set_preset_mode': return [{ service: 'climate.set_preset_mode', target: tgt, data: { preset_mode: v } }];
       case 'set_fan_mode':  return [{ service: 'climate.set_fan_mode', target: tgt, data: { fan_mode: v } }];
@@ -1297,6 +1343,12 @@ export default class WeeklyScheduleBase extends HTMLElement {
       presetModes: a.preset_modes || [],
       fanModes: a.fan_modes || [],
       swingModes: a.swing_modes || [],
+      humMin: a.min_humidity != null ? a.min_humidity : 0,
+      humMax: a.max_humidity != null ? a.max_humidity : 100,
+      humModes: a.available_modes || [],
+      whOpModes: a.operation_list || [],
+      whTempMin: a.min_temp != null ? a.min_temp : 30,
+      whTempMax: a.max_temp != null ? a.max_temp : 80,
     };
   }
 
@@ -1325,6 +1377,17 @@ export default class WeeklyScheduleBase extends HTMLElement {
       out.push({ v: 'open', label: this.t('endact.open') });
       out.push({ v: 'stop', label: this.t('endact.stop') });
       if (c.coverPosition) out.push({ v: 'set_position', label: this.t('endact.position') });
+    } else if (dom === 'lock') {
+      out.push({ v: 'turn_off', label: this.t('endact.unlock') });
+      out.push({ v: 'turn_on', label: this.t('endact.lock') });
+    } else if (dom === 'humidifier') {
+      onoff();
+      out.push({ v: 'set_humidity', label: this.t('endact.humidity') });
+      if (c.humModes.length) out.push({ v: 'set_hum_mode', label: this.t('endact.mode') });
+    } else if (dom === 'water_heater') {
+      onoff();
+      out.push({ v: 'set_temperature', label: this.t('popup.set_temp') });
+      if (c.whOpModes.length) out.push({ v: 'set_operation_mode', label: this.t('endact.operation_mode') });
     } else {
       onoff();
     }
@@ -1337,7 +1400,10 @@ export default class WeeklyScheduleBase extends HTMLElement {
       case 'set_temperature': return 18;
       case 'set_brightness':
       case 'set_speed':
+      case 'set_humidity':
       case 'set_position': return 50;
+      case 'set_hum_mode': return (a.available_modes || [])[0] || '';
+      case 'set_operation_mode': return (a.operation_list || [])[0] || '';
       case 'set_color': return '#FFFFFF';
       case 'set_color_temp': return Math.round(((a.min_color_temp_kelvin || 2200) + (a.max_color_temp_kelvin || 6500)) / 2);
       case 'set_hvac_mode': return (a.hvac_modes || [])[0] || '';
@@ -1355,7 +1421,7 @@ export default class WeeklyScheduleBase extends HTMLElement {
       return `<div class="end-act-val param-inline"><input type="number" class="end-val-num temp-inp" min="5" max="35" step="0.5" value="${v}"><span style="font-size:.8em;color:var(--secondary-text-color)">°C</span></div>`;
     if (t === 'set_position')
       return `<div class="end-act-val cover-pos-block end-pos" style="flex:1 1 100%;margin-top:0"><span class="cover-pos-end">${this.t('endact.open')}</span><input type="range" class="position-slider" min="0" max="100" step="1" value="${100 - (parseInt(v) || 0)}"><span class="cover-pos-end">${this.t('endact.close')}</span><span class="position-value">${v}%</span></div>`;
-    if (t === 'set_brightness' || t === 'set_speed')
+    if (t === 'set_brightness' || t === 'set_speed' || t === 'set_humidity')
       return `<div class="end-act-val param-inline"><span class="end-val-pct" style="min-width:40px;text-align:right;font-weight:700">${v}%</span><input type="range" class="end-val-range" min="0" max="100" step="1" value="${v}"></div>`;
     if (t === 'set_color')
       return `<div class="end-act-val">${this._colorPickerHTML(v || '#FFFFFF')}</div>`;
@@ -1363,8 +1429,8 @@ export default class WeeklyScheduleBase extends HTMLElement {
       const mn = a.min_color_temp_kelvin || 2000, mx = a.max_color_temp_kelvin || 6500;
       return `<div class="end-act-val param-inline"><input type="number" class="end-val-num" min="${mn}" max="${mx}" step="50" value="${v}"><span style="font-size:.8em;color:var(--secondary-text-color)">K</span></div>`;
     }
-    if (t === 'set_hvac_mode' || t === 'set_preset_mode' || t === 'set_fan_mode' || t === 'set_swing_mode') {
-      const lists = { set_hvac_mode: a.hvac_modes, set_preset_mode: a.preset_modes, set_fan_mode: a.fan_modes, set_swing_mode: a.swing_modes };
+    if (t === 'set_hvac_mode' || t === 'set_preset_mode' || t === 'set_fan_mode' || t === 'set_swing_mode' || t === 'set_hum_mode' || t === 'set_operation_mode') {
+      const lists = { set_hvac_mode: a.hvac_modes, set_preset_mode: a.preset_modes, set_fan_mode: a.fan_modes, set_swing_mode: a.swing_modes, set_hum_mode: a.available_modes, set_operation_mode: a.operation_list };
       const opts = (lists[t] || []).map(m => `<option value="${m}" ${v === m ? 'selected' : ''}>${m}</option>`).join('');
       return `<div class="end-act-val"><select class="end-val-sel param-select">${opts}</select></div>`;
     }
@@ -2136,6 +2202,9 @@ export default class WeeklyScheduleBase extends HTMLElement {
       valve:        ['mdi:pipe-valve',       '#009688'],
       input_boolean:['mdi:checkbox-marked',  '#4CAF50'],
       media_player: ['mdi:television-play',  '#FF5722'],
+      lock:         ['mdi:lock',             '#5C6BC0'],
+      humidifier:   ['mdi:air-humidifier',   '#00ACC1'],
+      water_heater: ['mdi:water-boiler',     '#EF6C00'],
     };
     const d = (entityId||'').split('.')[0];
     return map[d] || ['mdi:calendar-clock','#607D8B'];
@@ -2235,6 +2304,18 @@ export default class WeeklyScheduleBase extends HTMLElement {
       if (svc.includes('close')) return this.t('blk.close');
       if (svc.includes('stop')) return this.t('blk.stop');
       return s.state;
+    }
+    if (dom === 'lock') return svc.endsWith('unlock') ? this.t('blk.unlocked') : this.t('blk.locked');
+    if (dom === 'humidifier') {
+      if (isOffSvc) return this.t('blk.off');
+      if (d.humidity != null) return `${d.humidity}%`;
+      if (d.mode) return String(d.mode);
+      return this.t('blk.on');
+    }
+    if (dom === 'water_heater') {
+      if (d.temperature != null) return `${d.temperature}°`;
+      if (d.operation_mode) return String(d.operation_mode).replace(/_/g, ' ');
+      return isOffSvc ? this.t('blk.off') : this.t('blk.on');
     }
     return isOffSvc ? this.t('blk.off') : this.t('blk.on');
   }
@@ -2414,12 +2495,14 @@ export default class WeeklyScheduleBase extends HTMLElement {
       mode: 'create', entityId: null, entityConf: ec, domain,
       startMin, endMin: Math.min(startMin + 60, 1440),
       days: [dayIndex], name: '', isOff: false,
-      temp: this._config.default_temp ?? 21,
+      temp: this._config.default_temp ?? (domain === 'water_heater' ? (this._hass?.states?.[ec.entity]?.attributes?.temperature ?? 50) : 21),
       hvacMode: '', presetMode: '', fanMode: '', swingMode: '',
-      enableTemp: domain === 'climate', enableHvac: false, enablePreset: false, enableFan: false, enableSwing: false,
+      enableTemp: domain === 'climate' || domain === 'water_heater', enableHvac: false, enablePreset: false, enableFan: false, enableSwing: false,
       turnOn: true, brightness: 100, enableBrightness: false,
       enableColor: false, color: '#FFFFFF',
       enableSpeed: false, speed: 50,
+      enableHumidity: false, humidity: 50, enableHumMode: false, humMode: '',
+      enableOpMode: false, opMode: '',
       coverAction: 'close', position: 50,
       stopAction: null, stopValue: null,
       conditions: [], condCombinator: 'and', condInterval: 15, _condOpen: false,
@@ -2476,6 +2559,9 @@ export default class WeeklyScheduleBase extends HTMLElement {
       if (d.color_temp_kelvin !== undefined) ad.color_temp_kelvin = d.color_temp_kelvin;
       if (d.percentage !== undefined) ad.percentage = d.percentage;
       if (d.position !== undefined) ad.position = d.position;
+      if (d.humidity !== undefined) ad.humidity = d.humidity;
+      if (d.mode !== undefined) ad.mode = d.mode;
+      if (d.operation_mode !== undefined) ad.operation_mode = d.operation_mode;
       if (!svc) svc = a.service || '';
     }
     // Storage extras override (HA Scheduler keeps only the first action — preset/fan/swing/hvac live in storage)
@@ -2495,13 +2581,16 @@ export default class WeeklyScheduleBase extends HTMLElement {
       presetMode: ad.preset_mode ?? '', fanMode: ad.fan_mode ?? '', swingMode: ad.swing_mode ?? '',
       enableTemp: ad.temperature !== undefined, enableHvac: !!ad.hvac_mode,
       enablePreset: !!ad.preset_mode, enableFan: !!ad.fan_mode, enableSwing: !!ad.swing_mode,
-      turnOn: !svc.endsWith('turn_off'),
+      turnOn: !svc.endsWith('turn_off') && !svc.endsWith('.unlock'),
       brightness: ad.brightness_pct ?? ad.brightness ?? 100,
       enableBrightness: ad.brightness_pct !== undefined || ad.brightness !== undefined,
       enableColor: ad.rgb_color !== undefined,
       color: ad.rgb_color ? this._rgbToHex(ad.rgb_color) : '#FFFFFF',
       enableSpeed: ad.percentage !== undefined,
       speed: ad.percentage ?? 50,
+      enableHumidity: ad.humidity !== undefined, humidity: ad.humidity ?? 50,
+      enableHumMode: ad.mode !== undefined, humMode: ad.mode ?? '',
+      enableOpMode: ad.operation_mode !== undefined, opMode: ad.operation_mode ?? '',
       coverAction: (/set_(cover|valve)_position/.test(svc) ? 'position' : /open_(cover|valve)/.test(svc) ? 'open' : /stop_(cover|valve)/.test(svc) ? 'stop' : 'close'),
       position: ad.position ?? 50,
       stopAction: (() => {
@@ -2575,7 +2664,7 @@ export default class WeeklyScheduleBase extends HTMLElement {
     const magnetPoints = [...new Set(bgBlocks.flatMap(b => [b.startMin, b.endMin]))];
     const editLeft = this._minutesToPercent(ps.startMin);
     const editWidth = this._minutesToPercent(ps.endMin - ps.startMin);
-    const editColor = ps.domain === 'climate' ? this._tempToColor(ps.temp) : (ps.entityConf.color || '#9E9E9E');
+    const editColor = (ps.domain === 'climate' || ps.domain === 'water_heater') ? this._tempToColor(ps.temp) : (ps.entityConf.color || '#9E9E9E');
     const timeLabel = `${this._minutesToTime(ps.startMin)} – ${this._minutesToTime(ps.endMin)}`;
 
     const groupPicker = ps.groupEntities ? `
@@ -2608,14 +2697,17 @@ export default class WeeklyScheduleBase extends HTMLElement {
       const opts = list.map(m => `<option value="${m}" ${value === m ? 'selected' : ''}>${m}</option>`).join('');
       return `<select class="${clsBase}-select param-select${disCls}${outCls}" ${disAttr}><option value="">-- select --</option>${extra}${opts}</select>`;
     };
+    const caps = this._entityCaps(ps.entityConf.entity);
+    // Temperature slider bounds: climate 5–35, water_heater from device range (default 30–80).
+    const tempBounds = ps.domain === 'water_heater' ? { min: caps.whTempMin, max: caps.whTempMax } : { min: 5, max: 35 };
     const domainSection = ps.domain === 'climate' ? `
       <div>
         <div class="section-label">${this.t('popup.climate_actions')}</div>
         <div class="action-row">
           <label class="action-check"><input type="checkbox" class="chk-temp" ${ps.enableTemp?'checked':''}><span>${this.t('popup.temperature')}</span></label>
-          <div class="param-inline temp-ctrl ${ps.enableTemp?'':'disabled'} ${ps.temp<5||ps.temp>35?'out-range-wrap':''}">
-            <input type="number" class="temp-inp ${ps.temp<5||ps.temp>35?'out-range':''}" min="5" max="100" step="0.5" value="${ps.temp}" ${ps.enableTemp?'':'disabled'}>
-            <input type="range" class="temp-slider ${ps.temp<5||ps.temp>35?'out-range':''}" min="5" max="35" step="0.5" value="${Math.min(35,Math.max(5,ps.temp))}" ${ps.enableTemp?'':'disabled'}>
+          <div class="param-inline temp-ctrl ${ps.enableTemp?'':'disabled'} ${ps.temp<tempBounds.min||ps.temp>tempBounds.max?'out-range-wrap':''}">
+            <input type="number" class="temp-inp ${ps.temp<tempBounds.min||ps.temp>tempBounds.max?'out-range':''}" min="5" max="100" step="0.5" value="${ps.temp}" ${ps.enableTemp?'':'disabled'}>
+            <input type="range" class="temp-slider ${ps.temp<tempBounds.min||ps.temp>tempBounds.max?'out-range':''}" min="${tempBounds.min}" max="${tempBounds.max}" step="0.5" value="${Math.min(tempBounds.max,Math.max(tempBounds.min,ps.temp))}" ${ps.enableTemp?'':'disabled'}>
           </div>
         </div>
         <div class="temp-msg-area" style="${ps.enableTemp?'':'display:none'}"></div>
@@ -2689,6 +2781,55 @@ export default class WeeklyScheduleBase extends HTMLElement {
           <input type="range" class="position-slider" min="0" max="100" step="1" value="${100 - ps.position}">
           <span class="cover-pos-end">${this.t('endact.close')}</span>
           <span class="position-value">${ps.position}%</span>
+        </div>` : ''}
+      </div>` :
+    ps.domain === 'lock' ? `
+      <div>
+        <div class="section-label">${this.t('popup.action')}</div>
+        <div class="radio-row">
+          <label><input type="radio" name="switch-action" value="on" ${ps.turnOn?'checked':''}> ${this.t('popup.lock')}</label>
+          <label><input type="radio" name="switch-action" value="off" ${!ps.turnOn?'checked':''}> ${this.t('popup.unlock')}</label>
+        </div>
+      </div>` :
+    ps.domain === 'humidifier' ? `
+      <div>
+        <div class="section-label">${this.t('popup.action')}</div>
+        <div class="radio-row">
+          <label><input type="radio" name="switch-action" value="on" ${ps.turnOn?'checked':''}> ${this.t('popup.turn_on')}</label>
+          <label><input type="radio" name="switch-action" value="off" ${!ps.turnOn?'checked':''}> ${this.t('popup.turn_off')}</label>
+        </div>
+        <div class="action-row" style="margin-top:8px;${caps.humModes.length?'':'border-bottom:none'}">
+          <label class="action-check"><input type="checkbox" class="chk-humidity" ${ps.enableHumidity?'checked':''}><span>${this.t('popup.humidity')}</span></label>
+          <div class="param-inline ${ps.enableHumidity?'':'disabled'}">
+            <span class="humidity-value" style="min-width:40px;text-align:right;font-weight:700">${ps.humidity}%</span>
+            <input type="range" class="humidity-slider" min="${caps.humMin}" max="${caps.humMax}" step="1" value="${ps.humidity}" ${ps.enableHumidity?'':'disabled'}>
+          </div>
+        </div>
+        ${caps.humModes.length ? `
+        <div class="action-row" style="border-bottom:none">
+          <label class="action-check"><input type="checkbox" class="chk-hummode" ${ps.enableHumMode?'checked':''}><span>${this.t('popup.mode')}</span></label>
+          <select class="hummode-select param-select ${ps.enableHumMode?'':'disabled'}" ${ps.enableHumMode?'':'disabled'}>
+            <option value="">-- select --</option>${caps.humModes.map(m=>`<option value="${this._escAttr(m)}" ${ps.humMode===m?'selected':''}>${this._esc(m)}</option>`).join('')}
+          </select>
+        </div>` : ''}
+      </div>` :
+    ps.domain === 'water_heater' ? `
+      <div>
+        <div class="section-label">${this.t('popup.action')}</div>
+        <div class="action-row">
+          <label class="action-check"><input type="checkbox" class="chk-temp" ${ps.enableTemp?'checked':''}><span>${this.t('popup.temperature')}</span></label>
+          <div class="param-inline temp-ctrl ${ps.enableTemp?'':'disabled'} ${ps.temp<tempBounds.min||ps.temp>tempBounds.max?'out-range-wrap':''}">
+            <input type="number" class="temp-inp ${ps.temp<tempBounds.min||ps.temp>tempBounds.max?'out-range':''}" min="5" max="100" step="0.5" value="${ps.temp}" ${ps.enableTemp?'':'disabled'}>
+            <input type="range" class="temp-slider ${ps.temp<tempBounds.min||ps.temp>tempBounds.max?'out-range':''}" min="${tempBounds.min}" max="${tempBounds.max}" step="0.5" value="${Math.min(tempBounds.max,Math.max(tempBounds.min,ps.temp))}" ${ps.enableTemp?'':'disabled'}>
+          </div>
+        </div>
+        <div class="temp-msg-area" style="${ps.enableTemp?'':'display:none'}"></div>
+        ${caps.whOpModes.length ? `
+        <div class="action-row" style="border-bottom:none">
+          <label class="action-check"><input type="checkbox" class="chk-opmode" ${ps.enableOpMode?'checked':''}><span>${this.t('popup.operation_mode')}</span></label>
+          <select class="opmode-select param-select ${ps.enableOpMode?'':'disabled'}" ${ps.enableOpMode?'':'disabled'}>
+            <option value="">-- select --</option>${caps.whOpModes.map(m=>`<option value="${this._escAttr(m)}" ${ps.opMode===m?'selected':''}>${this._esc(m)}</option>`).join('')}
+          </select>
         </div>` : ''}
       </div>` : `
       <div>
@@ -3114,7 +3255,7 @@ export default class WeeklyScheduleBase extends HTMLElement {
 
     dlg.querySelector('.name-input').addEventListener('input', e => { ps.name = e.target.value; });
 
-    if (ps.domain === 'climate') {
+    if (ps.domain === 'climate' || ps.domain === 'water_heater') {
       const eb = dlg.querySelector('.tb-edit');
       const bindChk = (chkSel, fieldSel, key, enableKey, isSelect) => {
         const chk = dlg.querySelector(chkSel);
@@ -3131,11 +3272,11 @@ export default class WeeklyScheduleBase extends HTMLElement {
       const ts = dlg.querySelector('.temp-slider'), ti = dlg.querySelector('.temp-inp'), ct = dlg.querySelector('.chk-temp');
       const updateTempUI = () => {
         const v = ps.temp;
-        const outSlider = v < 5 || v > 35;
+        const outSlider = v < tempBounds.min || v > tempBounds.max;
         ts.classList.toggle('out-range', outSlider);
         ti.classList.toggle('out-range', outSlider);
         ti.closest('.param-inline')?.classList.toggle('out-range-wrap', outSlider);
-        ts.value = String(Math.min(35, Math.max(5, v)));
+        ts.value = String(Math.min(tempBounds.max, Math.max(tempBounds.min, v)));
         ti.value = String(v);
         const eState = this._hass.states[ps.entityConf.entity];
         const haMin = eState?.attributes.min_temp;
@@ -3202,6 +3343,23 @@ export default class WeeklyScheduleBase extends HTMLElement {
     }));
     if (pos) {
       pos.addEventListener('input', () => { ps.position = 100 - parseInt(pos.value); if (posV) posV.textContent = `${ps.position}%`; });
+    }
+    // Humidifier: humidity slider + mode select
+    const humChk = dlg.querySelector('.chk-humidity'), humSld = dlg.querySelector('.humidity-slider'), humV = dlg.querySelector('.humidity-value');
+    if (humChk && humSld) {
+      humChk.addEventListener('change', () => { ps.enableHumidity = humChk.checked; humSld.disabled = !humChk.checked; humSld.closest('.param-inline')?.classList.toggle('disabled', !humChk.checked); });
+      humSld.addEventListener('input', () => { ps.humidity = parseInt(humSld.value); if (humV) humV.textContent = `${ps.humidity}%`; });
+    }
+    const humModeChk = dlg.querySelector('.chk-hummode'), humModeSel = dlg.querySelector('.hummode-select');
+    if (humModeChk && humModeSel) {
+      humModeChk.addEventListener('change', () => { ps.enableHumMode = humModeChk.checked; humModeSel.disabled = !humModeChk.checked; humModeSel.classList.toggle('disabled', !humModeChk.checked); });
+      humModeSel.addEventListener('change', () => { ps.humMode = humModeSel.value; });
+    }
+    // Water heater: operation mode select (temperature handled with climate temp listeners)
+    const opChk = dlg.querySelector('.chk-opmode'), opSel = dlg.querySelector('.opmode-select');
+    if (opChk && opSel) {
+      opChk.addEventListener('change', () => { ps.enableOpMode = opChk.checked; opSel.disabled = !opChk.checked; opSel.classList.toggle('disabled', !opChk.checked); });
+      opSel.addEventListener('change', () => { ps.opMode = opSel.value; });
     }
     // End-of-slot (auto-off) action editor
     dlg.querySelector('.end-act-type')?.addEventListener('change', e => {
@@ -3963,7 +4121,7 @@ export default class WeeklyScheduleBase extends HTMLElement {
       .ent-item .color-palette{display:none;padding:2px 0}
       .ent-item.sel .color-palette{display:flex}
       .dom-badge{font-size:.62em;font-weight:700;padding:1px 6px;border-radius:6px;color:white;flex-shrink:0;min-width:44px;text-align:center}
-      .dom-climate{background:#FF7043}.dom-switch{background:#42A5F5}.dom-light{background:#F9A825}.dom-fan{background:#26C6DA}.dom-cover{background:#AB47BC}.dom-valve{background:#7E57C2}
+      .dom-climate{background:#FF7043}.dom-switch{background:#42A5F5}.dom-light{background:#F9A825}.dom-fan{background:#26C6DA}.dom-cover{background:#AB47BC}.dom-valve{background:#7E57C2}.dom-lock{background:#5C6BC0}.dom-input_boolean{background:#4CAF50}.dom-humidifier{background:#00ACC1}.dom-water_heater{background:#EF6C00}
       .ent-name{flex:1;font-size:.83em;color:var(--primary-text-color);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
       .ent-label-inp{padding:4px 8px;border-radius:6px;border:1px solid var(--divider-color,#ccc);font-size:.78em;color:var(--primary-text-color);background:var(--card-background-color,#fff);font-family:inherit;width:80px;flex-shrink:0}`;
   }
@@ -4088,7 +4246,7 @@ export default class WeeklyScheduleBase extends HTMLElement {
   }
 
   _getAvailableEntities() {
-    const DOMAINS = ['climate', 'switch', 'light', 'fan', 'cover', 'valve'];
+    const DOMAINS = ['climate', 'switch', 'light', 'fan', 'cover', 'valve', 'lock', 'input_boolean', 'humidifier', 'water_heater'];
     return Object.values(this._hass?.states || {})
       .filter(s => {
         const d = s.entity_id.split('.')[0];
