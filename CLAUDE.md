@@ -393,6 +393,14 @@ Build OK, `check` verde sui 3 bundle. **Da validare in HA**: schedule lock (lock
 (umidità/modalità), water_heater (temp/modalità operativa), input_boolean on/off; quick-timer hold+restore;
 selezione nei gruppi. Limite: end-action set_temperature widget max 35° (digitabile oltre); slider umidità usa
 range device.
+**FIX (stessa sessione):** modifica schedule non funzionante sulla prima entità climate di un gruppo quando
+lo schedule ha azioni **hvac/preset-only** (senza temperatura). Causa: `_openEditPopup` risolveva `ec`
+(entityConf) SOLO da `s.attributes.entities`, che lo Scheduler lascia VUOTO per azioni climate hvac-only
+(stesso quirk del fix v1.2.4 sul render) → `ec` cadeva sulla prima entità top-level sbagliata o `undefined`
+→ popup di edit rotto (durata/preset non modificabili/salvabili). Fix: raccogliere gli entity_id anche dalle
+`actions` (`entity_id`/`target.entity_id`/`service_data.entity_id`), come fa `_buildRenderCache`, e
+matchare `ec` su quel set (entità top-level → gruppi → fallback sintetico `{entity}`). Create non era
+affetto perché usa direttamente l'entità del tab.
 2026-06-24 11:23 Rome (v1.2.5 — fix persistenza storage + healing orfani + avviso overlap) —
 due bug riportati dall'utente, stessa radice. **Causa:** il refetch async in `set hass` (rami
 `addedOrRemoved`/`storeChanged`) si risolveva DOPO una scrittura locale e sovrascriveva `_storageData`

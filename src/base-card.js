@@ -2525,11 +2525,24 @@ export default class WeeklyScheduleBase extends HTMLElement {
     const s = this._hass.states[entityId];
     if (!s) return;
     const { weekdays, timeslots, actions } = s.attributes;
-    let ec = this._entities[0];
-    for (const e of this._entities) { if (s.attributes.entities?.includes(e.entity)) { ec = e; break; } }
-    for (const p of this._storageData?.profiles || [])
-      for (const g of p.groups || [])
-        for (const e of g.entities || []) { if (s.attributes.entities?.includes(e.entity)) { ec = e; break; } }
+    // Entity ids this schedule controls. attributes.entities can be EMPTY for
+    // hvac/preset-only climate actions (Scheduler quirk) — harvest from the
+    // actions too, otherwise ec resolves to the wrong entity and edit breaks.
+    const schedEnts = new Set();
+    if (Array.isArray(s.attributes.entities)) for (const e of s.attributes.entities) if (typeof e === 'string') schedEnts.add(e);
+    if (Array.isArray(actions)) for (const a of actions) {
+      if (typeof a?.entity_id === 'string') schedEnts.add(a.entity_id);
+      if (typeof a?.target?.entity_id === 'string') schedEnts.add(a.target.entity_id);
+      if (typeof a?.service_data?.entity_id === 'string') schedEnts.add(a.service_data.entity_id);
+    }
+    let ec = null;
+    for (const e of this._entities) { if (schedEnts.has(e.entity)) { ec = e; break; } }
+    if (!ec) for (const p of this._storageData?.profiles || []) {
+      for (const g of p.groups || []) { const m = (g.entities || []).find(e => schedEnts.has(e.entity)); if (m) { ec = m; break; } }
+      if (ec) break;
+    }
+    if (!ec) ec = this._entities[0] || (schedEnts.size ? { entity: [...schedEnts][0] } : null);
+    if (!ec) return;
 
     const slot = timeslots?.[0] || '08:00 - 22:00';
     const [a, b] = slot.split(' - ');
