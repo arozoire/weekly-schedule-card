@@ -44,6 +44,10 @@ jobs:
             - **humidifier** — on/off + umidità + modalità
             - **water_heater** — temperatura + modalità operativa
 
+            ### Fix
+            - Modifica schedule **climate hvac/preset-only** (senza temperatura) ora funzionante
+              anche sulla prima entità di un gruppo (durata/preset modificabili).
+
             ### Aggiornare
             - **HACS**: Update → Ctrl-F5.
             - **Manuale**: scarica `weekly-schedule-card.js` (Assets) → in `/config/www/` → Ctrl-F5.

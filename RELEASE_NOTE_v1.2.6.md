@@ -25,10 +25,17 @@ gh release create v1.2.6 --target main \
   dist/weekly-schedule-card.js dist/weekly-schedule-view-card.js dist/quick-timer-card.js
 ```
 
+## 📦 Contenuto v1.2.6
+- **Nuovi domini** controllabili: lock, input_boolean, humidifier, water_heater
+  (schedule + quick-timer + selezione gruppi).
+- **Fix**: modifica schedule climate hvac/preset-only (senza temperatura) sulla prima
+  entità di un gruppo (durata/preset ora modificabili e salvabili).
+
 ## 🔎 Da validare in HA (post-release, quando possibile)
 - schedule **lock** (blocca/sblocca + auto-off), **humidifier** (umidità/modalità),
   **water_heater** (temperatura/modalità operativa), **input_boolean** on/off;
 - quick-timer hold + restore sui nuovi domini;
-- selezione dei nuovi domini nella creazione/modifica gruppi.
+- selezione dei nuovi domini nella creazione/modifica gruppi;
+- **modifica** di uno schedule climate solo-preset/hvac sulla prima entità di un gruppo.
 
 > Dopo la release, questo file può essere eliminato.
