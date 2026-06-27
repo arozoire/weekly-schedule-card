@@ -4,9 +4,9 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: 'Version tag (e.g. v1.2.6)'
+        description: 'Version tag (e.g. v1.2.7)'
         required: true
-        default: 'v1.2.6'
+        default: 'v1.2.7'
 
 jobs:
   release:
@@ -34,15 +34,18 @@ jobs:
             dist/weekly-schedule-view-card.js
             dist/quick-timer-card.js
           body: |
-            ## ${{ github.event.inputs.version }} — nuovi domini controllabili
+            ## ${{ github.event.inputs.version }} — fix modifica schedule climate
 
-            Schedule, quick-timer card e selezione entità dei gruppi ora supportano
-            **4 nuovi domini** oltre a climate/light/switch/fan/cover/valve:
+            Patch sopra la v1.2.6 (che ha introdotto i domini lock / input_boolean /
+            humidifier / water_heater).
 
-            - **lock** — blocca/sblocca
-            - **input_boolean** — on/off
-            - **humidifier** — on/off + umidità + modalità
-            - **water_heater** — temperatura + modalità operativa
+            ### Fix
+            - **Modifica** di uno schedule **climate hvac/preset-only** (senza temperatura)
+              non funzionava sulla prima entità di un gruppo: durata e preset non
+              modificabili/salvabili. `_openEditPopup` risolveva l'entità solo da
+              `attributes.entities` (che lo Scheduler lascia vuoto per azioni hvac-only);
+              ora la ricava anche dalle `actions`. Era rimasto fuori dalla v1.2.6 per via
+              del timing del merge.
 
             ### Aggiornare
             - **HACS**: Update → Ctrl-F5.

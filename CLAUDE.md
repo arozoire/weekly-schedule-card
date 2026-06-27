@@ -17,6 +17,16 @@ Il bundle principale (`weekly-schedule-card.js`) include già la view card, la m
 4. Elimina `CHANGES.md`
 5. `npm run build` (genera IIFE bundle in dist/). MAI `cp src/ dist/` — i sorgenti hanno `import` ES module che HA non risolve senza bundle.
 
+## Regole operative di sessione (SEMPRE)
+1. **Allinea sullo stato reale del repo PRIMA di modificare/rilasciare**: `git fetch --all --tags`,
+   controlla `origin/main`, i tag, le release esistenti e l'eventuale divergenza del branch. NON fidarti
+   della versione in `package.json`/`CLAUDE.md` o di snapshot di contesto: verifica cosa è davvero su `main`
+   e cosa è già taggato/rilasciato (lezione v1.2.6: una PR mergiata a un commit vecchio ha rilasciato senza
+   il fix → servì la 1.2.7). Se il branch è dietro `main`, riallinealo (merge) prima di lavorare.
+2. **Chiudi SEMPRE la risposta con un prompt pronto da incollare** all'altro Claude (GitHub Codespace) per
+   gestire la PR/release: numero PR, link, e i passi (merge + Actions→Create Release→Run workflow con la
+   versione giusta). Vedi i file `RELEASE_NOTE_v*.md`.
+
 ## File struttura
 ```
 src/
@@ -366,6 +376,13 @@ notifications:
 
 ## Last modified
 always update last modified date with day an hour Rome utc
+2026-06-27 Rome (v1.2.7 — release del fix climate hvac/preset-only) — la v1.2.6 era stata mergiata
+(PR #2) a `20baf23`, cioè PRIMA dei 2 commit del bug fix (`cd7632a`/`fce752a`): la release v1.2.6 conteneva
+i 4 nuovi domini ma NON il fix di `_openEditPopup` (su `main` restava la vecchia risoluzione
+`s.attributes.entities?.includes(...)`). v1.2.7 spedisce SOLO quel fix (entity_id raccolti anche dalle
+`actions` → modifica schedule climate solo-preset/hvac sulla prima entità di un gruppo di nuovo funzionante).
+Branch riallineato a `main` via merge, bump 1.2.6→1.2.7, workflow/nota release aggiornati a v1.2.7. Nessun
+cambiamento di codice oltre al fix già descritto sotto. Build OK, `check` verde sui 3 bundle.
 2026-06-25 Rome (v1.2.6 — nuovi domini controllabili: lock, input_boolean, humidifier, water_heater) —
 estesi gli schedule + quick-timer + gruppi a 4 nuovi domini target (prima solo climate/light/switch/fan/
 cover/valve). **Root pattern:** il ramo default di `_buildScheduleActions` faceva `${dom}.turn_on/off`,
@@ -393,6 +410,14 @@ Build OK, `check` verde sui 3 bundle. **Da validare in HA**: schedule lock (lock
 (umidità/modalità), water_heater (temp/modalità operativa), input_boolean on/off; quick-timer hold+restore;
 selezione nei gruppi. Limite: end-action set_temperature widget max 35° (digitabile oltre); slider umidità usa
 range device.
+**FIX (stessa sessione):** modifica schedule non funzionante sulla prima entità climate di un gruppo quando
+lo schedule ha azioni **hvac/preset-only** (senza temperatura). Causa: `_openEditPopup` risolveva `ec`
+(entityConf) SOLO da `s.attributes.entities`, che lo Scheduler lascia VUOTO per azioni climate hvac-only
+(stesso quirk del fix v1.2.4 sul render) → `ec` cadeva sulla prima entità top-level sbagliata o `undefined`
+→ popup di edit rotto (durata/preset non modificabili/salvabili). Fix: raccogliere gli entity_id anche dalle
+`actions` (`entity_id`/`target.entity_id`/`service_data.entity_id`), come fa `_buildRenderCache`, e
+matchare `ec` su quel set (entità top-level → gruppi → fallback sintetico `{entity}`). Create non era
+affetto perché usa direttamente l'entità del tab.
 2026-06-24 11:23 Rome (v1.2.5 — fix persistenza storage + healing orfani + avviso overlap) —
 due bug riportati dall'utente, stessa radice. **Causa:** il refetch async in `set hass` (rami
 `addedOrRemoved`/`storeChanged`) si risolveva DOPO una scrittura locale e sovrascriveva `_storageData`
