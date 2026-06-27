@@ -366,6 +366,13 @@ notifications:
 
 ## Last modified
 always update last modified date with day an hour Rome utc
+2026-06-27 Rome (v1.2.7 — release del fix climate hvac/preset-only) — la v1.2.6 era stata mergiata
+(PR #2) a `20baf23`, cioè PRIMA dei 2 commit del bug fix (`cd7632a`/`fce752a`): la release v1.2.6 conteneva
+i 4 nuovi domini ma NON il fix di `_openEditPopup` (su `main` restava la vecchia risoluzione
+`s.attributes.entities?.includes(...)`). v1.2.7 spedisce SOLO quel fix (entity_id raccolti anche dalle
+`actions` → modifica schedule climate solo-preset/hvac sulla prima entità di un gruppo di nuovo funzionante).
+Branch riallineato a `main` via merge, bump 1.2.6→1.2.7, workflow/nota release aggiornati a v1.2.7. Nessun
+cambiamento di codice oltre al fix già descritto sotto. Build OK, `check` verde sui 3 bundle.
 2026-06-25 Rome (v1.2.6 — nuovi domini controllabili: lock, input_boolean, humidifier, water_heater) —
 estesi gli schedule + quick-timer + gruppi a 4 nuovi domini target (prima solo climate/light/switch/fan/
 cover/valve). **Root pattern:** il ramo default di `_buildScheduleActions` faceva `${dom}.turn_on/off`,
