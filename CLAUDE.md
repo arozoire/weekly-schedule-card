@@ -17,6 +17,16 @@ Il bundle principale (`weekly-schedule-card.js`) include già la view card, la m
 4. Elimina `CHANGES.md`
 5. `npm run build` (genera IIFE bundle in dist/). MAI `cp src/ dist/` — i sorgenti hanno `import` ES module che HA non risolve senza bundle.
 
+## Regole operative di sessione (SEMPRE)
+1. **Allinea sullo stato reale del repo PRIMA di modificare/rilasciare**: `git fetch --all --tags`,
+   controlla `origin/main`, i tag, le release esistenti e l'eventuale divergenza del branch. NON fidarti
+   della versione in `package.json`/`CLAUDE.md` o di snapshot di contesto: verifica cosa è davvero su `main`
+   e cosa è già taggato/rilasciato (lezione v1.2.6: una PR mergiata a un commit vecchio ha rilasciato senza
+   il fix → servì la 1.2.7). Se il branch è dietro `main`, riallinealo (merge) prima di lavorare.
+2. **Chiudi SEMPRE la risposta con un prompt pronto da incollare** all'altro Claude (GitHub Codespace) per
+   gestire la PR/release: numero PR, link, e i passi (merge + Actions→Create Release→Run workflow con la
+   versione giusta). Vedi i file `RELEASE_NOTE_v*.md`.
+
 ## File struttura
 ```
 src/
