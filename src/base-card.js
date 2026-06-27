@@ -3270,6 +3270,11 @@ export default class WeeklyScheduleBase extends HTMLElement {
 
     if (ps.domain === 'climate' || ps.domain === 'water_heater') {
       const eb = dlg.querySelector('.tb-edit');
+      // tempBounds is recomputed here: it's a local of _renderPopup and NOT in
+      // scope inside this method (updateTempUI lives here) — referencing the
+      // _renderPopup one threw a ReferenceError and killed all later listeners.
+      const tCaps = this._entityCaps(ps.entityConf.entity);
+      const tempBounds = ps.domain === 'water_heater' ? { min: tCaps.whTempMin, max: tCaps.whTempMax } : { min: 5, max: 35 };
       const bindChk = (chkSel, fieldSel, key, enableKey, isSelect) => {
         const chk = dlg.querySelector(chkSel);
         const field = dlg.querySelector(fieldSel) || dlg.querySelector(fieldSel.replace('-input','-select')) || dlg.querySelector(fieldSel.replace('-select','-input'));
