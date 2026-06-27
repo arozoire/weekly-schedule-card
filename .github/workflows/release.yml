@@ -4,9 +4,9 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: 'Version tag (e.g. v1.2.7)'
+        description: 'Version tag (e.g. v1.2.8)'
         required: true
-        default: 'v1.2.7'
+        default: 'v1.2.8'
 
 jobs:
   release:
@@ -34,18 +34,17 @@ jobs:
             dist/weekly-schedule-view-card.js
             dist/quick-timer-card.js
           body: |
-            ## ${{ github.event.inputs.version }} — fix modifica schedule climate
+            ## ${{ github.event.inputs.version }} — fix regressione popup climate
 
-            Patch sopra la v1.2.6 (che ha introdotto i domini lock / input_boolean /
-            humidifier / water_heater).
+            Patch urgente sopra la v1.2.7.
 
             ### Fix
-            - **Modifica** di uno schedule **climate hvac/preset-only** (senza temperatura)
-              non funzionava sulla prima entità di un gruppo: durata e preset non
-              modificabili/salvabili. `_openEditPopup` risolveva l'entità solo da
-              `attributes.entities` (che lo Scheduler lascia vuoto per azioni hvac-only);
-              ora la ricava anche dalle `actions`. Era rimasto fuori dalla v1.2.6 per via
-              del timing del merge.
+            - **Regressione**: creare/modificare uno schedule **climate** (qualsiasi azione
+              con temperatura) non rispondeva — i controlli del popup risultavano "morti".
+              Causa: `updateTempUI` (in `_bindPopupEvents`) referenziava `tempBounds`,
+              definito in un altro metodo (`_renderPopup`) → ReferenceError a runtime che
+              abortiva il binding di tutti i listener successivi. Introdotta in v1.2.6 con
+              i nuovi domini. `tempBounds` ora è calcolato localmente.
 
             ### Aggiornare
             - **HACS**: Update → Ctrl-F5.

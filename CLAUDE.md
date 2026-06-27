@@ -376,6 +376,15 @@ notifications:
 
 ## Last modified
 always update last modified date with day an hour Rome utc
+2026-06-27 Rome (v1.2.8 — fix regressione popup climate, da v1.2.6) — creare/modificare uno schedule
+climate non rispondeva (popup "morto"). Causa: `updateTempUI` (in `_bindPopupEvents`) referenziava
+`tempBounds`, variabile LOCALE di un altro metodo (`_renderPopup`) → `ReferenceError: tempBounds is not
+defined` a runtime; siccome per i climate `enableTemp` è true, `updateTempUI()` parte durante il binding
+e l'eccezione aborta TUTTI i listener successivi → nessun controllo del popup funziona. Introdotto in
+v1.2.6 estraendo `tempBounds` in `_renderPopup` (per il range water_heater) ma usandolo dentro
+`_bindPopupEvents` (metodo diverso). `npm run check` NON lo prende (non esegue il popup). Fix: `tempBounds`
+ricalcolato localmente in `_bindPopupEvents` (`tCaps`+bounds). Bug riprodotto e fix verificato con test di
+scope. LEZIONE: attenzione alle variabili condivise tra `_renderPopup` e `_bindPopupEvents` (sono 2 metodi).
 2026-06-27 Rome (v1.2.7 — release del fix climate hvac/preset-only) — la v1.2.6 era stata mergiata
 (PR #2) a `20baf23`, cioè PRIMA dei 2 commit del bug fix (`cd7632a`/`fce752a`): la release v1.2.6 conteneva
 i 4 nuovi domini ma NON il fix di `_openEditPopup` (su `main` restava la vecchia risoluzione
