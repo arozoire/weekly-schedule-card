@@ -376,6 +376,19 @@ notifications:
 
 ## Last modified
 always update last modified date with day an hour Rome utc
+2026-06-29 Rome (WIP, NON rilasciato — parcheggiato per 1.2.9) — quick-timer: feedback onesto all'avvio +
+anti doppio-click. Sintomo utente: a volte "Avvia" non parte / è lento. Causa: `_startTimer` fa 3 await in
+sequenza (DELETE+POST automazione, `_resolveAutomationEntity` polling fino 6s, `automation.trigger`) e il
+`render()` del countdown era solo alla fine → nessun feedback per 1-3s + nessun blocco → il ri-click creava
+una corsa (il DELETE del 2° avvio cancellava l'automazione del 1° prima del trigger). Fix in
+`quick-timer-card.js`: flag `_starting` (return se già in corso) + `_setFootStatus(text,kind)` che mostra
+nel piede gli step reali e RIMUOVE il pulsante (anti doppio-click): "Stato in acquisizione…" → "Stato
+acquisito: <label>" (via nuovo `_restoreLabel(actions,eid)`, etichetta dal restore: spento/40%/fan only/…)
+→ countdown. Errori: "Stato non acquisito" (restore vuoto) o `start_failed` (automazione) per ~2.5s poi
+torna il pulsante. `render()` non ricrea il pulsante se `_starting` (un render spurio non lo riporta).
+`automation.trigger` ora NON è più in try/catch silenzioso: se fallisce → errore e NIENTE record timer
+(prima salvava un countdown fantasma). LOCALES `qtimer.acquiring/acquired/acquire_failed/starting` (en/it/fr).
+`_restoreLabel` testato su 13 domini. Da validare in HA. (One-shot "usa e getta" resta in CHANGES.md, da fare.)
 2026-06-27 Rome (v1.2.8 — fix regressione popup climate, da v1.2.6) — creare/modificare uno schedule
 climate non rispondeva (popup "morto"). Causa: `updateTempUI` (in `_bindPopupEvents`) referenziava
 `tempBounds`, variabile LOCALE di un altro metodo (`_renderPopup`) → `ReferenceError: tempBounds is not
