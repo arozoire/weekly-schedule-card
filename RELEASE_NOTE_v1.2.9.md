@@ -1,49 +1,36 @@
-# 🚧 Release 1.2.9 — in preparazione (lista viva)
+# 📝 Release 1.2.9 — pronta
 
-Stato: **WIP, non rilasciato.** `package.json` è ancora a 1.2.8 (bump a 1.2.9 solo al
-momento del rilascio). `main` è a v1.2.8. Tutto il lavoro è sul branch
+`package.json` → 1.2.9. `main` è a v1.2.8. Tutto sul branch
 `claude/inspiring-meitner-l59npr`.
 
-Quando si rilascia: bump `package.json` → 1.2.9, aggiornare `release.yml` (default `v1.2.9`)
-+ questa nota, `npm run check`, PR → merge → Actions → Create Release → Run workflow `v1.2.9`.
+## Contenuto
 
----
+### 1. Schedule "usa e getta" (one-shot)
+Flag in creazione/modifica → lo schedule gira sulla **prossima occorrenza di ogni giorno
+selezionato** e poi si **auto-elimina** (`scheduler.remove`) dopo l'ultima.
+Es: mercoledì imposto lun/mar/ven → gira ven, lun, mar (prossimi) → sparisce dopo il martedì.
+- `_computeOneShotExpiry(days,endMin)` calcola la scadenza al salvataggio (testato Node, 7 casi).
+- Automazione `wsc_oneshot_<eid>`: a fine slot fa `scheduler.remove` quando `now() >= scadenza`.
+- GC client `_cleanupExpiredOneShots` al load (rete di sicurezza se HA era spento al trigger).
+- Cleanup integrato nei delete/orphan/zombie sweep; riga in "Oggetti collegati"; i18n en/it/fr.
 
-## ✅ Fatto (già sul branch)
+### 2. Quick-timer — feedback onesto all'avvio + anti doppio-click
+"Stato in acquisizione…" → "Stato acquisito: \<label\>" → countdown; errori chiari; niente
+record-timer fantasma se il trigger fallisce.
 
-### 1. Quick-timer — feedback onesto all'avvio + anti doppio-click
-Sintomo: a volte "Avvia" non partiva o sembrava lento. Causa: `_startTimer` fa 3 await in
-sequenza (DELETE+POST automazione, attesa entità fino 6s, `automation.trigger`) e il
-countdown appariva solo alla fine → nessun feedback 1-3s + nessun blocco → il ri-click
-creava una corsa (il DELETE del 2° avvio cancellava l'automazione del 1° prima del trigger).
+> Solo aggiunte additive: nessuna funzionalità esistente modificata.
 
-Ora il piede della card mostra gli step reali e rimuove il pulsante (anti doppio-click):
-- **"Stato in acquisizione…"** → **"Stato acquisito: \<label\>"** (spento / 40% / fan only /
-  bloccato / eco · 50°C …, via nuovo `_restoreLabel`) → **countdown**.
-- Errori: **"Stato non acquisito"** (restore vuoto) o errore automazione (~2.5s, poi torna il
-  pulsante). `automation.trigger` non più ingoiato: se fallisce → niente record-timer fantasma.
-- LOCALES `qtimer.acquiring/acquired/acquire_failed/starting` (en/it/fr).
-- `_restoreLabel` verificato su 13 domini (test Node).
+## 🎯 Rilascio (2 click dopo il merge)
+1. **Merge** della PR (v1.2.9) verso `main` — verifica che prenda l'HEAD del branch.
+2. GitHub → **Actions** → **"Create Release"** → **Run workflow** (versione già `v1.2.9`).
 
----
+In alternativa: `gh workflow run release.yml -f version=v1.2.9`.
 
-## ⏳ Da fare (pianificato, non ancora implementato)
+## 🔎 Da validare in HA
+- One-shot: crea uno schedule con flag su più giorni → verifica che giri e poi sparisca dopo
+  l'ultimo giorno; controlla l'automazione `wsc_oneshot_*` in "Oggetti collegati".
+- Quick-timer: avvio mostra gli step e il countdown; doppio click non rompe nulla.
+- Sanity: schedule normali (climate/luci/ecc.) e domini v1.2.6 invariati.
 
-### 2. Schedule "usa e getta" (one-shot, auto-eliminazione)
-Piano dettagliato e approvato in **`CHANGES.md`**. Sintesi:
-- Flag in creazione/modifica → lo schedule gira sulla **prossima occorrenza di ogni giorno
-  selezionato** e poi si **auto-elimina** (`scheduler.remove`) dopo l'ultima.
-- Es: mercoledì imposto lun/mar/ven → gira ven, lun, mar (prossimi) → sparisce dopo il martedì.
-- Meccanismo: `oneShotExpiry` (datetime) calcolata al salvataggio = la più lontana tra le
-  prossime occorrenze; automazione `wsc_oneshot_<eid>` che a fine slot fa `scheduler.remove`
-  quando `now() >= scadenza`; GC client-side al load come rete di sicurezza.
-- Decisioni confermate dall'utente: **eliminare** (non disabilitare) · **prossima occorrenza
-  di ogni giorno scelto**.
-- Aperti (da decidere in implementazione): indicatore visivo sui blocchi one-shot (badge);
-  posizione checkbox nel popup (sotto la selezione giorni).
-
----
-
-## Idee/eventuali (non confermate)
-- Traduzione nomi modalità hvac nel feedback timer ("fan_only" → "solo ventola") — al momento
-  mostrato raw con `_`→spazio. Da fare solo se richiesto.
+## Prossimo (1.3.0)
+`weekly-serpentine-card` — design congelato in `RELEASE_NOTE_v1.3.0.md`.

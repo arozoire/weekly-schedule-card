@@ -21,9 +21,10 @@ const LOCALES = {
     blk:{ on:'On',off:'Off',open:'Open',close:'Closed',stop:'Stop',locked:'Locked',unlocked:'Unlocked' },
     entstatus:{ unavailable:'unavailable',missing:'removed',banner_title:'Some entities are unavailable or removed:',overlap_title:'Overlapping schedules on the same entity:' },
     sched_name:{ all_day:'all-day',workdays_abbr:'wd' },
-    linked:{ title:'Linked objects',auto_off:'Auto-off automation',cond_auto:'Condition automation',extras_auto:'Extras automation',notify:'Notification',override_flag:'Override flag',open:'Open',edit_yaml:'Edit YAML',missing:'missing' },
+    linked:{ title:'Linked objects',auto_off:'Auto-off automation',cond_auto:'Condition automation',extras_auto:'Extras automation',notify:'Notification',override_flag:'Override flag',one_shot:'One-shot automation',open:'Open',edit_yaml:'Edit YAML',missing:'missing' },
     endact:{ brightness:'Set brightness',color:'Set color',color_temp:'Set color temp',speed:'Set speed',position:'Set position',open:'Open',close:'Close',stop:'Stop',lock:'Lock',unlock:'Unlock',humidity:'Set humidity',mode:'Set mode',operation_mode:'Set operation mode' },
-    override:{ enable:'Allow manual override',hint:'If you change the entity by hand during a slot, the schedule stops re-applying its value until the next slot (conditional schedules only).',active:'Manual override active',inactive:'No override',cancel:'Cancel override now' }
+    override:{ enable:'Allow manual override',hint:'If you change the entity by hand during a slot, the schedule stops re-applying its value until the next slot (conditional schedules only).',active:'Manual override active',inactive:'No override',cancel:'Cancel override now' },
+    oneshot:{ enable:'One-shot (use and discard)',hint:'Runs on the next occurrence of each selected day, then deletes itself after the last one.' }
   },
   it: {
     card:{ title:'Pianificazione Settimanale',new_profile:'Nuovo profilo',groups:'Gruppi',no_entities:'Nessuna entità configurata',no_entities_sub:'Aggiungi entità via YAML o crea un Gruppo per iniziare.',manage_groups:'Gestisci Gruppi',layout_rows_view:'Vista righe',layout_cols_view:'Vista colonne',no_schedule_now:'Nessuno schedule attivo ora',empty_schedule:'Nessuno schedule' },
@@ -40,9 +41,10 @@ const LOCALES = {
     blk:{ on:'On',off:'Off',open:'Aperto',close:'Chiuso',stop:'Stop',locked:'Bloccato',unlocked:'Sbloccato' },
     entstatus:{ unavailable:'non disponibile',missing:'rimossa',banner_title:'Alcune entità non sono disponibili o sono state rimosse:',overlap_title:'Schedule sovrapposti sulla stessa entità:' },
     sched_name:{ all_day:'tutto-gg',workdays_abbr:'fer' },
-    linked:{ title:'Oggetti collegati',auto_off:'Automazione auto-off',cond_auto:'Automazione condizioni',extras_auto:'Automazione extra',notify:'Notifica',override_flag:'Flag override',open:'Apri',edit_yaml:'Modifica YAML',missing:'mancante' },
+    linked:{ title:'Oggetti collegati',auto_off:'Automazione auto-off',cond_auto:'Automazione condizioni',extras_auto:'Automazione extra',notify:'Notifica',override_flag:'Flag override',one_shot:'Automazione usa e getta',open:'Apri',edit_yaml:'Modifica YAML',missing:'mancante' },
     endact:{ brightness:'Imposta luminosità',color:'Imposta colore',color_temp:'Imposta temp. colore',speed:'Imposta velocità',position:'Imposta posizione',open:'Apri',close:'Chiudi',stop:'Ferma',lock:'Blocca',unlock:'Sblocca',humidity:'Imposta umidità',mode:'Imposta modalità',operation_mode:'Imposta modalità operativa' },
-    override:{ enable:'Consenti override manuale',hint:'Se cambi l\'entità a mano durante uno slot, lo schedule smette di ri-applicare il suo valore fino al prossimo slot (solo schedule con condizioni).',active:'Override manuale attivo',inactive:'Nessun override',cancel:'Annulla override adesso' }
+    override:{ enable:'Consenti override manuale',hint:'Se cambi l\'entità a mano durante uno slot, lo schedule smette di ri-applicare il suo valore fino al prossimo slot (solo schedule con condizioni).',active:'Override manuale attivo',inactive:'Nessun override',cancel:'Annulla override adesso' },
+    oneshot:{ enable:'Usa e getta',hint:'Gira sulla prossima occorrenza di ogni giorno scelto, poi si elimina da solo dopo l\'ultimo.' }
   },
   fr: {
     card:{ title:'Planning Hebdomadaire',new_profile:'Nouveau profil',groups:'Groupes',no_entities:'Aucune entité configurée',no_entities_sub:'Ajoutez des entités via la config YAML, ou créez un Groupe pour commencer.',manage_groups:'Gérer les Groupes',layout_rows_view:'Vue lignes',layout_cols_view:'Vue colonnes',no_schedule_now:'Aucun planning actif',empty_schedule:'Aucun planning' },
@@ -59,9 +61,10 @@ const LOCALES = {
     blk:{ on:'On',off:'Off',open:'Ouvert',close:'Fermé',stop:'Stop',locked:'Verrouillé',unlocked:'Déverrouillé' },
     entstatus:{ unavailable:'indisponible',missing:'supprimée',banner_title:'Certaines entités sont indisponibles ou supprimées :',overlap_title:'Plannings qui se chevauchent sur la même entité :' },
     sched_name:{ all_day:'tt-jour',workdays_abbr:'jo' },
-    linked:{ title:'Objets liés',auto_off:'Automatisation auto-off',cond_auto:'Automatisation conditions',extras_auto:'Automatisation extra',notify:'Notification',override_flag:'Indicateur surcharge',open:'Ouvrir',edit_yaml:'Modifier YAML',missing:'manquant' },
+    linked:{ title:'Objets liés',auto_off:'Automatisation auto-off',cond_auto:'Automatisation conditions',extras_auto:'Automatisation extra',notify:'Notification',override_flag:'Indicateur surcharge',one_shot:'Automatisation à usage unique',open:'Ouvrir',edit_yaml:'Modifier YAML',missing:'manquant' },
     endact:{ brightness:'Définir luminosité',color:'Définir couleur',color_temp:'Définir temp. couleur',speed:'Définir vitesse',position:'Définir position',open:'Ouvrir',close:'Fermer',stop:'Arrêter',lock:'Verrouiller',unlock:'Déverrouiller',humidity:'Définir humidité',mode:'Définir mode',operation_mode:'Définir mode de fonctionnement' },
-    override:{ enable:'Autoriser la commande manuelle',hint:'Si vous changez l\'entité à la main pendant un créneau, le planning cesse de réappliquer sa valeur jusqu\'au prochain créneau (plannings avec conditions uniquement).',active:'Commande manuelle active',inactive:'Aucune surcharge',cancel:'Annuler la surcharge' }
+    override:{ enable:'Autoriser la commande manuelle',hint:'Si vous changez l\'entité à la main pendant un créneau, le planning cesse de réappliquer sa valeur jusqu\'au prochain créneau (plannings avec conditions uniquement).',active:'Commande manuelle active',inactive:'Aucune surcharge',cancel:'Annuler la surcharge' },
+    oneshot:{ enable:'À usage unique',hint:'S\'exécute à la prochaine occurrence de chaque jour choisi, puis se supprime après le dernier.' }
   }
 };
 
@@ -138,6 +141,7 @@ export default class WeeklyScheduleBase extends HTMLElement {
         this._ensureDefaultProfile();
         this._loadingStorage = false;
         this._cleanupOrphanAutomations().catch(() => {});
+        this._cleanupExpiredOneShots().catch(() => {});
         this._hideStoreHelpers().catch(() => {});
         if (!this._popupState && !this._profilesMode && !this._groupsMode && !this._dialogOpen) this.render();
       }).catch(() => {
@@ -554,6 +558,54 @@ export default class WeeklyScheduleBase extends HTMLElement {
     await this._wsSet(data);
   }
 
+  // ── One-shot ("usa e getta") helpers ──────────────────────────────────────
+
+  _getOneShot(scheduleEntityId) {
+    for (const p of this._storageData?.profiles || []) {
+      const link = (p.scheduleLinks || []).find(l => l.id === scheduleEntityId);
+      if (link && 'oneShot' in link) return { oneShot: !!link.oneShot, oneShotExpiry: link.oneShotExpiry || null };
+    }
+    return { oneShot: false, oneShotExpiry: null };
+  }
+
+  _getOneShotAutoId(scheduleEntityId) {
+    for (const p of this._storageData?.profiles || []) {
+      const link = (p.scheduleLinks || []).find(l => l.id === scheduleEntityId);
+      if (link?.oneShotAutoId) return link.oneShotAutoId;
+    }
+    return null;
+  }
+
+  async _saveOneShotAutoId(scheduleEntityId, autoId) {
+    const data = this._storageData;
+    for (const p of data.profiles || []) {
+      const link = (p.scheduleLinks || []).find(l => l.id === scheduleEntityId);
+      if (link) { if (autoId) link.oneShotAutoId = autoId; else delete link.oneShotAutoId; }
+    }
+    await this._wsSet(data);
+  }
+
+  // Scadenza one-shot: per ogni giorno selezionato trova la PROSSIMA occorrenza il cui
+  // fine-slot è ancora futuro, e prende la più lontana. Restituisce una stringa locale
+  // "YYYY-MM-DDTHH:MM:SS" (wall-clock, confrontata con now() dell'automazione) o null.
+  _computeOneShotExpiry(days, endMin, now = new Date()) {
+    if (!Array.isArray(days) || !days.length) return null;
+    let maxTs = 0;
+    for (const d of days) {
+      const jsTarget = (d + 1) % 7;   // WSC 0=lun..6=dom → JS getDay 0=dom
+      for (let add = 0; add <= 7; add++) {
+        const cand = new Date(now.getFullYear(), now.getMonth(), now.getDate() + add, 0, 0, 0, 0);
+        if (cand.getDay() !== jsTarget) continue;
+        const endTs = cand.getTime() + endMin * 60000;
+        if (endTs > now.getTime()) { if (endTs > maxTs) maxTs = endTs; break; }
+      }
+    }
+    if (!maxTs) return null;
+    const e = new Date(maxTs);
+    const p = n => String(n).padStart(2, '0');
+    return `${e.getFullYear()}-${p(e.getMonth() + 1)}-${p(e.getDate())}T${p(e.getHours())}:${p(e.getMinutes())}:${p(e.getSeconds())}`;
+  }
+
   // Stored end-of-slot action ({stopAction, stopValue}) or null if not persisted.
   _getStoredStop(scheduleEntityId) {
     const link = this._linksFor(scheduleEntityId).find(l => 'stopAction' in l);
@@ -770,6 +822,7 @@ export default class WeeklyScheduleBase extends HTMLElement {
         if (link.notifyAutoId) deletions.push(link.notifyAutoId);
         if (link.autoOffAutoId) deletions.push(link.autoOffAutoId);
         if (link.overrideFlagAutoId) deletions.push(link.overrideFlagAutoId);
+        if (link.oneShotAutoId) deletions.push(link.oneShotAutoId);
         if (link.autoChildId) childRemovals.add(link.autoChildId);
         // Also remove from p.schedules
         p.schedules = (p.schedules || []).filter(x => x !== link.id);
@@ -802,6 +855,39 @@ export default class WeeklyScheduleBase extends HTMLElement {
     await this._sweepZombieAutomations(data);
   }
 
+  // Rete di sicurezza one-shot: se l'automazione non è scattata (HA spento a fine slot),
+  // al load elimina gli one-shot già scaduti ancora presenti (schedule + automazioni collegate).
+  async _cleanupExpiredOneShots() {
+    if (this._oneShotGcDone) return;
+    const data = this._storageData;
+    if (!data?.profiles || !this._hass) return;
+    this._oneShotGcDone = true;
+    const now = Date.now();
+    await this._withTx(async () => {
+      let dirty = false;
+      for (const p of data.profiles) {
+        const links = p.scheduleLinks || [];
+        const surviving = [];
+        for (const link of links) {
+          const exp = (link.oneShot && link.oneShotExpiry) ? Date.parse(link.oneShotExpiry) : NaN;
+          if (!isNaN(exp) && exp < now) {
+            if (link.id && this._hass.states[link.id]) {
+              try { await this._hass.callService('scheduler', 'remove', { entity_id: link.id }); } catch {}
+            }
+            for (const k of ['oneShotAutoId', 'condAutoId', 'extrasAutoId', 'notifyAutoId', 'autoOffAutoId', 'overrideFlagAutoId'])
+              if (link[k]) { try { await this._hass.callApi('DELETE', `config/automation/config/${link[k]}`); } catch {} }
+            p.schedules = (p.schedules || []).filter(x => x !== link.id);
+            dirty = true;
+            continue;   // drop expired one-shot link
+          }
+          surviving.push(link);
+        }
+        if (surviving.length !== links.length) { p.scheduleLinks = surviving; dirty = true; }
+      }
+      if (dirty) await this._wsSet(data).catch(() => {});
+    });
+  }
+
   // Sweep "zombi" CONSERVATIVO: automazioni `wsc_*` NON tracciate in nessun scheduleLink E che
   // referenziano solo `switch.schedule_*` ormai assenti da hass.states → orfane → DELETE.
   // Solo admin. Se non si capisce quale schedule referenzia (0 ref) → NON si cancella.
@@ -812,7 +898,7 @@ export default class WeeklyScheduleBase extends HTMLElement {
     const tracked = new Set();
     for (const p of data.profiles || [])
       for (const l of p.scheduleLinks || [])
-        for (const k of ['condAutoId', 'extrasAutoId', 'notifyAutoId', 'autoOffAutoId', 'overrideFlagAutoId'])
+        for (const k of ['condAutoId', 'extrasAutoId', 'notifyAutoId', 'autoOffAutoId', 'overrideFlagAutoId', 'oneShotAutoId'])
           if (l[k]) tracked.add(l[k]);
     const candidates = Object.values(states).filter(s =>
       s.entity_id.startsWith('automation.') &&
@@ -874,6 +960,37 @@ export default class WeeklyScheduleBase extends HTMLElement {
       await this._saveAutoOffAutoId(scheduleEntityId, targetId);
     } catch (e) {
       console.error('WSC autoOff save failed', e);
+    }
+  }
+
+  // One-shot ("usa e getta"): a fine slot, se siamo all'ultima occorrenza (now >= scadenza)
+  // l'automazione rimuove lo schedule → non ripartirà più. Event-driven come l'auto-off.
+  async _syncOneShotAutomation(scheduleEntityId, ps, expiry) {
+    const existingId = this._getOneShotAutoId(scheduleEntityId);
+    const cleanup = async () => {
+      if (existingId) {
+        try { await this._hass.callApi('DELETE', `config/automation/config/${existingId}`); } catch (e) { console.error('WSC oneShot delete failed', e); }
+        await this._saveOneShotAutoId(scheduleEntityId, null);
+      }
+    };
+    if (!ps.oneShot || !expiry) { await cleanup(); return; }
+    const targetId = existingId || `wsc_oneshot_${scheduleEntityId.replace('switch.', '')}`;
+    const expiryTs = `as_timestamp(strptime('${expiry}', '%Y-%m-%dT%H:%M:%S'))`;
+    const automationConfig = {
+      alias: `WSC One-shot - ${scheduleEntityId}`,
+      description: 'Auto-generated by Weekly Schedule Card (one-shot)',
+      trigger: [{ platform: 'template', value_template: `{{ state_attr('${scheduleEntityId}', 'current_slot') is none }}` }],
+      // -30s di margine: la transizione fine-slot dell'ultimo giorno cade ~sulla scadenza,
+      // gli altri giorni sono ≥1 giorno prima → mai falsi positivi.
+      condition: [{ condition: 'template', value_template: `{{ now().timestamp() >= ${expiryTs} - 30 }}` }],
+      action: [{ service: 'scheduler.remove', data: { entity_id: scheduleEntityId } }],
+      mode: 'single',
+    };
+    try {
+      await this._recreateAutomation(targetId, automationConfig);
+      await this._saveOneShotAutoId(scheduleEntityId, targetId);
+    } catch (e) {
+      console.error('WSC oneShot save failed', e);
     }
   }
 
@@ -1790,6 +1907,13 @@ export default class WeeklyScheduleBase extends HTMLElement {
         [ent ? { label: this.t('linked.open'), act: 'more-info', val: ent.entity_id } : null,
          { label: this.t('linked.edit_yaml'), act: 'edit-auto', val: notifyId }]));
     }
+    const oneShotId = this._getOneShotAutoId(eid);
+    if (oneShotId) {
+      const ent = findAuto(oneShotId);
+      rows.push(this._linkRow('mdi:fire', this.t('linked.one_shot'), ent ? ent.entity_id : oneShotId, ent ? ent.state : null,
+        [ent ? { label: this.t('linked.open'), act: 'more-info', val: ent.entity_id } : null,
+         { label: this.t('linked.edit_yaml'), act: 'edit-auto', val: oneShotId }]));
+    }
     // Manual-override flag (marker automation: state 'on' = no override, 'off' = override active)
     if (this._getOverrideEnabled(eid) && this._getOverrideFlagId(eid)) {
       const flagId = this._getOverrideFlagId(eid);
@@ -2505,6 +2629,7 @@ export default class WeeklyScheduleBase extends HTMLElement {
       enableOpMode: false, opMode: '',
       coverAction: 'close', position: 50,
       stopAction: null, stopValue: null,
+      oneShot: false,
       conditions: [], condCombinator: 'and', condInterval: 15, _condOpen: false,
       overrideEnabled: false,
       notifyService: '', notifyMessage: '', notifyMessageEnd: '',
@@ -2632,6 +2757,7 @@ export default class WeeklyScheduleBase extends HTMLElement {
       condCombinator: this._getStoredConditions(entityId).condCombinator,
       condInterval: this._getStoredConditions(entityId).condInterval,
       _condOpen: false,
+      oneShot: this._getOneShot(entityId).oneShot,
       overrideEnabled: this._getOverrideEnabled(entityId),
       notifyService: (() => { for (const p of this._storageData?.profiles||[]) { const l=(p.scheduleLinks||[]).find(l=>l.id===entityId); if(l?.notifyService)return l.notifyService; } return ''; })(),
       notifyMessage: (() => { for (const p of this._storageData?.profiles||[]) { const l=(p.scheduleLinks||[]).find(l=>l.id===entityId); if(l?.notifyMessage)return l.notifyMessage; } return ''; })(),
@@ -3034,6 +3160,9 @@ export default class WeeklyScheduleBase extends HTMLElement {
         .cond-empty{padding:8px 10px;border-radius:6px;background:color-mix(in srgb,var(--secondary-text-color) 8%,transparent);color:var(--secondary-text-color);font-size:.75em;font-style:italic;line-height:1.4}
         .cond-interval-row{display:flex;align-items:center;gap:8px;padding-top:6px;border-top:1px solid var(--divider-color,#eee);margin-top:4px}
         .cond-interval{padding:3px 6px;border-radius:6px;border:1px solid var(--divider-color,#ccc);background:var(--card-background-color,#fff);color:var(--primary-text-color);font-size:.78em}
+        .oneshot-row{display:flex;align-items:flex-start;gap:8px;padding:8px 10px;margin-top:10px;border-radius:10px;background:var(--secondary-background-color,#f5f5f5);font-size:.8em;cursor:pointer}
+        .oneshot-row input{margin-top:2px;flex-shrink:0}
+        .oneshot-hint{font-size:.85em;color:var(--secondary-text-color);line-height:1.3}
         .cond-override-row{display:flex;align-items:flex-start;gap:8px;padding-top:8px;margin-top:6px;border-top:1px solid var(--divider-color,#eee);font-size:.8em;cursor:pointer}
         .cond-override-row input{margin-top:2px;flex-shrink:0}
         .cond-override-hint{font-size:.82em;color:var(--secondary-text-color);line-height:1.3}
@@ -3112,6 +3241,10 @@ export default class WeeklyScheduleBase extends HTMLElement {
           <div class="day-chips">
             ${DAY_NAMES.map((d,i)=>`<div class="day-chip ${ps.days.includes(i)?'on':''}" data-day="${i}" role="button" tabindex="0" aria-pressed="${ps.days.includes(i)}">${d.slice(0,2)}</div>`).join('')}
           </div>
+          <label class="oneshot-row">
+            <input type="checkbox" class="chk-oneshot" ${ps.oneShot?'checked':''}>
+            <span><b><ha-icon icon="mdi:fire" style="--mdi-icon-size:16px;vertical-align:middle;margin-right:4px"></ha-icon>${this.t('oneshot.enable')}</b><br><span class="oneshot-hint">${this.t('oneshot.hint')}</span></span>
+          </label>
         </div>
         ${domainSection}
         ${this._endActionHtml(ps)}
@@ -3267,6 +3400,7 @@ export default class WeeklyScheduleBase extends HTMLElement {
     );
 
     dlg.querySelector('.name-input').addEventListener('input', e => { ps.name = e.target.value; });
+    dlg.querySelector('.chk-oneshot')?.addEventListener('change', e => { ps.oneShot = e.target.checked; });
 
     if (ps.domain === 'climate' || ps.domain === 'water_heater') {
       const eb = dlg.querySelector('.tb-edit');
@@ -3655,6 +3789,8 @@ export default class WeeklyScheduleBase extends HTMLElement {
     // Scheduler component expects {entity_id, service, service_data} (no `target` wrapping)
     const actions = built.map(a => ({ entity_id: eid, service: a.service, service_data: a.data || {} }));
     const timeslots = [{ start: this._minutesToTime(ps.startMin), stop: this._minutesToTime(ps.endMin === 1440 ? 0 : ps.endMin), actions }];
+    // One-shot: scadenza = ultima prossima occorrenza tra i giorni scelti (null se disattivato).
+    const oneShotExpiry = ps.oneShot ? this._computeOneShotExpiry(ps.days, ps.endMin) : null;
 
     const saveNotify = (scheduleId) => {
       const profile = this._getSelectedProfile(); if (!profile) return;
@@ -3667,6 +3803,8 @@ export default class WeeklyScheduleBase extends HTMLElement {
       link.notifyTrigger = ps.notifyTrigger || 'start';
       link.stopAction = ps.stopAction || null;
       link.stopValue = ps.stopValue;
+      link.oneShot = !!ps.oneShot;
+      if (oneShotExpiry) link.oneShotExpiry = oneShotExpiry; else delete link.oneShotExpiry;
     };
 
     let ok = true;
@@ -3682,6 +3820,7 @@ export default class WeeklyScheduleBase extends HTMLElement {
           await this._addScheduleToProfile(newId);
           saveNotify(newId);
           await this._syncAutoOffAutomation(newId, ps);
+          await this._syncOneShotAutomation(newId, ps, oneShotExpiry);
           await this._syncConditionAutomation(newId, ps.conditions, ps.condCombinator, ps.condInterval, ps);
           await this._syncOverrideFlag(newId, ps);
           await this._persistExtras(newId, ps);
@@ -3698,6 +3837,7 @@ export default class WeeklyScheduleBase extends HTMLElement {
         await this._hass.callService('scheduler', 'edit', p);
         saveNotify(ps.entityId);
         await this._syncAutoOffAutomation(ps.entityId, ps);
+        await this._syncOneShotAutomation(ps.entityId, ps, oneShotExpiry);
         await this._syncConditionAutomation(ps.entityId, ps.conditions, ps.condCombinator, ps.condInterval, ps);
         await this._syncOverrideFlag(ps.entityId, ps);
         await this._persistExtras(ps.entityId, ps);
@@ -3722,6 +3862,7 @@ export default class WeeklyScheduleBase extends HTMLElement {
     const notifyAutoId = this._getNotifyAutoId(eid);
     const autoOffAutoId = this._getAutoOffAutoId(eid);
     const overrideFlagId = this._getOverrideFlagId(eid);
+    const oneShotAutoId = this._getOneShotAutoId(eid);
     const data = this._storageData;
     for (const p of data.profiles || []) {
       p.schedules = (p.schedules || []).filter(x => x !== eid);
@@ -3741,6 +3882,9 @@ export default class WeeklyScheduleBase extends HTMLElement {
     }
     if (overrideFlagId) {
       try { await this._hass.callApi('DELETE', `config/automation/config/${overrideFlagId}`); } catch (e) { console.error('WSC overrideFlag delete failed', e); }
+    }
+    if (oneShotAutoId) {
+      try { await this._hass.callApi('DELETE', `config/automation/config/${oneShotAutoId}`); } catch (e) { console.error('WSC oneShot delete failed', e); }
     }
     if (childId) {
       try { await this._hass.callService('scheduler', 'remove', { entity_id: childId }); } catch {}
@@ -3823,6 +3967,8 @@ export default class WeeklyScheduleBase extends HTMLElement {
           try { await this._hass.callApi('DELETE', `config/automation/config/${link.autoOffAutoId}`); } catch (e) { console.error('WSC autoOff delete failed', e); }
         if (link.overrideFlagAutoId)
           try { await this._hass.callApi('DELETE', `config/automation/config/${link.overrideFlagAutoId}`); } catch (e) { console.error('WSC overrideFlag delete failed', e); }
+        if (link.oneShotAutoId)
+          try { await this._hass.callApi('DELETE', `config/automation/config/${link.oneShotAutoId}`); } catch (e) { console.error('WSC oneShot delete failed', e); }
         if (link.autoChildId)
           try { await this._hass.callService('scheduler', 'remove', { entity_id: link.autoChildId }); } catch {}
       }

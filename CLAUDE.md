@@ -376,7 +376,22 @@ notifications:
 
 ## Last modified
 always update last modified date with day an hour Rome utc
-2026-06-29 Rome (WIP, NON rilasciato — parcheggiato per 1.2.9) — quick-timer: feedback onesto all'avvio +
+2026-06-30 Rome (v1.2.9 — schedule "usa e getta" / one-shot) — nuovo flag per-schedule (`ps.oneShot`,
+checkbox `.chk-oneshot` sotto i giorni nel popup) che fa auto-eliminare lo schedule dopo l'ultima
+occorrenza dei giorni scelti. Semantica (decisa con utente): gira sulla PROSSIMA occorrenza di OGNI
+giorno selezionato, poi sparisce (es. mercoledì imposto lun/mar/ven → gira ven, lun, mar prossimi →
+`scheduler.remove` dopo il martedì). Meccanismo: `_computeOneShotExpiry(days,endMin)` calcola al salvataggio
+la scadenza = la più lontana tra le prossime occorrenze (fine-slot futuro), salvata come wall-clock locale
+`YYYY-MM-DDTHH:MM:SS` in `link.oneShotExpiry`. Automazione `wsc_oneshot_<eid>` (`_syncOneShotAutomation`,
+storage `link.oneShotAutoId`): trigger fine-slot (`current_slot is none`), condition `now() >= scadenza-30s`,
+action `scheduler.remove`. Event-driven come l'auto-off; si auto-distrugge alla prima occorrenza dell'ultimo
+giorno. Rete di sicurezza: `_cleanupExpiredOneShots()` al load (GC: elimina one-shot già scaduti ancora
+presenti se HA era spento al trigger). Cleanup `oneShotAutoId` in `_deleteSchedule`/`_deleteProfile`/
+`_cleanupOrphanAutomations`/`_sweepZombieAutomations`. Riga in `_linkedObjectsHtml` (`linked.one_shot`).
+LOCALES `oneshot.enable/hint` + `linked.one_shot` (en/it/fr). `_computeOneShotExpiry` testato Node (7 casi
+incl. mezzanotte/slot-passato/tutti-i-giorni). Rilasciata INSIEME al feedback quick-timer (sotto). Build OK,
+`check` verde. Da validare in HA. **NON toccate funzionalità esistenti** (solo aggiunte additive).
+2026-06-29 Rome (v1.2.9 — quick-timer: feedback onesto all'avvio +
 anti doppio-click. Sintomo utente: a volte "Avvia" non parte / è lento. Causa: `_startTimer` fa 3 await in
 sequenza (DELETE+POST automazione, `_resolveAutomationEntity` polling fino 6s, `automation.trigger`) e il
 `render()` del countdown era solo alla fine → nessun feedback per 1-3s + nessun blocco → il ri-click creava
