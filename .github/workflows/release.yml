@@ -48,6 +48,13 @@ jobs:
             - Inclusa nel bundle principale (HACS) e disponibile anche come bundle standalone
               `weekly-serpentine-card.js`.
 
+            ### Fix
+            - **Quick-timer**: il countdown poteva sparire subito dopo "Avvia" (tornava il pulsante)
+              e, ricaricando la pagina, il timer risultava "vuoto" come se non fosse mai partito.
+              Causa: un refetch dello storage condiviso non protetto da un contatore di versione
+              poteva leggere lo stato a metà scrittura e azzerare il timer appena creato. Corretto
+              con lo stesso meccanismo già usato per lo storage principale.
+
             ### Aggiornare
             - **HACS**: Update → Ctrl-F5.
             - **Manuale**: scarica `weekly-schedule-card.js` (Assets) → in `/config/www/` → Ctrl-F5.

@@ -302,6 +302,20 @@ incorporata al centro, `.qt-foot` Avvia/countdown in fondo).
   load (`_cleanupFinishedTimers`). A riposo nessun artefatto.
 - **Storage condiviso**: timer attivi in `_sharedSet('quick_timer_card', {timers})` (prefisso helper
   `wsc_qt_store`) → countdown/annulla cross-device. `set hass` refetch su cambio `input_text.wsc_qt_store_*`.
+  **Versionato** (`_qtWriteCount`, v1.3.0): stesso fix v1.2.5 applicato allo storage principale,
+  mai portato qui — `_saveTimers()` incrementa il contatore PRIMA di scrivere; il refetch (sia al
+  primo load sia al cambio store) cattura la versione prima del fetch e scarta il risultato se nel
+  frattempo è partita un'altra `_saveTimers()` O se la lettura è `null` (mid-write, payload >1 chunk:
+  `_saveTimers` scrive i chunk PRIMA del meta → un refetch che arriva a metà legge un meta assente/
+  vecchio → `_sharedGet` torna `null`). Bug pre-fix: il refetch senza guardia trattava QUALSIASI
+  `null` come "store vuoto" e azzerava `_timers` a `{}` → il countdown appena avviato spariva
+  (mostrava di nuovo il pulsante "Avvia") per il tempo dei round-trip fino al chunk/meta successivo,
+  per poi auto-correggersi — ma nel frattempo l'utente vedeva "non parte" e un refresh a metà
+  scrittura (rara ma possibile con round-trip di rete reali) mostrava il timer "vuoto". Riprodotto
+  e verificato con un harness headless (mock `hass.callService`/`connection` con round-trip
+  realistici + payload a 2 chunk) prima e dopo il fix; verificato che il fix non rompe il sync
+  cross-device (scrittura da un altro "device" via `_sharedSet` diretto, letta correttamente dal
+  refetch `storeChanged`).
 - "Annulla" = **ripristina subito** (replay delle `restore` salvate nel record). Durata **o** Fine alle.
 - **Config via UI editor O YAML** (v1.2.3): `static getConfigElement()` → elemento
   `quick-timer-card-editor` (`class QuickTimerCardEditor extends WeeklyScheduleBase`, in fondo a
@@ -420,6 +434,26 @@ notifications:
 
 ## Last modified
 always update last modified date with day an hour Rome utc
+2026-07-01 09:03 Rome (v1.3.0 — fix quick-timer: countdown che spariva all'avvio + timer "vuoto"
+dopo refresh) — bug segnalato dall'utente sulla 1.2.9: dopo "Avvia" la card mostra "Stato
+acquisito" ma poi sembra non partire (torna il pulsante), e ricaricando la pagina il timer risulta
+non configurato. **Causa**: `set hass` in `quick-timer-card.js` rifà il fetch di `_timers` da
+`_sharedGet` ad ogni cambio di `input_text.wsc_qt_store_*` (sync cross-device) SENZA la guardia
+di versione che il v1.2.5 aveva introdotto per lo storage principale (`_wsWriteCount`) — mai
+applicata qui. Risultato: mentre `_saveTimers()` scrive i chunk (payload realistici superano
+spesso 255 char → 2+ chunk, scritti PRIMA del meta) i refetch triggerati dai NOSTRI STESSI cambi
+di stato intermedi leggono un meta assente/vecchio → `_sharedGet` torna `null` → il vecchio codice
+trattava QUALSIASI `null` come "store vuoto" e azzerava `_timers` a `{}`, facendo sparire il
+countdown appena creato (poi si autocorreggeva all'ultimo refetch, dopo il meta — ma nel frattempo
+l'utente vedeva "non parte", e un refresh capitato a metà scrittura mostrava "vuoto"). **Fix**:
+nuovo contatore `_qtWriteCount` (incrementato in `_saveTimers()` prima di scrivere); entrambi i
+refetch in `set hass` (primo load + `storeChanged`) catturano la versione prima del fetch e
+scartano il risultato se la versione è cambiata nel frattempo (altra scrittura in corso) o se la
+lettura è `null` (mid-write) — stesso pattern del fix v1.2.5, mai portato al percorso storage del
+quick-timer. Riprodotto il bug e verificato il fix con un harness headless (mock realistico di
+`hass.callService`/`connection.sendMessagePromise` con round-trip async, payload che richiede 2
+chunk) prima/dopo; verificato che il sync cross-device (altro device scrive un timer) funziona
+ancora. Nessuna funzionalità esistente toccata oltre al fix (solo in `quick-timer-card.js`).
 2026-07-01 08:34 Rome (v1.3.0 — nuova card `weekly-serpentine-card`) — implementata da zero
 seguendo `docs/serpentine/HANDOFF.md` (design congelato, approvato su `mockup-2-multi-entity-FINAL.svg`):
 nastro boustrophedon vero (righe alternate, curve a U, mezzanotte all'apice, niente tacche
