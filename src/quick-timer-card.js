@@ -507,7 +507,32 @@ class QuickTimerCard extends WeeklyScheduleBase {
       const autoId = `qt_timer_${this._slug(eid)}`;
       await this._recreateAutomation(autoId, this._buildTimerAutomation(eid, autoId, durationS, restore));
       const ent = await this._resolveAutomationEntity(autoId);
-      await this._hass.callService('automation', 'trigger', { entity_id: ent });
+
+      // automation.trigger is a KNOWN HA quirk: unlike a real state-change trigger (which HA
+      // dispatches as a detached background task), calling this service directly awaits the
+      // WHOLE action script to completion — INCLUDING its own `delay` step. Without this race,
+      // the card would freeze on "acquired" for the entire timer duration, then compute
+      // endTs from THAT (already-late) moment and show a second, bogus countdown that doesn't
+      // correspond to any further action (real bug, reported+diagnosed against a live HA
+      // instance: a 5-min timer showed nothing for 5 min, then a fresh "5 min left" countdown,
+      // and the automation lingered ~10 min total before cleanup).
+      // Real failures (bad entity, missing service) surface near-instantly, before any delay
+      // runs — so racing against a short ack window keeps the original "no ghost timer on
+      // failure" safety for those, without blocking the UI for the success path.
+      const TRIGGER_ACK_MS = 2500;
+      const triggerPromise = this._hass.callService('automation', 'trigger', { entity_id: ent });
+      const early = await Promise.race([
+        triggerPromise.then(() => ({ settled: true, ok: true })).catch(err => ({ settled: true, ok: false, error: err })),
+        this._sleep(TRIGGER_ACK_MS).then(() => ({ settled: false })),
+      ]);
+      if (early.settled && !early.ok) throw early.error;
+      if (!early.settled) {
+        // Not settled yet within the ack window: assume accepted, keep watching in the
+        // background so a genuine (rare) late failure still gets cleaned up instead of
+        // leaving a ghost timer that will never actually restore anything.
+        triggerPromise.catch(err => this._handleLateTriggerFailure(eid, autoId, err));
+      }
+
       // 3) timer avviato → salva record e mostra countdown
       this._timers = this._timers || {};
       this._timers[eid] = { endTs: Date.now() + durationS * 1000, autoId, restore, label: this._heldLabel(eid), durationS };
@@ -516,12 +541,34 @@ class QuickTimerCard extends WeeklyScheduleBase {
       this._starting = false;
       this.render();
     } catch (e) {
-      console.error('QT startTimer failed', e);
+      // Stampa un riassunto leggibile in cima (i rifiuti di hass.callService arrivano come
+      // {type:'result',success:false,error:{code,message}} — un oggetto compresso in console,
+      // scomodo da leggere senza sapere come espanderlo). L'oggetto raw resta comunque loggato.
+      const detail = e?.error ? `${e.error.code || ''} ${e.error.message || ''}`.trim() || JSON.stringify(e.error) : (e?.message || String(e));
+      console.error(`QT startTimer failed: ${detail}`, e);
       this._setFootStatus(this.t('qtimer.start_failed'), 'error');
       this._starting = false;
       await this._sleep(2500);
       if (!this._activeTimer()) this.render();
     }
+  }
+
+  // Catches a trigger failure that arrives AFTER the ack-window race already let the countdown
+  // show (see _startTimer). Rare (real failures usually surface immediately), but without this
+  // a failed trigger would leave a ghost timer counting down to a restore that never happens.
+  // Guarded against being superseded by a newer timer/cancel for the same entity in the meantime.
+  async _handleLateTriggerFailure(eid, autoId, e) {
+    const detail = e?.error ? `${e.error.code || ''} ${e.error.message || ''}`.trim() || JSON.stringify(e.error) : (e?.message || String(e));
+    console.error(`QT background trigger failed for ${eid}: ${detail}`, e);
+    const t = this._timers?.[eid];
+    if (!t || t.autoId !== autoId) return; // already cancelled or superseded — nothing to undo
+    delete this._timers[eid];
+    try { await this._saveTimers(); } catch {}
+    try { await this._hass.callApi('DELETE', `config/automation/config/${autoId}`); } catch {}
+    if (this._entity !== eid) return;
+    this._setFootStatus(this.t('qtimer.start_failed'), 'error');
+    await this._sleep(2500);
+    if (!this._activeTimer()) this.render();
   }
 
   async _cancelTimer(eid) {
