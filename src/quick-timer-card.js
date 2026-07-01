@@ -18,6 +18,8 @@ class QuickTimerCard extends WeeklyScheduleBase {
     this._childBuilding = false;
     this._timers = null;          // { eid: { endTs, autoId, restore[], label, durationS } }
     this._loadingTimers = false;
+    this._qtWriteCount = 0;       // versione scritture locali: un refetch stantio (in volo prima
+                                   // di una nostra _saveTimers) va scartato, vedi _saveTimers
     this._timerMode = 'duration'; // 'duration' | 'until'
     this._timerMinutes = 30;
     // baseline di ripristino: ultimo stato "stabile" dell'entità (azioni restore) usato come
@@ -57,9 +59,17 @@ class QuickTimerCard extends WeeklyScheduleBase {
 
     if (this._timers === null && !this._loadingTimers) {
       this._loadingTimers = true;
+      const ver = this._qtWriteCount; // se _saveTimers scrive nel frattempo, scartiamo questo fetch stantio
       WeeklyScheduleBase._sharedGet(hass, 'quick_timer_card')
-        .then(d => { this._timers = (d && d.timers) || {}; this._loadingTimers = false; this._cleanupFinishedTimers().finally(() => this.render()); })
-        .catch(() => { this._timers = {}; this._loadingTimers = false; this.render(); });
+        .then(d => {
+          this._loadingTimers = false;
+          if (this._qtWriteCount !== ver) return; // una nostra scrittura è partita nel frattempo: non sovrascrivere
+          // null = store vuoto O letto a metà scrittura (altro device): non distinguibile qui,
+          // ma senza scritture nostre in corso è un fallback sicuro (nessun timer noto finora).
+          this._timers = (d && d.timers) || {};
+          this._cleanupFinishedTimers().finally(() => this.render());
+        })
+        .catch(() => { this._loadingTimers = false; if (this._qtWriteCount === ver) { this._timers = {}; this.render(); } });
       this.render();
       return;
     }
@@ -72,8 +82,18 @@ class QuickTimerCard extends WeeklyScheduleBase {
       for (const k of keys) { if (prev.states[k]?.state !== hass.states[k]?.state) { storeChanged = true; break; } }
       if (storeChanged && !this._loadingTimers) {
         this._loadingTimers = true;
+        // Versiona il fetch: se una NOSTRA _saveTimers è già in corso (o parte durante il fetch),
+        // il refetch è potenzialmente in-volo su uno stato non ancora completo (chunk scritti,
+        // meta non ancora, o viceversa) → scartalo invece di azzerare i timer visti localmente
+        // (era il bug: un read "null" a metà scrittura wipeava il countdown appena avviato).
+        const ver = this._qtWriteCount;
         WeeklyScheduleBase._sharedGet(hass, 'quick_timer_card')
-          .then(d => { this._timers = (d && d.timers) || {}; this._loadingTimers = false; this.render(); })
+          .then(d => {
+            this._loadingTimers = false;
+            if (this._qtWriteCount !== ver || !d) return; // scrittura nel frattempo, o lettura mid-write/corrotta
+            this._timers = d.timers || {};
+            this.render();
+          })
           .catch(() => { this._loadingTimers = false; });
       }
     }
@@ -526,6 +546,7 @@ class QuickTimerCard extends WeeklyScheduleBase {
   }
 
   async _saveTimers() {
+    this._qtWriteCount++; // invalida ogni refetch già in volo iniziato prima di questa scrittura
     try { await WeeklyScheduleBase._sharedSet(this._hass, 'quick_timer_card', { timers: this._timers || {} }); }
     catch (e) { console.error('QT saveTimers failed', e); }
   }

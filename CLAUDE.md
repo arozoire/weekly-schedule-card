@@ -5,9 +5,9 @@ Ecco il CLAUDE.md riscritto per minimizzare i token e massimizzare l'efficienza:
 
 ## Stack
 Vanilla JS custom element, **build con Rollup** (IIFE bundle).
-`src/*.js` → `npm run build` → `dist/*.js` (3 file IIFE auto-contenuti).
-Deploy: copiare `dist/weekly-schedule-card.js` + `dist/weekly-schedule-view-card.js` + `dist/quick-timer-card.js` in HA `/config/www/`.
-Il bundle principale (`weekly-schedule-card.js`) include già la view card, la mini card **e la quick-timer-card** (via import in `src/weekly-schedule-card.js`) — HACS fornisce tutte e 4 le card con un solo file.
+`src/*.js` → `npm run build` → `dist/*.js` (4 file IIFE auto-contenuti).
+Deploy: copiare `dist/weekly-schedule-card.js` + `dist/weekly-schedule-view-card.js` + `dist/quick-timer-card.js` + `dist/weekly-serpentine-card.js` in HA `/config/www/`.
+Il bundle principale (`weekly-schedule-card.js`) include già la view card, la mini card, la quick-timer-card **e la weekly-serpentine-card** (via import in `src/weekly-schedule-card.js`) — HACS fornisce tutte e 5 le card con un solo file.
 **NON** copiare `base-card.js` in dist: viene inglobato nel bundle dal rollup.
 
 ## Workflow obbligatorio
@@ -30,17 +30,61 @@ Il bundle principale (`weekly-schedule-card.js`) include già la view card, la m
 ## File struttura
 ```
 src/
-  base-card.js                   # classe condivisa, import-ata dalle card
-  weekly-schedule-card.js        # card principale con editing (extends base); importa view + quick-timer
+  base-card.js                   # classe condivisa, import-ata dalle card (esporta anche PALETTE)
+  weekly-schedule-card.js        # card principale con editing (extends base); importa view + quick-timer + serpentine
   weekly-schedule-view-card.js   # card solo visualizzazione (extends base)
   quick-timer-card.js            # card timer mono-entità (extends base)
+  weekly-serpentine-card.js      # card decorativa sola-lettura, nastro a serpentina (extends base)
   lz-string.js                   # compressione storage (vendored, MIT)
-rollup.config.js                 # 3 entry IIFE
+rollup.config.js                 # 4 entry IIFE
 dist/
-  weekly-schedule-card.js        # IIFE bundle (base + card + view + mini + quick-timer)
+  weekly-schedule-card.js        # IIFE bundle (base + card + view + mini + quick-timer + serpentine)
   weekly-schedule-view-card.js   # IIFE bundle (base + view-card)
   quick-timer-card.js            # IIFE bundle (base + quick-timer-card), standalone solo-timer
+  weekly-serpentine-card.js      # IIFE bundle (base + serpentine-card), standalone
 ```
+
+## Weekly Serpentine Card (`custom:weekly-serpentine-card`, v1.3.0)
+Card **decorativa sola-lettura** (`src/weekly-serpentine-card.js`, 4ª entry rollup, `extends
+WeeklyScheduleBase` con override TOTALE del lifecycle — niente profili/gruppi/storage, stesso
+modello di `quick-timer-card`). Mostra l'intera settimana come un **nastro continuo a
+serpentina** (boustrophedon VERO: lun →, mar ←, mer →, … righe pari L→R righe dispari R→L,
+collegate da curve a U che alternano lato). **Mezzanotte = apice della curva**, NIENTE tacche
+00→24 né marker espliciti (decisione utente, design congelato su `docs/serpentine/
+mockup-2-multi-entity-FINAL.svg`). Tutto renderizzato in **un unico `<svg>`** dentro `ha-card`
+(niente rettangolo/ombra disegnati a mano: li fornisce `ha-card` via tema, così dark-mode
+funziona gratis) — testi/tratti che dipendono dal tema usano `style="fill:var(--...)"` (non
+l'attributo di presentazione grezzo, per compatibilità var() cross-browser).
+- **Config**: `entities:` accetta stringhe o `{entity, name, color}` (normalizzato in
+  `setConfig`, diverso dalle altre card che richiedono solo oggetti). `title`/`language` come
+  le altre card.
+- **Multi-entità**: ogni entità = sotto-corsia parallela con colore proprio (`config.color` o
+  `PALETTE[i]`, ora **esportata** da `base-card.js` — vedi lezione CLAUDE.md sul drift di
+  PALETTE/LOCALES duplicati, qui riusata via import invece di ricopiata) + legenda in alto con
+  wrap automatico (**larghezza reale misurata via canvas offscreen**, non stimata). Avviso soft
+  (banner, non bloccante) se >3 entità (`serp.many_entities`), NESSUN limite rigido.
+- **Geometria**: costanti derivate per adattarsi a N entità mantenendo le proporzioni del
+  mockup approvato per N=3 (`strokeWidth = max(18, (n-1)*9 + 7 + 3)`, `rowStep = strokeWidth+18`,
+  `curveBump = strokeWidth+2`, `xL/xR` calcolati da `curveBump` per mantenere i margini). Pillole
+  posizionate per tempo→x **lineare** sulla riga (righe pari: `xL + t/1440*(xR-xL)`; dispari:
+  `xR - t/1440*(xR-xL)`) — NON mappate lungo le curve (approvato così, troppo complesso per v1).
+  Blocco attivo ORA: confronto diretto giorno/minuti correnti coi timeslot (niente dipendenza da
+  `current_slot`/storage) → più semplice e corretto anche senza profili.
+- **Dati**: riusa `_getSchedules(entityId)` (funziona senza `_storageData`, vedi nota in
+  `base-card.js`), `_appliesToDay`, `_parseTime`, `t()`, `_esc()`/`_escAttr()`, `_setStyles()`/
+  `_ensureRoot()`. `set hass` riusa `_hassChangedRelevant` del base (dipende solo da
+  `this._entities`, non da profili) per il debounce/diff — NIENTE fetch storage.
+- **v1 = decorativa**: click su una pillola → `hass-more-info` dello `switch.schedule_*`
+  (stesso pattern della mini-card). Editing futuro: riusare `_openEditPopup` (NIENTE drag sul
+  nastro — rovina curve/righe invertite/estetica, deciso con l'utente).
+- **Tick "ora"**: `setInterval` 60s in `connectedCallback` → re-render completo (rigenerare la
+  stringa SVG è economico; NON chiama `super.connectedCallback()`, stesso pattern quick-timer).
+- i18n: blocco `serp.*` (en/it/fr) — `title_default`, `many_entities` (avviso soft), `no_entities`,
+  `now`. Le etichette giorno (L M M G V S D) riusano `days.*` esistenti (prima lettera), NESSUNA
+  nuova chiave per i giorni.
+- Verificato visivamente con screenshot headless (Chromium/Playwright) contro il mockup approvato
+  (1/3/5 entità, tema chiaro/scuro, wrap legenda multi-riga, XSS-escaping di titolo/nomi con
+  caratteri speciali, click→hass-more-info, config a stringhe) — NON testato in HA reale.
 
 ## Architettura core
 ```
@@ -258,6 +302,20 @@ incorporata al centro, `.qt-foot` Avvia/countdown in fondo).
   load (`_cleanupFinishedTimers`). A riposo nessun artefatto.
 - **Storage condiviso**: timer attivi in `_sharedSet('quick_timer_card', {timers})` (prefisso helper
   `wsc_qt_store`) → countdown/annulla cross-device. `set hass` refetch su cambio `input_text.wsc_qt_store_*`.
+  **Versionato** (`_qtWriteCount`, v1.3.0): stesso fix v1.2.5 applicato allo storage principale,
+  mai portato qui — `_saveTimers()` incrementa il contatore PRIMA di scrivere; il refetch (sia al
+  primo load sia al cambio store) cattura la versione prima del fetch e scarta il risultato se nel
+  frattempo è partita un'altra `_saveTimers()` O se la lettura è `null` (mid-write, payload >1 chunk:
+  `_saveTimers` scrive i chunk PRIMA del meta → un refetch che arriva a metà legge un meta assente/
+  vecchio → `_sharedGet` torna `null`). Bug pre-fix: il refetch senza guardia trattava QUALSIASI
+  `null` come "store vuoto" e azzerava `_timers` a `{}` → il countdown appena avviato spariva
+  (mostrava di nuovo il pulsante "Avvia") per il tempo dei round-trip fino al chunk/meta successivo,
+  per poi auto-correggersi — ma nel frattempo l'utente vedeva "non parte" e un refresh a metà
+  scrittura (rara ma possibile con round-trip di rete reali) mostrava il timer "vuoto". Riprodotto
+  e verificato con un harness headless (mock `hass.callService`/`connection` con round-trip
+  realistici + payload a 2 chunk) prima e dopo il fix; verificato che il fix non rompe il sync
+  cross-device (scrittura da un altro "device" via `_sharedSet` diretto, letta correttamente dal
+  refetch `storeChanged`).
 - "Annulla" = **ripristina subito** (replay delle `restore` salvate nel record). Durata **o** Fine alle.
 - **Config via UI editor O YAML** (v1.2.3): `static getConfigElement()` → elemento
   `quick-timer-card-editor` (`class QuickTimerCardEditor extends WeeklyScheduleBase`, in fondo a
@@ -376,6 +434,39 @@ notifications:
 
 ## Last modified
 always update last modified date with day an hour Rome utc
+2026-07-01 09:03 Rome (v1.3.0 — fix quick-timer: countdown che spariva all'avvio + timer "vuoto"
+dopo refresh) — bug segnalato dall'utente sulla 1.2.9: dopo "Avvia" la card mostra "Stato
+acquisito" ma poi sembra non partire (torna il pulsante), e ricaricando la pagina il timer risulta
+non configurato. **Causa**: `set hass` in `quick-timer-card.js` rifà il fetch di `_timers` da
+`_sharedGet` ad ogni cambio di `input_text.wsc_qt_store_*` (sync cross-device) SENZA la guardia
+di versione che il v1.2.5 aveva introdotto per lo storage principale (`_wsWriteCount`) — mai
+applicata qui. Risultato: mentre `_saveTimers()` scrive i chunk (payload realistici superano
+spesso 255 char → 2+ chunk, scritti PRIMA del meta) i refetch triggerati dai NOSTRI STESSI cambi
+di stato intermedi leggono un meta assente/vecchio → `_sharedGet` torna `null` → il vecchio codice
+trattava QUALSIASI `null` come "store vuoto" e azzerava `_timers` a `{}`, facendo sparire il
+countdown appena creato (poi si autocorreggeva all'ultimo refetch, dopo il meta — ma nel frattempo
+l'utente vedeva "non parte", e un refresh capitato a metà scrittura mostrava "vuoto"). **Fix**:
+nuovo contatore `_qtWriteCount` (incrementato in `_saveTimers()` prima di scrivere); entrambi i
+refetch in `set hass` (primo load + `storeChanged`) catturano la versione prima del fetch e
+scartano il risultato se la versione è cambiata nel frattempo (altra scrittura in corso) o se la
+lettura è `null` (mid-write) — stesso pattern del fix v1.2.5, mai portato al percorso storage del
+quick-timer. Riprodotto il bug e verificato il fix con un harness headless (mock realistico di
+`hass.callService`/`connection.sendMessagePromise` con round-trip async, payload che richiede 2
+chunk) prima/dopo; verificato che il sync cross-device (altro device scrive un timer) funziona
+ancora. Nessuna funzionalità esistente toccata oltre al fix (solo in `quick-timer-card.js`).
+2026-07-01 08:34 Rome (v1.3.0 — nuova card `weekly-serpentine-card`) — implementata da zero
+seguendo `docs/serpentine/HANDOFF.md` (design congelato, approvato su `mockup-2-multi-entity-FINAL.svg`):
+nastro boustrophedon vero (righe alternate, curve a U, mezzanotte all'apice, niente tacche
+orarie), multi-entità con sotto-corsie parallele + legenda (wrap via canvas measureText), avviso
+soft (non bloccante) oltre 3 entità, indicatore "ora" sottile, v1 sola-lettura (click pillola →
+more-info). Nuovo file `src/weekly-serpentine-card.js` (4ª entry rollup, importato nel bundle
+main), `PALETTE` ora esportata da `base-card.js` (riusata, non ri-duplicata — vedi lezione
+storica sul drift), blocco i18n `serp.*` (en/it/fr) aggiunto a `LOCALES`. `npm run check`
+aggiornato per il 4° bundle. Vedi sezione dedicata sopra ("Weekly Serpentine Card") per i
+dettagli tecnici/geometria. Verificato con screenshot headless (Chromium) contro il mockup
+approvato, tema chiaro/scuro, XSS-escaping, config a stringhe — **non ancora validato in HA
+reale** (prossimo step utente). Nessuna funzionalità esistente toccata (solo file additivi +
+2 righe di export/import + blocco i18n aggiunto).
 2026-06-30 Rome (v1.2.9 — schedule "usa e getta" / one-shot) — nuovo flag per-schedule (`ps.oneShot`,
 checkbox `.chk-oneshot` sotto i giorni nel popup) che fa auto-eliminare lo schedule dopo l'ultima
 occorrenza dei giorni scelti. Semantica (decisa con utente): gira sulla PROSSIMA occorrenza di OGNI

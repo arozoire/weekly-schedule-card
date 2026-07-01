@@ -41,11 +41,12 @@ all on top of the [Scheduler Component](https://github.com/nielsfaber/scheduler-
 
 ## The cards
 
-This repository ships **four** Lovelace custom elements built from the same
+This repository ships **five** Lovelace custom elements built from the same
 source: the two main cards below — `weekly-schedule-card` (editing) and
-`weekly-schedule-view-card` (read-only) — plus two bonuses, the
-`weekly-schedule-mini-card` (active-now summary) and the `quick-timer-card`
-(temporary timer). All four are inlined in the main bundle.
+`weekly-schedule-view-card` (read-only) — plus three bonuses, the
+`weekly-schedule-mini-card` (active-now summary), the `quick-timer-card`
+(temporary timer) and the `weekly-serpentine-card` (decorative weekly
+overview). All five are inlined in the main bundle.
 
 ### `weekly-schedule-card` — editing
 
@@ -145,6 +146,40 @@ presets: [5, 10, 15, 30, 45, 60]   # optional minute chips
 > standalone `/local/quick-timer-card.js` resource is also available for
 > timer-only installs (see below).
 
+### `weekly-serpentine-card` — decorative weekly overview
+
+A **read-only, decorative** card (new in **v1.3.0**): the whole week rendered as one
+continuous ribbon that folds back on itself row after row — a true
+[boustrophedon](https://en.wikipedia.org/wiki/Boustrophedon): Monday flows left→right,
+Tuesday right→left, Wednesday left→right, and so on, each row joined to the next by a
+rounded U-turn. Midnight sits at the apex of each curve — there are no hour ticks or
+midnight markers, the shape tells the story.
+
+- **Multi-entity**: pick any entities in `entities:`; each gets its own color and a
+  swatch in the legend, rendered as a parallel sub-lane inside the ribbon. Up to 3 is the
+  sweet spot for readability — past that a soft, dismissible-by-config-change warning
+  appears, but there's **no hard limit**.
+- **Thin "now" indicator**: a small perpendicular tick + dot on today's row, no glow or label.
+- Schedule pills are colored by entity; the one active **right now** is brighter with a
+  soft glow. Disabled schedules are dimmed.
+- **v1 is display-only**: click a pill to open the same `more-info` dialog you'd get from
+  the entity's schedule elsewhere. Editing (reusing the existing create/edit popup) is
+  planned for a future release — no drag-on-ribbon is planned (curves + reversed rows +
+  midnight wraparound would fight the drag UX and the clean look).
+
+```yaml
+type: custom:weekly-serpentine-card
+title: "Zona giorno"        # optional
+language: "it"              # optional, auto-detect like the other cards
+entities:                   # accepts plain strings or {entity, name, color}
+  - climate.camera
+  - light.salotto
+  - switch.caldaia
+```
+
+> Included in the main bundle — no extra resource needed. Also ships as its own
+> `dist/weekly-serpentine-card.js` bundle if you only want this card.
+
 ---
 
 ## Installation
@@ -153,11 +188,11 @@ presets: [5, 10, 15, 30, 45, 60]   # optional minute chips
 
 1. Add this repository as a **Custom Repository** in HACS → Frontend.
 2. Install. HACS deploys and registers the main bundle automatically.
-3. Since **v1.2.2** the main bundle bundles **all four** custom elements
+3. Since **v1.2.2** the main bundle bundles **all five** custom elements
    (`weekly-schedule-card`, `weekly-schedule-view-card`,
-   `weekly-schedule-mini-card`, `quick-timer-card`), so the single resource
-   HACS registers exposes every card — no extra Lovelace resource needed.
-   Just hard-refresh after install.
+   `weekly-schedule-mini-card`, `quick-timer-card`, `weekly-serpentine-card`),
+   so the single resource HACS registers exposes every card — no extra
+   Lovelace resource needed. Just hard-refresh after install.
 
 ### Manual
 
@@ -166,12 +201,13 @@ Copy the bundles from `dist/` into your HA config:
 ```
 dist/weekly-schedule-card.js       →  /config/www/weekly-schedule-card.js
 dist/weekly-schedule-view-card.js  →  /config/www/weekly-schedule-view-card.js
-dist/quick-timer-card.js           →  /config/www/quick-timer-card.js   (only if you use it)
+dist/quick-timer-card.js           →  /config/www/quick-timer-card.js         (only if you use it)
+dist/weekly-serpentine-card.js     →  /config/www/weekly-serpentine-card.js   (only if you use it)
 ```
 
 ### Register resources
 
-For **HACS installs** the main bundle already registers all four cards — you
+For **HACS installs** the main bundle already registers all five cards — you
 don't need to add anything. For **manual `/config/www/` installs**, register at
 least the main bundle in **Settings → Dashboards → Resources** (or your
 `lovelace.yaml`):
@@ -197,6 +233,14 @@ the quick-timer card (without the full schedule editor), it also ships as a
 
 ```yaml
   - url: /local/quick-timer-card.js
+    type: module
+```
+
+The **`weekly-serpentine-card`** is included in the main bundle too, and also
+ships standalone for decorative-only installs:
+
+```yaml
+  - url: /local/weekly-serpentine-card.js
     type: module
 ```
 
@@ -580,7 +624,7 @@ npm run watch      # watch mode
 npm run deploy     # build + copy dist/*.js to /config/www/
 ```
 
-The two bundles are built by Rollup as self-contained IIFEs that inline
+The four bundles are built by Rollup as self-contained IIFEs that inline
 `src/base-card.js`. Do **not** copy `src/*.js` directly to HA — the
 sources use ES module `import`s that the browser will not resolve without
 the bundler. Always deploy from `dist/`.
@@ -590,13 +634,18 @@ Source layout:
 ```
 src/
   base-card.js                   # shared class + inline LOCALES (en/it/fr) + storage
-  weekly-schedule-card.js        # editing card (extends base) + mini card
+  weekly-schedule-card.js        # editing card (extends base); imports view/quick-timer/serpentine + mini card
   weekly-schedule-view-card.js   # view-only card (extends base)
-rollup.config.js                 # two IIFE entries (minified with terser)
+  quick-timer-card.js            # single-entity temporary-timer card (extends base) + its editor
+  weekly-serpentine-card.js      # decorative boustrophedon weekly overview (extends base)
+  lz-string.js                   # vendored compression for shared storage (MIT)
+rollup.config.js                 # four IIFE entries (minified with terser)
 scripts/deploy.js                # cross-platform deploy (dist/*.js → /config/www)
 dist/
-  weekly-schedule-card.js        # bundled editing card
+  weekly-schedule-card.js        # bundled editing card (+ view + mini + quick-timer + serpentine)
   weekly-schedule-view-card.js   # bundled view card
+  quick-timer-card.js            # bundled standalone quick-timer card
+  weekly-serpentine-card.js      # bundled standalone serpentine card
 ```
 
 ---
