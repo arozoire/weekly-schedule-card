@@ -256,6 +256,19 @@ con `input_text.wsc_store_meta` = N (conteggio chunk). Chiave quick-timer: prefi
 - **Mid-write fail-safe**: i chunk si scrivono prima del meta; un lettore che becca lo stato
   intermedio fallisce il decompress → `_sharedGet` ritorna null → fallback, si auto-corregge al
   prossimo update. Nessun lock (rischio basso con pochi utenti).
+- **Fix helper "_meta" duplicati (v1.3.1)**: `_sharedSet` calcolava `existing` (helper già
+  presenti, da NON ricreare) con una regex che intercetta solo i chunk numerati (`_0`, `_1`, …)
+  — l'helper `_meta` non è mai `\d+` quindi non ci finiva MAI dentro. L'unica guardia reale era
+  il Set di sessione `_createdHelpers` (si azzera a ogni refresh di pagina) → ad ogni reload +
+  nuovo salvataggio, `ensure(metaEntity)` lo considerava "non esistente" e ne creava uno NUOVO
+  (stesso nome "WSC Store Meta"/"WSC QT Store Meta", entity_id auto-suffissato da HA per
+  evitare collisioni) → helper duplicati orfani accumulati nel tempo (osservato in HA reale:
+  17 copie di "WSC QT Store Meta", quasi tutte `unknown` tranne quella con l'id esatto
+  `input_text.wsc_qt_store_meta`, l'unica che il codice legge/scrive davvero). Fix: `existing`
+  ora include anche il meta entity se già presente in `hass.states`. Verificato con test
+  (simula un "fresh reload" azzerando `_createdHelpers` tra due `_sharedSet` sullo stesso store
+  già esistente): zero chiamate `input_text/create` di troppo dopo il fix. Gli helper orfani già
+  creati vanno rimossi manualmente da Impostazioni → Helper (il fix previene solo i futuri).
 Schema reale (invariato — è il payload serializzato):
 ```javascript
 {
@@ -459,6 +472,25 @@ notifications:
 
 ## Last modified
 always update last modified date with day an hour Rome utc
+2026-07-01 14:54 Rome (v1.3.1 — fix helper "_meta" duplicati + log errori quick-timer leggibile) —
+dopo il fix `initial_state`, l'utente segnala ancora "il timer non si vede" e chiede se il timer
+debba sincronizzarsi tra dashboard diverse (sì, per design, via lo stesso storage condiviso).
+Raccolti 2 indizi da HA reale: (1) **17 helper duplicati** "WSC QT Store Meta" in Impostazioni →
+Helper, quasi tutti `unknown` tranne quello con id esatto `input_text.wsc_qt_store_meta` (che HA
+il valore corretto); (2) Console mostra `QT startTimer failed` con un oggetto errore
+`{type:"result",success:false,error:{…}}` (fallimento di una chiamata `hass.callService`) MA
+compresso — l'utente non sapeva espanderlo, e l'entity_id esatto del meta helper risulta con
+dati validi (quindi lo storage di per sé scrive/legge correttamente sull'entità giusta). **Fix
+applicato ora**: (a) risolto il bug REALE e confermato dei duplicati — `_sharedSet` in
+`base-card.js` riconosceva solo i chunk numerati come "già esistenti", mai il meta, quindi lo
+ricreava ad ogni refresh di pagina (vedi sezione "Profili storage" sopra per il dettaglio); (b)
+`_startTimer` in `quick-timer-card.js` ora stampa un riassunto leggibile dell'errore (code/message
+o JSON.stringify) invece del solo oggetto compresso, per diagnosticare senza dover sapere
+espandere oggetti in Console. Il vero perché "il timer non si vede" resta da confermare — il
+sospetto principale è che la chiamata `automation.trigger` fallisca (l'unica `callService` nel
+blocco try, e la forma dell'errore combacia con un rifiuto di servizio), ma serve il testo
+dell'errore ora leggibile per confermarlo. Nessuna regressione: build/check verde, test di
+regressione (race storage, cross-device sync, popup edit) ri-verificati tutti passanti.
 2026-07-01 13:59 Rome (v1.3.1 — serpentine: click su una pillola apre l'edit-schedule popup,
 non solo hass-more-info) — richiesta esplicita utente dopo aver provato la v1.3.0 in HA reale:
 preferisce il popup ricco (giorni/slot/azioni/condizioni/notifiche) al semplice toggle

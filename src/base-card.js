@@ -359,6 +359,13 @@ export default class WeeklyScheduleBase extends HTMLElement {
     if (!chunks.length) chunks.push('');
     const re = new RegExp(`^input_text\\.${prefix}_\\d+$`);
     const existing = new Set(Object.keys(hass.states).filter(k => re.test(k)));
+    // BUG (fino a v1.3.1): il regex sopra riconosce solo i chunk numerati (_0, _1, …), MAI
+    // l'helper "_meta" (non è \d+) → ensure(metaEntity) lo considerava sempre "non esistente"
+    // a ogni refresh di pagina (il Set `created` è per-sessione, si azzera al reload) e ne
+    // creava uno NUOVO ogni volta, accumulando helper "WSC Store Meta"/"WSC QT Store Meta"
+    // duplicati orfani (visti in HA reale: 17 copie). Fix: includere il meta se già presente.
+    const metaEnt = WeeklyScheduleBase._metaEntity(key);
+    if (hass.states[metaEnt]) existing.add(metaEnt);
     const isAdmin = WeeklyScheduleBase._isAdmin(hass);
     const ensure = async (ent, helperName) => {
       if (existing.has(ent) || created.has(ent)) return;

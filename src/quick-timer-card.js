@@ -516,7 +516,11 @@ class QuickTimerCard extends WeeklyScheduleBase {
       this._starting = false;
       this.render();
     } catch (e) {
-      console.error('QT startTimer failed', e);
+      // Stampa un riassunto leggibile in cima (i rifiuti di hass.callService arrivano come
+      // {type:'result',success:false,error:{code,message}} — un oggetto compresso in console,
+      // scomodo da leggere senza sapere come espanderlo). L'oggetto raw resta comunque loggato.
+      const detail = e?.error ? `${e.error.code || ''} ${e.error.message || ''}`.trim() || JSON.stringify(e.error) : (e?.message || String(e));
+      console.error(`QT startTimer failed: ${detail}`, e);
       this._setFootStatus(this.t('qtimer.start_failed'), 'error');
       this._starting = false;
       await this._sleep(2500);
