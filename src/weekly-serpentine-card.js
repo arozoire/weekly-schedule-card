@@ -1,13 +1,16 @@
 // src/weekly-serpentine-card.js
-// Last modified: 2026-07-01 Rome (v1.3.0 — new card)
+// Last modified: 2026-07-01 Rome (v1.3.1 — click a pill opens the full edit popup)
 //
-// Decorative read-only card: the whole week as one continuous boustrophedon ribbon
-// (LUN →, MAR ←, MER →, … connected by rounded U-turns; midnight sits at the apex of
-// each curve, no explicit tick marks). Multi-entity: each entity is a parallel sub-lane
-// with its own color + legend, soft warning past 3 (no hard limit). v1 = decorative only:
-// click a pill → hass-more-info of the switch.schedule_*; editing stays for a future
-// iteration (reuse _openEditPopup). Extends the base only for t()/_esc()/_setStyles()/
-// _getSchedules()/_appliesToDay()/_parseTime() — no profiles/groups/storage.
+// Decorative card: the whole week as one continuous boustrophedon ribbon (LUN →, MAR ←,
+// MER →, … connected by rounded U-turns; midnight sits at the apex of each curve, no
+// explicit tick marks). Multi-entity: each entity is a parallel sub-lane with its own
+// color + legend, soft warning past 3 (no hard limit). Click a pill → the SAME rich
+// edit-schedule popup used by the editing/view cards (_openEditPopup), so this inherits
+// WeeklyScheduleBase's DEFAULT `hass`/connectedCallback (storage fetch, default-profile
+// bootstrap, cross-card sync) instead of overriding them — same lifecycle as
+// weekly-schedule-card/weekly-schedule-view-card, just without a groups/profiles UI of
+// its own (new schedules land in the first/default profile via _getSelectedProfile's
+// fallback). Own additions: a periodic tick for the "now" indicator.
 
 import WeeklyScheduleBase, { PALETTE } from './base-card.js';
 
@@ -41,26 +44,28 @@ class WeeklySerpentineCard extends WeeklyScheduleBase {
       const o = typeof e === 'string' ? { entity: e } : (e || {});
       return { entity: o.entity, name: o.name || null, color: o.color || null };
     }).filter(e => !!e.entity);
+    this._snap = config?.snap || 15; // usato dal popup di modifica (drag/snap dello slot)
     this._lang = null;
   }
 
   static getStubConfig() { return { entities: [] }; }
   getCardSize() { return 6; }
 
-  get hass() { return this._hass; }
-  set hass(hass) {
-    const prev = this._hass;
-    this._hass = hass;
-    if (!prev) { this.render(); return; }
-    if (this._hassChangedRelevant(prev, hass)) this.render();
-  }
+  // hass getter/setter: NOT overridden — inherits WeeklyScheduleBase's default (fetches/
+  // maintains _storageData, bootstraps the default profile, gates render() while a popup
+  // is open, refetches on cross-card/cross-device storage changes). Needed so the edit
+  // popup opened from a pill (save/conditions/notifications/linked-objects panel) works
+  // exactly like it does from the other two cards.
 
-  // Only the "ora" indicator needs a periodic tick; a full re-render (cheap SVG string
-  // rebuild) once a minute is simpler than patching two coordinates in place.
   connectedCallback() {
-    if (!this._serpTick) this._serpTick = setInterval(() => this.render(), 60000);
+    super.connectedCallback();
+    // Only the "ora" indicator needs a periodic tick; a full re-render (cheap SVG string
+    // rebuild) once a minute is simpler than patching two coordinates in place. Skipped
+    // while the edit popup is open so it doesn't get disturbed mid-edit.
+    if (!this._serpTick) this._serpTick = setInterval(() => { if (!this._popupState) this.render(); }, 60000);
   }
   disconnectedCallback() {
+    super.disconnectedCallback();
     if (this._serpTick) { clearInterval(this._serpTick); this._serpTick = null; }
   }
 
@@ -136,7 +141,7 @@ class WeeklySerpentineCard extends WeeklyScheduleBase {
   }
 
   render() {
-    if (!this._hass || !this._config) return;
+    if (!this._hass || !this._config || !this._storageData) return;
     this._setStyles('serp', this._styles());
     const root = this._ensureRoot();
     const entities = this._entities || [];
@@ -159,11 +164,7 @@ class WeeklySerpentineCard extends WeeklyScheduleBase {
     root.innerHTML = `<ha-card>${svg}${warn}</ha-card>`;
 
     root.querySelectorAll('[data-schedule]').forEach(el => {
-      el.addEventListener('click', () => {
-        this.dispatchEvent(new CustomEvent('hass-more-info', {
-          detail: { entityId: el.dataset.schedule }, bubbles: true, composed: true
-        }));
-      });
+      el.addEventListener('click', () => this._openEditPopup(el.dataset.schedule));
     });
   }
 

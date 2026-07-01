@@ -4,9 +4,9 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: 'Version tag (e.g. v1.3.0)'
+        description: 'Version tag (e.g. v1.3.1)'
         required: true
-        default: 'v1.3.0'
+        default: 'v1.3.1'
 
 jobs:
   release:
@@ -44,16 +44,22 @@ jobs:
             - **Multi-entità**: ogni entità è una sotto-corsia parallela con colore proprio +
               legenda in alto; avviso soft (non un limite rigido) oltre 3 entità.
             - **Indicatore "ora" sottile** sul giorno corrente. Pillole = schedule; click →
-              apre il more-info dello schedule (editing resta nel popup esistente, in futuro).
+              apre lo **stesso popup di modifica** delle altre card (giorni/slot/azioni/
+              condizioni/notifiche), non solo un more-info.
+            - Blocchi a cavallo di mezzanotte ora "fluiscono" visivamente dentro la curva invece
+              di fermarsi di netto sul bordo.
             - Inclusa nel bundle principale (HACS) e disponibile anche come bundle standalone
               `weekly-serpentine-card.js`.
 
-            ### Fix
-            - **Quick-timer**: il countdown poteva sparire subito dopo "Avvia" (tornava il pulsante)
-              e, ricaricando la pagina, il timer risultava "vuoto" come se non fosse mai partito.
-              Causa: un refetch dello storage condiviso non protetto da un contatore di versione
-              poteva leggere lo stato a metà scrittura e azzerare il timer appena creato. Corretto
-              con lo stesso meccanismo già usato per lo storage principale.
+            ### Fix quick-timer
+            - Il countdown poteva sparire subito dopo "Avvia" (tornava il pulsante) e, ricaricando
+              la pagina, il timer risultava "vuoto" come se non fosse mai partito. Causa: un
+              refetch dello storage condiviso non protetto da un contatore di versione poteva
+              leggere lo stato a metà scrittura e azzerare il timer appena creato.
+            - L'automazione del timer, se finita disabilitata anche una sola volta (es. un
+              "Annulla" il cui delete fallisce), restava disabilitata per sempre alle ricreazioni
+              successive → il countdown non partiva mai più, bloccato su "Stato acquisito".
+              Ora l'automazione viene sempre forzata abilitata alla ricreazione.
 
             ### Aggiornare
             - **HACS**: Update → Ctrl-F5.

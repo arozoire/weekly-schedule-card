@@ -44,10 +44,17 @@ dist/
   weekly-serpentine-card.js      # IIFE bundle (base + serpentine-card), standalone
 ```
 
-## Weekly Serpentine Card (`custom:weekly-serpentine-card`, v1.3.0)
-Card **decorativa sola-lettura** (`src/weekly-serpentine-card.js`, 4ª entry rollup, `extends
-WeeklyScheduleBase` con override TOTALE del lifecycle — niente profili/gruppi/storage, stesso
-modello di `quick-timer-card`). Mostra l'intera settimana come un **nastro continuo a
+## Weekly Serpentine Card (`custom:weekly-serpentine-card`, v1.3.0 → v1.3.1)
+Card **decorativa** (`src/weekly-serpentine-card.js`, 4ª entry rollup, `extends
+WeeklyScheduleBase`). Dalla v1.3.1 **NON** override più `hass`/`connectedCallback` del base:
+eredita il ciclo di vita STANDARD (fetch/mantieni `_storageData`, bootstrap profilo default,
+gate su `_popupState`, refetch cross-card/cross-device) — lo stesso di `weekly-schedule-card`/
+`weekly-schedule-view-card` — perché serve a `_openEditPopup` (save/condizioni/notifiche/
+pannello linked-objects) funzionare identico alle altre due card. Novità nuove schedule: finiscono
+nel primo profilo (`_getSelectedProfile()` fallback su `profiles[0]`), la card non ha una sua UI
+profili/gruppi. Uniche aggiunte proprie: tick periodico per l'indicatore "ora" (`connectedCallback`/
+`disconnectedCallback` chiamano `super.*` + gestiscono `_serpTick`, saltato se popup aperto).
+Mostra l'intera settimana come un **nastro continuo a
 serpentina** (boustrophedon VERO: lun →, mar ←, mer →, … righe pari L→R righe dispari R→L,
 collegate da curve a U che alternano lato). **Mezzanotte = apice della curva**, NIENTE tacche
 00→24 né marker espliciti (decisione utente, design congelato su `docs/serpentine/
@@ -76,21 +83,26 @@ l'attributo di presentazione grezzo, per compatibilità var() cross-browser).
   flusso continuo (screenshot utente). Il resto della curva resta senza mapping (invariato).
   Blocco attivo ORA: confronto diretto giorno/minuti correnti coi timeslot (niente dipendenza da
   `current_slot`/storage) → più semplice e corretto anche senza profili.
-- **Dati**: riusa `_getSchedules(entityId)` (funziona senza `_storageData`, vedi nota in
-  `base-card.js`), `_appliesToDay`, `_parseTime`, `t()`, `_esc()`/`_escAttr()`, `_setStyles()`/
-  `_ensureRoot()`. `set hass` riusa `_hassChangedRelevant` del base (dipende solo da
-  `this._entities`, non da profili) per il debounce/diff — NIENTE fetch storage.
-- **v1 = decorativa**: click su una pillola → `hass-more-info` dello `switch.schedule_*`
-  (stesso pattern della mini-card). Editing futuro: riusare `_openEditPopup` (NIENTE drag sul
-  nastro — rovina curve/righe invertite/estetica, deciso con l'utente).
-- **Tick "ora"**: `setInterval` 60s in `connectedCallback` → re-render completo (rigenerare la
-  stringa SVG è economico; NON chiama `super.connectedCallback()`, stesso pattern quick-timer).
+- **Dati**: riusa `_getSchedules(entityId)`, `_appliesToDay`, `_parseTime`, `t()`, `_esc()`/
+  `_escAttr()`, `_setStyles()`/`_ensureRoot()`. `render()` richiede `_hass`+`_config`+
+  `_storageData` (come le altre due card — c'è un breve delay al primo load finché lo storage
+  non risolve, non più immediato come in v1.3.0).
+- **Editing (v1.3.1)**: click su una pillola → `_openEditPopup(scheduleEntityId)`, lo STESSO
+  popup ricco (giorni/slot/azioni per dominio/condizioni/notifiche/linked-objects) delle altre
+  due card — non più solo `hass-more-info`. NIENTE drag sul nastro (rovina curve/righe
+  invertite/estetica, deciso con l'utente): resize/move dal popup stesso.
+- **Tick "ora"**: `setInterval` 60s in `connectedCallback` (che chiama `super.connectedCallback()`
+  per il listener `wsc-storage-changed` + binding a11y) → re-render completo, saltato se
+  `_popupState` è aperto (rigenerare la stringa SVG è economico).
 - i18n: blocco `serp.*` (en/it/fr) — `title_default`, `many_entities` (avviso soft), `no_entities`,
   `now`. Le etichette giorno (L M M G V S D) riusano `days.*` esistenti (prima lettera), NESSUNA
   nuova chiave per i giorni.
 - Verificato visivamente con screenshot headless (Chromium/Playwright) contro il mockup approvato
   (1/3/5 entità, tema chiaro/scuro, wrap legenda multi-riga, XSS-escaping di titolo/nomi con
-  caratteri speciali, click→hass-more-info, config a stringhe) — NON testato in HA reale.
+  caratteri speciali, config a stringhe) e con un test end-to-end (mock storage/scheduler) che
+  simula click→apertura popup in modalità edit→modifica temperatura→Salva→`scheduler.edit`
+  chiamato coi dati giusti→popup chiuso — validato IN HA reale dall'utente per la parte visiva,
+  editing da validare.
 
 ## Architettura core
 ```
@@ -447,6 +459,28 @@ notifications:
 
 ## Last modified
 always update last modified date with day an hour Rome utc
+2026-07-01 13:59 Rome (v1.3.1 — serpentine: click su una pillola apre l'edit-schedule popup,
+non solo hass-more-info) — richiesta esplicita utente dopo aver provato la v1.3.0 in HA reale:
+preferisce il popup ricco (giorni/slot/azioni/condizioni/notifiche) al semplice toggle
+attivo/disattivo del more-info generico. Per farlo funzionare (save, pannello linked-objects,
+condizioni/notifiche — tutta roba che scrive in `_storageData.profiles[].scheduleLinks`),
+`weekly-serpentine-card.js` **non override più `hass`/`connectedCallback`/`disconnectedCallback`
+del base**: eredita il ciclo di vita STANDARD (fetch storage, `_ensureDefaultProfile`, gate su
+`_popupState`, sync cross-card/cross-device) invece del "override totale, niente storage" di v1.3.0
+— esattamente lo stesso lifecycle di `weekly-schedule-card`/`weekly-schedule-view-card` (nessuna
+delle due override `set hass`, verificato). Aggiunte proprie: solo il tick 60s per l'indicatore
+"ora" in `connectedCallback` (ora chiama `super.connectedCallback()`), saltato se popup aperto.
+`render()` ora richiede anche `_storageData` (come le altre due card) → un breve delay al primo
+load prima che compaia qualcosa (prima renderizzava subito). `setConfig` aggiunge `this._snap =
+config.snap||15` (serviva al drag/snap del popup, prima rimaneva sul default costruttore).
+Verificato con un test end-to-end (mock hass.callService/callApi/connection realistici): storage
+si carica, click sulla pillola apre il dialog in modalità **edit** (non create) con l'entity_id
+giusto, modificare un campo e Salvare chiama `scheduler.edit` coi dati corretti e chiude il popup
+— nessun errore. Ri-verificato visivamente che il rendering (1/3/5 entità, dark mode, config a
+stringhe) resta identico a prima (nessuna regressione dal cambio di lifecycle). README/CLAUDE.md
+aggiornati. Bump 1.3.0→1.3.1 (la 1.3.0 non era ancora stata rilasciata: la vecchia PR/branch
+continua, niente tag/release v1.3.0 da gestire a parte). Da validare in HA reale (l'utente aveva
+già segnalato bene la parte visiva della v1.3.0, manca la conferma sull'editing).
 2026-07-01 13:44 Rome (v1.3.0 — fix quick-timer: automazione ricreata restava disabilitata,
 "Stato acquisito" bloccato per sempre) — diagnosticato in diretta su HA reale dell'utente (v1.2.9
 ancora in uso mentre si testava il branch): dopo "Avvia", Network mostrava DELETE (400, normale,
