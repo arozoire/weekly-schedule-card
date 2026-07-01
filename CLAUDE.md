@@ -334,6 +334,25 @@ incorporata al centro, `.qt-foot` Avvia/countdown in fondo).
   reload di HA) e il delay/restore non parte MAI più finché non la si riabilita a mano dalla UI —
   bug reale riscontrato in HA (l'utente vedeva "Stato acquisito" bloccato all'infinito perché
   `automation.trigger` su un'automazione disabilitata non esegue le azioni).
+- **`automation.trigger` blocca fino al termine dello script, delay incluso (v1.3.1, bug reale
+  in HA)**: diagnosticato in diretta — dopo il fix `initial_state`, l'utente segnalava ancora
+  countdown mancante; con un test (`_cancelTimer` osservato: l'automazione restava viva ~10 min
+  per un timer da 5 min) si è capito che `await this._hass.callService('automation','trigger',…)`
+  NON ritorna finché l'intera action dell'automazione non è FINITA — compreso il primo passo,
+  che è proprio il `delay` della durata scelta (a differenza di un trigger reale, che HA esegue
+  come task in background senza bloccare il chiamante). Risultato: la card restava su "Stato
+  acquisito" per l'intera durata, poi calcolava `endTs` da QUEL momento (già in ritardo) invece
+  che dall'avvio reale → un secondo countdown fittizio della stessa durata, senza che succedesse
+  più nulla di reale (il ripristino era già avvenuto durante l'attesa). Fix in `_startTimer`:
+  `Promise.race` tra la chiamata reale e un timeout breve (`TRIGGER_ACK_MS=2500`) — un fallimento
+  vero (entità inesistente, ecc.) arriva quasi subito quindi il race lo cattura comunque (nessuna
+  regressione sulla sicurezza "niente timer fantasma" introdotta in v1.2.9); se non risponde entro
+  2.5s si assume accettata, si mostra SUBITO il countdown corretto (calcolato da adesso), e la
+  promise originale resta osservata in background (`_handleLateTriggerFailure`) per ripulire
+  timer+automazione nel raro caso di un fallimento tardivo. Verificato con 5 scenari headless
+  (successo/fallimento veloce invariati, successo lento mostra countdown corretto senza aspettare
+  la durata intera, fallimento lento si ripulisce da solo, annulla-durante-attesa non resuscita
+  nulla quando la promise tardiva arriva dopo).
 - **Overlap "vince l'ultimo attivato"**: guardia template nell'automazione → salta il revert se uno
   `switch.schedule_*` è entrato in slot DOPO l'avvio (`last_changed > now()-durata`).
 - **Auto-pulizia**: automazione eliminata ~30s dopo `endTs` (buffer) o subito all'Annulla; GC su
@@ -472,6 +491,29 @@ notifications:
 
 ## Last modified
 always update last modified date with day an hour Rome utc
+2026-07-01 15:38 Rome (v1.3.1 — fix quick-timer: `automation.trigger` bloccava per l'intera durata
+del timer, non solo per gli errori) — dopo il fix `initial_state`, l'utente ha continuato a
+indagare CON me passo passo (giustamente, mi ha fatto notare di ragionare insieme prima di
+agire): un timer da 5 minuti restava su "Stato acquisito" per ~5 minuti pieni, poi mostrava un
+countdown DI ALTRI 5 minuti; osservando l'automazione in HA, restava viva ~10 minuti totali prima
+di autoeliminarsi. L'utente stesso ha ipotizzato "forse la duration viene usata come delay" — la
+causa reale è vicina: `hass.callService('automation','trigger',…)` in HA **blocca fino alla fine
+dell'intera action script dell'automazione, compreso il suo `delay` interno** (comportamento noto
+e documentato di HA: un trigger via SERVIZIO — a differenza di un trigger reale — non viene
+eseguito come task in background, il chiamante resta in attesa). Il nostro `await` su quella
+chiamata quindi bloccava la card per l'intera durata del timer prima di calcolare `endTs` (da quel
+momento, già in ritardo) e mostrare il countdown — un secondo countdown fittizio senza nulla di
+reale dietro (il ripristino era già avvenuto). L'`await` serviva per non salvare un "timer
+fantasma" se il trigger falliva davvero (fix esplicito v1.2.9) — rimuoverlo e basta avrebbe
+reintrodotto quel bug. **Fix**: `Promise.race` tra la chiamata e un timeout breve di 2.5s — un
+errore vero (entità sbagliata ecc.) arriva quasi subito quindi viene comunque intercettato; se
+non risponde entro 2.5s si assume accettata e si mostra il countdown corretto subito, mentre la
+promise vera resta osservata in background per ripulire (record + automazione) nel raro caso di
+un fallimento tardivo. Verificato con un harness headless a 5 scenari (successo/fallimento
+veloce invariati — nessuna regressione sulla sicurezza "niente ghost timer" —, successo lento
+ora mostra il countdown giusto in ~2.5s invece che dopo l'intera durata, fallimento lento si
+ripulisce da solo, annulla-durante-attesa non resuscita nulla). Ri-verificati tutti i fix
+precedenti (race storage, helper duplicati, popup serpentine, sync cross-device): tutti passanti.
 2026-07-01 14:54 Rome (v1.3.1 — fix helper "_meta" duplicati + log errori quick-timer leggibile) —
 dopo il fix `initial_state`, l'utente segnala ancora "il timer non si vede" e chiede se il timer
 debba sincronizzarsi tra dashboard diverse (sì, per design, via lo stesso storage condiviso).
