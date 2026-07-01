@@ -148,7 +148,7 @@ presets: [5, 10, 15, 30, 45, 60]   # optional minute chips
 
 ### `weekly-serpentine-card` — decorative weekly overview
 
-A **read-only, decorative** card (new in **v1.3.0**): the whole week rendered as one
+A **decorative weekly overview** (new in **v1.3.0**): the whole week rendered as one
 continuous ribbon that folds back on itself row after row — a true
 [boustrophedon](https://en.wikipedia.org/wiki/Boustrophedon): Monday flows left→right,
 Tuesday right→left, Wednesday left→right, and so on, each row joined to the next by a
@@ -162,10 +162,10 @@ midnight markers, the shape tells the story.
 - **Thin "now" indicator**: a small perpendicular tick + dot on today's row, no glow or label.
 - Schedule pills are colored by entity; the one active **right now** is brighter with a
   soft glow. Disabled schedules are dimmed.
-- **v1 is display-only**: click a pill to open the same `more-info` dialog you'd get from
-  the entity's schedule elsewhere. Editing (reusing the existing create/edit popup) is
-  planned for a future release — no drag-on-ribbon is planned (curves + reversed rows +
-  midnight wraparound would fight the drag UX and the clean look).
+- **Click a pill → the same edit-schedule popup** used by the editing/view cards (days,
+  time slot, per-domain actions, conditions, notifications, linked objects). No drag-on-ribbon
+  (curves + reversed rows + midnight wraparound would fight the drag UX and the clean look) —
+  resize/move a slot from the popup's own controls instead.
 
 ```yaml
 type: custom:weekly-serpentine-card
