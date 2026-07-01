@@ -405,6 +405,11 @@ class QuickTimerCard extends WeeklyScheduleBase {
       id: autoId,
       alias: `QT Timer - ${eid}`,
       mode: 'restart',
+      // Forza sempre abilitata alla ricreazione: se un giro precedente l'aveva disabilitata
+      // (es. un DELETE fallito in _cancelTimer che l'ha lasciata orfana e off), senza questo
+      // campo HA la ricrea mantenendo lo stato disabilitato precedente e il delay/restore non
+      // parte mai più finché non la si riabilita a mano. Stesso pattern di _syncOverrideFlag.
+      initial_state: true,
       trigger: [{ platform: 'template', value_template: '{{ false }}' }],
       condition: [],
       action: [

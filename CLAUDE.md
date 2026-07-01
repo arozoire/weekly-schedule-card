@@ -302,6 +302,13 @@ incorporata al centro, `.qt-foot` Avvia/countdown in fondo).
   ⚠️ se modifichi e aspetti >30s prima di Avviare, il baseline avanza (ripristino = no-op).
 - **NIENTE scene**: ripristino con azioni esplicite `_buildRestoreActions(eid)` (legge `hass.states`
   per dominio) cucite in un'automazione **transitoria** `qt_timer_<slug>` (delay + guardia + restore).
+  `_buildTimerAutomation` include **`initial_state: true`** (v1.3.0, come `_syncOverrideFlag`): senza,
+  se l'automazione finisce disabilitata una volta (es. `_cancelTimer` chiama `automation.turn_off`
+  prima del DELETE, e se il DELETE fallisce — vedi lezione proxy sotto — resta orfana e off), ogni
+  ricreazione successiva la ricrea mantenendo lo stato disabilitato precedente (comportamento di
+  reload di HA) e il delay/restore non parte MAI più finché non la si riabilita a mano dalla UI —
+  bug reale riscontrato in HA (l'utente vedeva "Stato acquisito" bloccato all'infinito perché
+  `automation.trigger` su un'automazione disabilitata non esegue le azioni).
 - **Overlap "vince l'ultimo attivato"**: guardia template nell'automazione → salta il revert se uno
   `switch.schedule_*` è entrato in slot DOPO l'avvio (`last_changed > now()-durata`).
 - **Auto-pulizia**: automazione eliminata ~30s dopo `endTs` (buffer) o subito all'Annulla; GC su
@@ -440,6 +447,28 @@ notifications:
 
 ## Last modified
 always update last modified date with day an hour Rome utc
+2026-07-01 13:44 Rome (v1.3.0 — fix quick-timer: automazione ricreata restava disabilitata,
+"Stato acquisito" bloccato per sempre) — diagnosticato in diretta su HA reale dell'utente (v1.2.9
+ancora in uso mentre si testava il branch): dopo "Avvia", Network mostrava DELETE (400, normale,
+nessun'automazione da cancellare la prima volta) seguito da **POST 200** (creazione riuscita) —
+quindi la creazione funzionava, ma **Impostazioni → Automazioni** mostrava l'automazione
+`QT Timer - climate.ac_19621004` presente ma **disabilitata**. Causa: `_buildTimerAutomation` non
+impostava `initial_state` (a differenza di `_syncOverrideFlag`, che lo fa apposta) — se
+l'automazione finisce disabilitata anche una sola volta (es. `_cancelTimer` chiama
+`automation.turn_off` prima del DELETE; se quel DELETE fallisce — come il 400 osservato, coerente
+con un proxy/hosting che tratta DELETE in modo particolare — l'automazione resta orfana e off),
+ogni `_recreateAutomation` successiva (DELETE-poi-POST sullo stesso id) la ricrea MANTENENDO lo
+stato disabilitato precedente (comportamento di reload automazioni di HA), e `automation.trigger`
+su un'automazione disabilitata non esegue mai le azioni (delay+restore) → il countdown non parte
+mai, la card resta bloccata sul messaggio "Stato acquisito" indefinitamente. **Fix**: aggiunto
+`initial_state: true` in `_buildTimerAutomation`, stesso pattern già usato da `_syncOverrideFlag`
+— forza sempre abilitata alla ricreazione, indipendentemente da uno stato disabilitato ereditato.
+Verificato che compare nel bundle minificato dopo build. Da riverificare in HA reale dall'utente
+(riprovare "Avvia" dopo il redeploy). Segnalato anche, separatamente e non toccato: la risorsa
+standalone `quick-timer-card.js` (ridondante, già inclusa nel bundle principale) e
+`climate-scheduler-card.js` (non di questo progetto) fallivano il caricamento con
+`NS_ERROR_CORRUPTED_CONTENT` nell'hosting dell'utente — probabile problema di proxy/Content-Type
+lato loro, da investigare separatamente se vogliono tenerle.
 2026-07-01 10:02 Rome (v1.3.0 — fix serpentine: blocchi a cavallo di mezzanotte non fluivano nella
 curva) — feedback utente da HA reale (screenshot): due schedule adiacenti a cavallo di mezzanotte
 (mer 23:25-00:00 + gio 00:01-00:45) apparivano come due pillole staccate "prima e dopo" la curva
