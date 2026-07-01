@@ -3,7 +3,7 @@
 
 import { compressToBase64, decompressFromBase64 } from './lz-string.js';
 
-const PALETTE=['#F44336','#E91E63','#9C27B0','#673AB7','#3F51B5','#2196F3','#03A9F4','#00BCD4','#009688','#4CAF50','#8BC34A','#CDDC39','#FFEB3B','#FFC107','#FF9800','#FF5722','#795548','#9E9E9E','#607D8B','#000000','#FFFFFF','#FF80AB','#69F0AE','#40C4FF'];
+export const PALETTE=['#F44336','#E91E63','#9C27B0','#673AB7','#3F51B5','#2196F3','#03A9F4','#00BCD4','#009688','#4CAF50','#8BC34A','#CDDC39','#FFEB3B','#FFC107','#FF9800','#FF5722','#795548','#9E9E9E','#607D8B','#000000','#FFFFFF','#FF80AB','#69F0AE','#40C4FF'];
 
 const LOCALES = {
   en: {
@@ -24,7 +24,8 @@ const LOCALES = {
     linked:{ title:'Linked objects',auto_off:'Auto-off automation',cond_auto:'Condition automation',extras_auto:'Extras automation',notify:'Notification',override_flag:'Override flag',one_shot:'One-shot automation',open:'Open',edit_yaml:'Edit YAML',missing:'missing' },
     endact:{ brightness:'Set brightness',color:'Set color',color_temp:'Set color temp',speed:'Set speed',position:'Set position',open:'Open',close:'Close',stop:'Stop',lock:'Lock',unlock:'Unlock',humidity:'Set humidity',mode:'Set mode',operation_mode:'Set operation mode' },
     override:{ enable:'Allow manual override',hint:'If you change the entity by hand during a slot, the schedule stops re-applying its value until the next slot (conditional schedules only).',active:'Manual override active',inactive:'No override',cancel:'Cancel override now' },
-    oneshot:{ enable:'One-shot (use and discard)',hint:'Runs on the next occurrence of each selected day, then deletes itself after the last one.' }
+    oneshot:{ enable:'One-shot (use and discard)',hint:'Runs on the next occurrence of each selected day, then deletes itself after the last one.' },
+    serp:{ title_default:'Weekly Schedule',many_entities:'Readability drops past 3 entities — grouping fewer keeps it clean.',no_entities:'Add entities in the card config to see them here.',now:'Now' }
   },
   it: {
     card:{ title:'Pianificazione Settimanale',new_profile:'Nuovo profilo',groups:'Gruppi',no_entities:'Nessuna entità configurata',no_entities_sub:'Aggiungi entità via YAML o crea un Gruppo per iniziare.',manage_groups:'Gestisci Gruppi',layout_rows_view:'Vista righe',layout_cols_view:'Vista colonne',no_schedule_now:'Nessuno schedule attivo ora',empty_schedule:'Nessuno schedule' },
@@ -44,7 +45,8 @@ const LOCALES = {
     linked:{ title:'Oggetti collegati',auto_off:'Automazione auto-off',cond_auto:'Automazione condizioni',extras_auto:'Automazione extra',notify:'Notifica',override_flag:'Flag override',one_shot:'Automazione usa e getta',open:'Apri',edit_yaml:'Modifica YAML',missing:'mancante' },
     endact:{ brightness:'Imposta luminosità',color:'Imposta colore',color_temp:'Imposta temp. colore',speed:'Imposta velocità',position:'Imposta posizione',open:'Apri',close:'Chiudi',stop:'Ferma',lock:'Blocca',unlock:'Sblocca',humidity:'Imposta umidità',mode:'Imposta modalità',operation_mode:'Imposta modalità operativa' },
     override:{ enable:'Consenti override manuale',hint:'Se cambi l\'entità a mano durante uno slot, lo schedule smette di ri-applicare il suo valore fino al prossimo slot (solo schedule con condizioni).',active:'Override manuale attivo',inactive:'Nessun override',cancel:'Annulla override adesso' },
-    oneshot:{ enable:'Usa e getta',hint:'Gira sulla prossima occorrenza di ogni giorno scelto, poi si elimina da solo dopo l\'ultimo.' }
+    oneshot:{ enable:'Usa e getta',hint:'Gira sulla prossima occorrenza di ogni giorno scelto, poi si elimina da solo dopo l\'ultimo.' },
+    serp:{ title_default:'Pianificazione Settimanale',many_entities:'Oltre 3 entità la leggibilità cala — raggrupparne meno mantiene la card pulita.',no_entities:'Aggiungi entità nella configurazione della card per vederle qui.',now:'Ora' }
   },
   fr: {
     card:{ title:'Planning Hebdomadaire',new_profile:'Nouveau profil',groups:'Groupes',no_entities:'Aucune entité configurée',no_entities_sub:'Ajoutez des entités via la config YAML, ou créez un Groupe pour commencer.',manage_groups:'Gérer les Groupes',layout_rows_view:'Vue lignes',layout_cols_view:'Vue colonnes',no_schedule_now:'Aucun planning actif',empty_schedule:'Aucun planning' },
@@ -64,7 +66,8 @@ const LOCALES = {
     linked:{ title:'Objets liés',auto_off:'Automatisation auto-off',cond_auto:'Automatisation conditions',extras_auto:'Automatisation extra',notify:'Notification',override_flag:'Indicateur surcharge',one_shot:'Automatisation à usage unique',open:'Ouvrir',edit_yaml:'Modifier YAML',missing:'manquant' },
     endact:{ brightness:'Définir luminosité',color:'Définir couleur',color_temp:'Définir temp. couleur',speed:'Définir vitesse',position:'Définir position',open:'Ouvrir',close:'Fermer',stop:'Arrêter',lock:'Verrouiller',unlock:'Déverrouiller',humidity:'Définir humidité',mode:'Définir mode',operation_mode:'Définir mode de fonctionnement' },
     override:{ enable:'Autoriser la commande manuelle',hint:'Si vous changez l\'entité à la main pendant un créneau, le planning cesse de réappliquer sa valeur jusqu\'au prochain créneau (plannings avec conditions uniquement).',active:'Commande manuelle active',inactive:'Aucune surcharge',cancel:'Annuler la surcharge' },
-    oneshot:{ enable:'À usage unique',hint:'S\'exécute à la prochaine occurrence de chaque jour choisi, puis se supprime après le dernier.' }
+    oneshot:{ enable:'À usage unique',hint:'S\'exécute à la prochaine occurrence de chaque jour choisi, puis se supprime après le dernier.' },
+    serp:{ title_default:'Planning Hebdomadaire',many_entities:'La lisibilité diminue au-delà de 3 entités — en regrouper moins garde la carte lisible.',no_entities:'Ajoutez des entités dans la configuration de la carte pour les voir ici.',now:'Maintenant' }
   }
 };
 

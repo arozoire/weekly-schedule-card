@@ -27,5 +27,14 @@ export default [
       name: 'QuickTimerCard'
     },
     plugins: [terser()]
+  },
+  {
+    input: 'src/weekly-serpentine-card.js',
+    output: {
+      file: 'dist/weekly-serpentine-card.js',
+      format: 'iife',
+      name: 'WeeklySerpentineCard'
+    },
+    plugins: [terser()]
   }
 ];

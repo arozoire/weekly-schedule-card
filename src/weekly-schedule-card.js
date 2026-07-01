@@ -4,6 +4,7 @@
 import WeeklyScheduleBase from './base-card.js';
 import './weekly-schedule-view-card.js';
 import './quick-timer-card.js';
+import './weekly-serpentine-card.js';
 
 class WeeklyScheduleCard extends WeeklyScheduleBase {
   setConfig(config) {
