@@ -491,6 +491,12 @@ notifications:
 
 ## Last modified
 always update last modified date with day an hour Rome utc
+2026-07-01 16:33 Rome (v1.3.2 — bump) — l'utente non ha ancora confermato in HA reale il fix
+`automation.trigger`/countdown (sotto), ma ha chiesto di bumpare comunque la versione ora e fare
+la prova dopo. Bump 1.3.1→1.3.2 (package.json, workflow release default + note aggiornate solo
+sui due fix quick-timer di questa sessione: race `automation.trigger` + helper "_meta" duplicati
+— la 1.3.1 con la nuova serpentine-card era già stata rilasciata). Nessun merge/tag ancora fatto:
+resta da fare dopo conferma dell'utente.
 2026-07-01 15:38 Rome (v1.3.1 — fix quick-timer: `automation.trigger` bloccava per l'intera durata
 del timer, non solo per gli errori) — dopo il fix `initial_state`, l'utente ha continuato a
 indagare CON me passo passo (giustamente, mi ha fatto notare di ragionare insieme prima di

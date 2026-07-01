@@ -4,9 +4,9 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: 'Version tag (e.g. v1.3.1)'
+        description: 'Version tag (e.g. v1.3.2)'
         required: true
-        default: 'v1.3.1'
+        default: 'v1.3.2'
 
 jobs:
   release:
@@ -35,31 +35,26 @@ jobs:
             dist/quick-timer-card.js
             dist/weekly-serpentine-card.js
           body: |
-            ## ${{ github.event.inputs.version }} — 🐍 weekly-serpentine-card
-
-            ### Novità
-            - **Nuova card decorativa `weekly-serpentine-card`**: mostra l'intera settimana come
-              un nastro continuo a serpentina (boustrophedon vero: lun →, mar ←, mer →, …
-              collegate da curve a U — mezzanotte cade nell'apice, senza tacche orarie).
-            - **Multi-entità**: ogni entità è una sotto-corsia parallela con colore proprio +
-              legenda in alto; avviso soft (non un limite rigido) oltre 3 entità.
-            - **Indicatore "ora" sottile** sul giorno corrente. Pillole = schedule; click →
-              apre lo **stesso popup di modifica** delle altre card (giorni/slot/azioni/
-              condizioni/notifiche), non solo un more-info.
-            - Blocchi a cavallo di mezzanotte ora "fluiscono" visivamente dentro la curva invece
-              di fermarsi di netto sul bordo.
-            - Inclusa nel bundle principale (HACS) e disponibile anche come bundle standalone
-              `weekly-serpentine-card.js`.
+            ## ${{ github.event.inputs.version }} — fix quick-timer: countdown fedele alla durata reale
 
             ### Fix quick-timer
-            - Il countdown poteva sparire subito dopo "Avvia" (tornava il pulsante) e, ricaricando
-              la pagina, il timer risultava "vuoto" come se non fosse mai partito. Causa: un
-              refetch dello storage condiviso non protetto da un contatore di versione poteva
-              leggere lo stato a metà scrittura e azzerare il timer appena creato.
-            - L'automazione del timer, se finita disabilitata anche una sola volta (es. un
-              "Annulla" il cui delete fallisce), restava disabilitata per sempre alle ricreazioni
-              successive → il countdown non partiva mai più, bloccato su "Stato acquisito".
-              Ora l'automazione viene sempre forzata abilitata alla ricreazione.
+            - **`automation.trigger` bloccava per l'intera durata del timer**: chiamare quel
+              servizio per far partire l'automazione del timer aspetta che TUTTA la sua sequenza
+              di azioni finisca — compreso il `delay` interno della durata scelta (comportamento
+              noto di Home Assistant, diverso da un trigger reale che gira in background). La card
+              restava su "Stato acquisito" per l'intera durata, poi mostrava un secondo countdown
+              fittizio della stessa durata, mentre il ripristino era già avvenuto durante l'attesa.
+              Ora la chiamata è in corsa con un timeout breve (2.5s): un errore vero (entità
+              sbagliata, ecc.) viene comunque intercettato subito come prima, ma il countdown
+              corretto compare da subito invece di aspettare tutta la durata; un fallimento tardivo
+              (raro) viene comunque ripulito in background.
+            - **Helper di storage "_meta" duplicati**: un controllo che doveva riconoscere gli
+              helper `input_text` già esistenti non riconosceva mai quello "_meta" → ad ogni
+              refresh di pagina + salvataggio ne veniva creato uno nuovo, accumulando duplicati
+              orfani nel tempo. Ora riconosciuto correttamente; gli helper duplicati già creati in
+              passato vanno rimossi manualmente da Impostazioni → Helper.
+            - Messaggi d'errore del timer ora leggibili direttamente in Console (niente più oggetti
+              compressi da dover espandere a mano).
 
             ### Aggiornare
             - **HACS**: Update → Ctrl-F5.
