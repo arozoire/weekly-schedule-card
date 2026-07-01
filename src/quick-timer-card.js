@@ -184,7 +184,9 @@ class QuickTimerCard extends WeeklyScheduleBase {
       foot.innerHTML = this._activeHtml(active);
     } else {
       when.innerHTML = `<div class="qt-title"><ha-icon icon="mdi:timer-outline"></ha-icon> ${this.t('qtimer.timer')}</div>${this._whenHtml()}`;
-      foot.innerHTML = `<button class="qt-start"><ha-icon icon="mdi:play"></ha-icon> ${this.t('qtimer.start')}</button>`;
+      // Durante l'avvio il piede mostra lo status (gestito da _setFootStatus): non
+      // ricreare il pulsante, così un render spurio non lo riporta (anti doppio-click).
+      if (!this._starting) foot.innerHTML = `<button class="qt-start"><ha-icon icon="mdi:play"></ha-icon> ${this.t('qtimer.start')}</button>`;
     }
     this._bindPanel(card);
     this._syncTick();
@@ -411,32 +413,90 @@ class QuickTimerCard extends WeeklyScheduleBase {
 
   // ── Avvio / annullo / pulizia ─────────────────────────────────────────────
 
+  _sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+  // Status onesto nel piede della card durante l'avvio (niente UI ottimistica):
+  // mostra cosa sta facendo il codice e rimuove il pulsante → blocco anti doppio-click.
+  _setFootStatus(text, kind) {
+    const foot = this.shadowRoot.querySelector('.qt-foot');
+    if (!foot) return;
+    const icon = kind === 'error' ? 'mdi:alert-circle-outline'
+      : kind === 'ok' ? 'mdi:check-circle-outline'
+      : 'mdi:progress-clock';
+    foot.innerHTML = `<div class="qt-status qt-status-${kind}"><ha-icon icon="${icon}"></ha-icon><span>${this._esc(text)}</span></div>`;
+  }
+
+  // Etichetta leggibile dello stato acquisito (target di ripristino), dalle azioni di restore.
+  _restoreLabel(actions, eid) {
+    if (!Array.isArray(actions) || !actions.length) return '';
+    const dom = this._detectDomain(eid);
+    const svcs = actions.map(a => a.service || '');
+    const data = Object.assign({}, ...actions.map(a => a.data || {}));
+    const has = frag => svcs.some(s => s.includes(frag));
+    if (dom === 'climate' || dom === 'water_heater') {
+      const parts = [];
+      const mode = data.hvac_mode || data.operation_mode;
+      if (mode) parts.push(mode === 'off' ? this.t('qtimer.off') : String(mode).replace(/_/g, ' '));
+      if (data.temperature != null) parts.push(`${data.temperature}°C`);
+      if (data.preset_mode) parts.push(String(data.preset_mode));
+      return parts.join(' · ') || this._heldLabel(eid);
+    }
+    if (dom === 'cover' || dom === 'valve') {
+      if (data.position != null) return `${data.position}%`;
+      if (has('open')) return this.t('blk.open');
+      if (has('close')) return this.t('blk.close');
+      return this._heldLabel(eid);
+    }
+    if (dom === 'lock') return has('unlock') ? this.t('blk.unlocked') : this.t('blk.locked');
+    if (has('turn_off')) return this.t('qtimer.off');
+    if (data.percentage != null) return `${data.percentage}%`;
+    if (data.brightness != null) return `${Math.round(data.brightness / 255 * 100)}%`;
+    if (data.humidity != null) return `${data.humidity}%`;
+    return this.t('qtimer.on');
+  }
+
   async _startTimer(root) {
+    if (this._starting) return;                 // blocco anti doppio-click
     if (!this._entity) return;
     const eid = this._entity;
     const durationS = this._readDurationSeconds(root);
     if (!durationS || durationS < 1) { await this._alert(this.t('qtimer.bad_duration')); return; }
-    // Il valore "tenuto" è quello impostato dall'utente col controllo nativo (già applicato):
-    // qui creiamo solo il ripristino verso il baseline (stato pre-modifica).
+
+    this._starting = true;
+    // 1) acquisizione stato (target di ripristino = baseline pre-modifica)
+    this._setFootStatus(this.t('qtimer.acquiring'), 'progress');
+    await this._sleep(200);                      // rende percepibile lo step (l'acquisizione è istantanea)
     const existing = this._activeTimer();
     const restore = existing?.restore || this._settledRestore || this._buildRestoreActions(eid);
-    if (!restore || !restore.length) { await this._alert(this.t('qtimer.start_failed')); return; }
+    if (!restore || !restore.length) {
+      this._setFootStatus(this.t('qtimer.acquire_failed'), 'error');
+      this._starting = false;
+      await this._sleep(2500);
+      if (!this._activeTimer()) this.render();   // ripristina il pulsante "Avvia"
+      return;
+    }
+    // 2) stato acquisito (resta visibile durante la creazione dell'automazione)
+    this._setFootStatus(this.t('qtimer.acquired', { state: this._restoreLabel(restore, eid) }), 'ok');
 
     try {
       const autoId = `qt_timer_${this._slug(eid)}`;
       await this._recreateAutomation(autoId, this._buildTimerAutomation(eid, autoId, durationS, restore));
       const ent = await this._resolveAutomationEntity(autoId);
-      try { await this._hass.callService('automation', 'trigger', { entity_id: ent }); }
-      catch (e) { console.error('QT trigger failed', e); }
+      await this._hass.callService('automation', 'trigger', { entity_id: ent });
+      // 3) timer avviato → salva record e mostra countdown
       this._timers = this._timers || {};
       this._timers[eid] = { endTs: Date.now() + durationS * 1000, autoId, restore, label: this._heldLabel(eid), durationS };
       this._expiredRendered = false;
       await this._saveTimers();
+      this._starting = false;
+      this.render();
     } catch (e) {
       console.error('QT startTimer failed', e);
-      await this._alert(this.t('qtimer.start_failed'));
+      this._setFootStatus(this.t('qtimer.start_failed'), 'error');
+      this._starting = false;
+      await this._sleep(2500);
+      if (!this._activeTimer()) this.render();
     }
-    this.render();
   }
 
   async _cancelTimer(eid) {
@@ -495,6 +555,15 @@ class QuickTimerCard extends WeeklyScheduleBase {
       .qt-start{display:flex;align-items:center;justify-content:center;gap:6px;width:100%;padding:10px;border:none;border-radius:10px;background:var(--primary-color);color:var(--text-primary-color,#fff);font-size:.9em;font-weight:600;cursor:pointer}
       .qt-start ha-icon{--mdc-icon-size:18px}
       .qt-start:hover{filter:brightness(.95)}
+      .qt-status{display:flex;align-items:center;gap:8px;width:100%;padding:10px;border-radius:10px;font-size:.85em;font-weight:600;box-sizing:border-box}
+      .qt-status ha-icon{--mdc-icon-size:18px;flex-shrink:0}
+      .qt-status span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+      .qt-status-progress{background:color-mix(in srgb,var(--primary-color) 13%,transparent);color:var(--primary-color)}
+      .qt-status-ok{background:color-mix(in srgb,var(--success-color,#4caf50) 15%,transparent);color:var(--success-color,#4caf50)}
+      .qt-status-error{background:color-mix(in srgb,var(--error-color,#f44336) 15%,transparent);color:var(--error-color,#f44336)}
+      .qt-status-progress ha-icon{animation:qt-spin 1.1s linear infinite}
+      @keyframes qt-spin{to{transform:rotate(360deg)}}
+      @media (prefers-reduced-motion:reduce){.qt-status-progress ha-icon{animation:none}}
       .qt-active{display:flex;align-items:center;gap:12px}
       .qt-active-ic{--mdc-icon-size:32px;color:var(--primary-color)}
       .qt-active-info{flex:1}
