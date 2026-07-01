@@ -250,7 +250,16 @@ class WeeklySerpentineCard extends WeeklyScheduleBase {
         for (const b of blocks) {
           const x1 = even ? xL + (b.t1 / 1440) * (xR - xL) : xR - (b.t1 / 1440) * (xR - xL);
           const x2 = even ? xL + (b.t2 / 1440) * (xR - xL) : xR - (b.t2 / 1440) * (xR - xL);
-          const rx0 = Math.min(x1, x2), rw = Math.max(1, Math.abs(x2 - x1));
+          let rx0 = Math.min(x1, x2), rx1 = Math.max(x1, x2);
+          // Un blocco che tocca la mezzanotte (inizio/fine giornata) si estende un po' dentro
+          // la curva invece di fermarsi di netto sul bordo — altrimenti due slot adiacenti a
+          // cavallo di mezzanotte (es. 23:45-00:00 + 00:00-00:15) sembrano due pillole staccate
+          // "prima e dopo" la curva invece di leggersi come un unico flusso continuo.
+          const NEAR_MIDNIGHT = 15; // minuti, stessa granularità dello snap/time_step del progetto
+          const bleed = curveBump * 0.6;
+          if (b.t1 <= NEAR_MIDNIGHT) { if (even) rx0 -= bleed; else rx1 += bleed; }
+          if (b.t2 >= 1440 - NEAR_MIDNIGHT) { if (even) rx1 += bleed; else rx0 -= bleed; }
+          const rw = Math.max(1, rx1 - rx0);
           const h = b.isActive ? PILL_H + 3 : PILL_H;
           const ry = y0 + offsets[ei] - h / 2;
           const opacity = b.isOff ? 0.35 : (b.isActive ? 1 : 0.88);

@@ -68,6 +68,12 @@ l'attributo di presentazione grezzo, per compatibilità var() cross-browser).
   `curveBump = strokeWidth+2`, `xL/xR` calcolati da `curveBump` per mantenere i margini). Pillole
   posizionate per tempo→x **lineare** sulla riga (righe pari: `xL + t/1440*(xR-xL)`; dispari:
   `xR - t/1440*(xR-xL)`) — NON mappate lungo le curve (approvato così, troppo complesso per v1).
+  **Bleed a mezzanotte** (fix utente reale in HA): un blocco che tocca l'inizio/fine giornata
+  (`t1<=15` o `t2>=1425`, soglia = granularità snap del progetto) estende il proprio bordo di
+  `curveBump*0.6` OLTRE `xL`/`xR`, dentro la curva — altrimenti due slot adiacenti a cavallo di
+  mezzanotte (es. mer 23:25-00:00 + gio 00:01-00:45) si fermavano di netto sul bordo del nastro,
+  sembrando due pillole scollegate "prima e dopo" la curva invece di leggersi come un unico
+  flusso continuo (screenshot utente). Il resto della curva resta senza mapping (invariato).
   Blocco attivo ORA: confronto diretto giorno/minuti correnti coi timeslot (niente dipendenza da
   `current_slot`/storage) → più semplice e corretto anche senza profili.
 - **Dati**: riusa `_getSchedules(entityId)` (funziona senza `_storageData`, vedi nota in
@@ -434,6 +440,20 @@ notifications:
 
 ## Last modified
 always update last modified date with day an hour Rome utc
+2026-07-01 10:02 Rome (v1.3.0 — fix serpentine: blocchi a cavallo di mezzanotte non fluivano nella
+curva) — feedback utente da HA reale (screenshot): due schedule adiacenti a cavallo di mezzanotte
+(mer 23:25-00:00 + gio 00:01-00:45) apparivano come due pillole staccate "prima e dopo" la curva
+invece di leggersi come un flusso continuo — la decisione originale "mezzanotte = apice della
+curva" restava solo concettuale, non si vedeva nel risultato reale. **Fix**: in `_buildSvg`
+(`weekly-serpentine-card.js`), un blocco il cui `t1<=15` o `t2>=1425` (soglia = 15 min, la
+granularità snap standard del progetto) estende il bordo corrispondente di `curveBump*0.6` oltre
+`xL`/`xR`, dentro la curva — NON è mapping lungo la curva (resta esplicitamente fuori scope per
+v1, vedi HANDOFF), solo un'estensione del rettangolo dritto che fa "sanguinare" visivamente la
+pillola nella zona di curva così i due blocchi adiacenti sembrano toccarsi. Verificato con
+screenshot headless riproducendo esattamente il caso segnalato (stesso orario) prima/dopo, e
+verificato che i blocchi normali (non a cavallo di mezzanotte) restano invariati (screenshot
+mockup 1/3/5 entità re-confrontati, nessuna differenza). Nessuna funzionalità esistente toccata
+(unica modifica in `weekly-serpentine-card.js`, dentro il loop che genera le pillole).
 2026-07-01 09:03 Rome (v1.3.0 — fix quick-timer: countdown che spariva all'avvio + timer "vuoto"
 dopo refresh) — bug segnalato dall'utente sulla 1.2.9: dopo "Avvia" la card mostra "Stato
 acquisito" ma poi sembra non partire (torna il pulsante), e ricaricando la pagina il timer risulta
