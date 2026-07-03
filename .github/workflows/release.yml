@@ -4,9 +4,9 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: 'Version tag (e.g. v1.3.2)'
+        description: 'Version tag (e.g. v1.3.3)'
         required: true
-        default: 'v1.3.2'
+        default: 'v1.3.3'
 
 jobs:
   release:
@@ -35,26 +35,19 @@ jobs:
             dist/quick-timer-card.js
             dist/weekly-serpentine-card.js
           body: |
-            ## ${{ github.event.inputs.version }} — fix quick-timer: countdown fedele alla durata reale
+            ## ${{ github.event.inputs.version }} — serpentine: la mezzanotte gira davvero nella curva
 
-            ### Fix quick-timer
-            - **`automation.trigger` bloccava per l'intera durata del timer**: chiamare quel
-              servizio per far partire l'automazione del timer aspetta che TUTTA la sua sequenza
-              di azioni finisca — compreso il `delay` interno della durata scelta (comportamento
-              noto di Home Assistant, diverso da un trigger reale che gira in background). La card
-              restava su "Stato acquisito" per l'intera durata, poi mostrava un secondo countdown
-              fittizio della stessa durata, mentre il ripristino era già avvenuto durante l'attesa.
-              Ora la chiamata è in corsa con un timeout breve (2.5s): un errore vero (entità
-              sbagliata, ecc.) viene comunque intercettato subito come prima, ma il countdown
-              corretto compare da subito invece di aspettare tutta la durata; un fallimento tardivo
-              (raro) viene comunque ripulito in background.
-            - **Helper di storage "_meta" duplicati**: un controllo che doveva riconoscere gli
-              helper `input_text` già esistenti non riconosceva mai quello "_meta" → ad ogni
-              refresh di pagina + salvataggio ne veniva creato uno nuovo, accumulando duplicati
-              orfani nel tempo. Ora riconosciuto correttamente; gli helper duplicati già creati in
-              passato vanno rimossi manualmente da Impostazioni → Helper.
-            - Messaggi d'errore del timer ora leggibili direttamente in Console (niente più oggetti
-              compressi da dover espandere a mano).
+            ### Fix weekly-serpentine-card
+            - **I blocchi a cavallo di mezzanotte ora fluiscono DENTRO la curva a U fino
+              all'apice** (mezzanotte = apice della curva, come da design). Prima il blocco si
+              estendeva solo di un piccolo margine oltre il bordo del nastro e si fermava di
+              netto: due slot adiacenti a cavallo di mezzanotte (es. mer 23:25-00:00 +
+              gio 00:01-00:45) sembravano due pillole staccate "prima e dopo" la curva. Ora la
+              pillola segue la stessa curva del nastro: quella di fine giornata e quella di
+              inizio della giornata dopo si incontrano esattamente all'apice e si leggono come
+              un unico flusso continuo. Con più entità, ogni sotto-corsia gira in parallelo
+              dentro la curva mantenendo il proprio colore. Inizio lunedì / fine domenica
+              (dove il nastro non ha curva) restano invariati.
 
             ### Aggiornare
             - **HACS**: Update → Ctrl-F5.
