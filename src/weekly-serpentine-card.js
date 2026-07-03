@@ -1,5 +1,5 @@
 // src/weekly-serpentine-card.js
-// Last modified: 2026-07-03 Rome (v1.3.3 — midnight-touching pills flow along the U-curve to its apex)
+// Last modified: 2026-07-03 Rome (v1.3.4 — sub-lane order alternates per row; concentric, non-overlapping curve lanes)
 //
 // Decorative card: the whole week as one continuous boustrophedon ribbon (LUN →, MAR ←,
 // MER →, … connected by rounded U-turns; midnight sits at the apex of each curve, no
@@ -239,24 +239,31 @@ class WeeklySerpentineCard extends WeeklyScheduleBase {
 
     const nowInfo = this._dayNow();
 
-    // Metà-curva della U tra le righe i e i+1: split de Casteljau a t=0.5 della STESSA
-    // cubica del nastro, traslata verticalmente di `off` per la sotto-corsia. L'apice
-    // (= mezzanotte) cade a 3/4 del curveBump, a metà strada tra le due righe — è lo
-    // STESSO punto sia per il blocco che finisce il giorno i sia per quello che inizia
-    // il giorno i+1: i due round-cap si sovrappongono lì e la pillola "gira" col nastro.
-    const halfCurveD = (i, off, half) => {
-      const yA = rowY(i) + off, yB = rowY(i + 1) + off, ym = (yA + yB) / 2;
+    // Sotto-corsie come in un nastro VERO: l'ordine verticale delle entità si alterna a
+    // ogni riga (lun 1ª sopra, mar 1ª sotto, mer 1ª sopra, …) perché attraverso una U la
+    // corsia esterna resta esterna e quella interna resta interna — così dentro le curve
+    // le corsie sono archi CONCENTRICI che non si accavallano mai (richiesta utente).
+    const baseOffsets = entities.map((_, i) => (i - (nEnt - 1) / 2) * SUBLANE_STEP);
+    const rowOff = (d, ei) => (d % 2 === 0 ? baseOffsets[ei] : -baseOffsets[ei]);
+
+    // Metà-curva della U tra le righe i e i+1: split de Casteljau a t=0.5 della cubica
+    // del nastro, resa CONCENTRICA per la sotto-corsia — `offIn` è l'offset della corsia
+    // sulla riga i (in ingresso); la corsia esce sulla riga i+1 a `-offIn` (ordine
+    // alternato) e il bump orizzontale scala col raggio (distanza dal centro della U).
+    // L'apice (= mezzanotte) cade a metà strada esatta tra le due righe — è lo STESSO
+    // punto sia per il blocco che finisce il giorno i sia per quello che inizia il
+    // giorno i+1: i due round-cap si sovrappongono lì e la pillola "gira" col nastro.
+    const halfCurveD = (i, offIn, half) => {
+      const yA = rowY(i) + offIn, yB = rowY(i + 1) - offIn, ym = (yA + yB) / 2;
       const s = i % 2 === 0 ? 1 : -1; // curva a destra dopo le righe pari, a sinistra dopo le dispari
       const xE = s === 1 ? xR : xL;
-      const c1 = xE + s * curveBump / 2, c2 = xE + s * curveBump * 0.75;
+      const cb = curveBump * (1 - offIn / (rowStep / 2)); // concentrica: raggio ∝ distanza dal centro
+      const c1 = xE + s * cb / 2, c2 = xE + s * cb * 0.75;
       const f = n => n.toFixed(1);
       return half === 'out'
         ? `L${f(xE)},${f(yA)} C${f(c1)},${f(yA)} ${f(c2)},${f((3 * yA + yB) / 4)} ${f(c2)},${f(ym)}`
         : `M${f(c2)},${f(ym)} C${f(c2)},${f((yA + 3 * yB) / 4)} ${f(c1)},${f(yB)} ${f(xE)},${f(yB)}`;
     };
-
-    // Sotto-corsie: pillole schedule per entità, per giorno.
-    const offsets = entities.map((_, i) => (i - (nEnt - 1) / 2) * SUBLANE_STEP);
     let pills = '';
     for (let d = 0; d < 7; d++) {
       const even = d % 2 === 0;
@@ -268,7 +275,7 @@ class WeeklySerpentineCard extends WeeklyScheduleBase {
           const x1 = even ? xL + (b.t1 / 1440) * (xR - xL) : xR - (b.t1 / 1440) * (xR - xL);
           const x2 = even ? xL + (b.t2 / 1440) * (xR - xL) : xR - (b.t2 / 1440) * (xR - xL);
           const h = b.isActive ? PILL_H + 3 : PILL_H;
-          const laneY = y0 + offsets[ei];
+          const laneY = y0 + rowOff(d, ei);
           const opacity = b.isOff ? 0.35 : (b.isActive ? 1 : 0.88);
           const fill = b.isActive ? color : `url(#serp-grad-${ei})`;
           const glow = b.isActive ? ` style="filter:drop-shadow(0 0 3px ${color})"` : '';
@@ -285,13 +292,13 @@ class WeeklySerpentineCard extends WeeklyScheduleBase {
             const h2 = h / 2; // i round-cap sporgono di h/2 oltre gli estremi del path
             let dp;
             if (startsMid) {
-              dp = halfCurveD(d - 1, offsets[ei], 'in'); // dall'apice fino al bordo della riga d
+              dp = halfCurveD(d - 1, rowOff(d - 1, ei), 'in'); // dall'apice fino al bordo della riga d
             } else {
               const sx = even ? Math.min(x1 + h2, xR) : Math.max(x1 - h2, xL);
               dp = `M${sx.toFixed(1)},${laneY.toFixed(1)}`;
             }
             if (endsMid) {
-              dp += ' ' + halfCurveD(d, offsets[ei], 'out'); // dal bordo della riga d fino all'apice
+              dp += ' ' + halfCurveD(d, rowOff(d, ei), 'out'); // dal bordo della riga d fino all'apice
             } else {
               const ex = even ? Math.max(x2 - h2, xL) : Math.min(x2 + h2, xR);
               dp += ` L${ex.toFixed(1)},${laneY.toFixed(1)}`;

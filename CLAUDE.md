@@ -44,7 +44,7 @@ dist/
   weekly-serpentine-card.js      # IIFE bundle (base + serpentine-card), standalone
 ```
 
-## Weekly Serpentine Card (`custom:weekly-serpentine-card`, v1.3.0 → v1.3.3)
+## Weekly Serpentine Card (`custom:weekly-serpentine-card`, v1.3.0 → v1.3.4)
 Card **decorativa** (`src/weekly-serpentine-card.js`, 4ª entry rollup, `extends
 WeeklyScheduleBase`). Dalla v1.3.1 **NON** override più `hass`/`connectedCallback` del base:
 eredita il ciclo di vita STANDARD (fetch/mantieni `_storageData`, bootstrap profilo default,
@@ -78,16 +78,24 @@ l'attributo di presentazione grezzo, per compatibilità var() cross-browser).
   troppo complesso per v1). **Mezzanotte nella curva (v1.3.3, sostituisce il "bleed" v1.3.0)**:
   un blocco che tocca l'inizio/fine giornata (`t1<=15` o `t2>=1425`, soglia = granularità snap
   del progetto) è reso come `<path>` con `stroke` round-cap (stessa altezza `h` della pillola)
-  che segue la METÀ-CURVA della U fino all'apice: helper locale `halfCurveD(i, off, half)` in
-  `_buildSvg` = split de Casteljau a t=0.5 della STESSA cubica del nastro, traslata verticalmente
-  di `off` (la sotto-corsia dell'entità) — apice a `xE ± curveBump*0.75`, a metà altezza tra le
-  due righe. L'apice è lo STESSO punto per il blocco di fine giornata `d` e quello di inizio
-  giornata `d+1` (stessa corsia) → i due round-cap si sovrappongono lì e i due slot si leggono
-  come un unico flusso continuo che gira col nastro (richiesta esplicita utente: il precedente
-  bleed orizzontale di `curveBump*0.6` si fermava appena oltre il bordo e le pillole sembravano
-  ancora staccate). I blocchi che NON toccano mezzanotte restano `<rect>` invariati; inizio
-  lunedì / fine domenica (nessuna curva adiacente: `d===0`/`d===6`) mantengono il vecchio piccolo
-  bleed. Il click-to-edit funziona identico sui `<path>` (stesso attributo `data-schedule`).
+  che segue la METÀ-CURVA della U fino all'apice: helper locale `halfCurveD(i, offIn, half)` in
+  `_buildSvg` = split de Casteljau a t=0.5 della stessa cubica del nastro. L'apice è lo STESSO
+  punto per il blocco di fine giornata `d` e quello di inizio giornata `d+1` (stessa corsia) →
+  i due round-cap si sovrappongono lì e i due slot si leggono come un unico flusso continuo che
+  gira col nastro (richiesta esplicita utente: il precedente bleed orizzontale di `curveBump*0.6`
+  si fermava appena oltre il bordo e le pillole sembravano ancora staccate). I blocchi che NON
+  toccano mezzanotte restano `<rect>` invariati; inizio lunedì / fine domenica (nessuna curva
+  adiacente: `d===0`/`d===6`) mantengono il vecchio piccolo bleed. Il click-to-edit funziona
+  identico sui `<path>` (stesso attributo `data-schedule`).
+  **Corsie da nastro VERO (v1.3.4, richiesta utente)**: l'ordine verticale delle sotto-corsie si
+  ALTERNA a ogni riga (`rowOff(d,ei)` = `baseOffsets[ei]` righe pari, `-baseOffsets[ei]` dispari:
+  lun 1ª sopra, mar 1ª sotto, mer 1ª sopra, …) perché attraverso una U la corsia esterna resta
+  esterna e l'interna resta interna → dentro le curve le corsie sono archi CONCENTRICI che non si
+  accavallano mai (prima, con offset fissi per entità, `halfCurveD` traslava le curve in verticale
+  e le corsie si sovrapponevano nelle curve). `halfCurveD(i, offIn, half)` prende l'offset della
+  corsia sulla riga di INGRESSO `i` (chi inizia il giorno `d` passa `rowOff(d-1,ei)`), esce a
+  `-offIn` sulla riga `i+1`, e scala il bump orizzontale col raggio (`cb = curveBump *
+  (1 - offIn/(rowStep/2))`); l'apice (= mezzanotte) resta a metà altezza esatta tra le righe.
   Blocco attivo ORA: confronto diretto giorno/minuti correnti coi timeslot (niente dipendenza da
   `current_slot`/storage) → più semplice e corretto anche senza profili.
 - **Dati**: riusa `_getSchedules(entityId)`, `_appliesToDay`, `_parseTime`, `t()`, `_esc()`/
@@ -498,6 +506,20 @@ notifications:
 
 ## Last modified
 always update last modified date with day an hour Rome utc
+2026-07-03 16:35 Rome (v1.3.4 — serpentine: ordine sotto-corsie alternato per riga, curve
+concentriche senza accavallamenti) — richiesta utente subito dopo la v1.3.3 (voleva fermare la
+release ma era già pubblicata → questa è la v1.3.4): con più entità le corsie si accavallavano
+nelle curve; proposta utente (corretta anche "fisicamente" per un nastro) = alternare l'ordine
+verticale delle entità a ogni riga (lun 1ª sopra, mar 1ª sotto, …), così attraverso ogni U la
+corsia esterna resta esterna → archi concentrici, zero incroci. Implementazione (solo
+`src/weekly-serpentine-card.js`): `rowOff(d,ei)` (offset specchiato sulle righe dispari) usato
+per `laneY` e passato a `halfCurveD` con l'offset della riga di INGRESSO della curva;
+`halfCurveD` ora è concentrica (esce a `-offIn`, bump scalato col raggio `cb = curveBump *
+(1 - offIn/(rowStep/2))`), apice sempre a metà altezza esatta. Verificato headless: screenshot
+2 e 3 entità (ordine alternato riga per riga, archi concentrici nelle curve, pillole di
+mezzanotte che si incontrano all'apice sul proprio arco), test DOM click→popup ripassato. Bump
+1.3.3→1.3.4 (package.json, workflow release default+note). La v1.3.3 (mezzanotte nella curva)
+era GIÀ stata rilasciata: PR #10 mergiata + release pubblicata con i 4 asset. Da validare in HA.
 2026-07-03 16:05 Rome (v1.3.3 — serpentine: i blocchi a cavallo di mezzanotte girano DENTRO la
 curva fino all'apice) — feedback utente da HA reale (screenshot): il bleed v1.3.0 (`curveBump*0.6`
 orizzontale oltre il bordo) era troppo timido — le pillole si fermavano comunque "di netto" appena
