@@ -4,9 +4,9 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: 'Version tag (e.g. v1.3.3)'
+        description: 'Version tag (e.g. v1.3.4)'
         required: true
-        default: 'v1.3.3'
+        default: 'v1.3.4'
 
 jobs:
   release:
@@ -35,19 +35,16 @@ jobs:
             dist/quick-timer-card.js
             dist/weekly-serpentine-card.js
           body: |
-            ## ${{ github.event.inputs.version }} — serpentine: la mezzanotte gira davvero nella curva
+            ## ${{ github.event.inputs.version }} — serpentine: corsie da nastro vero, niente accavallamenti nelle curve
 
-            ### Fix weekly-serpentine-card
-            - **I blocchi a cavallo di mezzanotte ora fluiscono DENTRO la curva a U fino
-              all'apice** (mezzanotte = apice della curva, come da design). Prima il blocco si
-              estendeva solo di un piccolo margine oltre il bordo del nastro e si fermava di
-              netto: due slot adiacenti a cavallo di mezzanotte (es. mer 23:25-00:00 +
-              gio 00:01-00:45) sembravano due pillole staccate "prima e dopo" la curva. Ora la
-              pillola segue la stessa curva del nastro: quella di fine giornata e quella di
-              inizio della giornata dopo si incontrano esattamente all'apice e si leggono come
-              un unico flusso continuo. Con più entità, ogni sotto-corsia gira in parallelo
-              dentro la curva mantenendo il proprio colore. Inizio lunedì / fine domenica
-              (dove il nastro non ha curva) restano invariati.
+            ### Miglioria weekly-serpentine-card (multi-entità)
+            - **L'ordine verticale delle entità ora si alterna a ogni riga**, come in un
+              nastro fisico: lunedì 1ª entità sopra e 2ª sotto, martedì 2ª sopra e 1ª sotto,
+              e così via (vale per qualunque numero di entità). Attraverso ogni curva a U la
+              corsia esterna resta esterna e quella interna resta interna → **dentro le curve
+              le corsie sono archi concentrici che non si accavallano più**. I blocchi a
+              cavallo di mezzanotte continuano a incontrarsi all'apice della curva (v1.3.3),
+              ora ciascuno sul proprio arco concentrico.
 
             ### Aggiornare
             - **HACS**: Update → Ctrl-F5.
