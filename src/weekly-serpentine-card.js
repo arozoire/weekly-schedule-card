@@ -1,5 +1,5 @@
 // src/weekly-serpentine-card.js
-// Last modified: 2026-07-01 Rome (v1.3.1 — click a pill opens the full edit popup)
+// Last modified: 2026-07-03 Rome (v1.3.3 — midnight-touching pills flow along the U-curve to its apex)
 //
 // Decorative card: the whole week as one continuous boustrophedon ribbon (LUN →, MAR ←,
 // MER →, … connected by rounded U-turns; midnight sits at the apex of each curve, no
@@ -239,6 +239,22 @@ class WeeklySerpentineCard extends WeeklyScheduleBase {
 
     const nowInfo = this._dayNow();
 
+    // Metà-curva della U tra le righe i e i+1: split de Casteljau a t=0.5 della STESSA
+    // cubica del nastro, traslata verticalmente di `off` per la sotto-corsia. L'apice
+    // (= mezzanotte) cade a 3/4 del curveBump, a metà strada tra le due righe — è lo
+    // STESSO punto sia per il blocco che finisce il giorno i sia per quello che inizia
+    // il giorno i+1: i due round-cap si sovrappongono lì e la pillola "gira" col nastro.
+    const halfCurveD = (i, off, half) => {
+      const yA = rowY(i) + off, yB = rowY(i + 1) + off, ym = (yA + yB) / 2;
+      const s = i % 2 === 0 ? 1 : -1; // curva a destra dopo le righe pari, a sinistra dopo le dispari
+      const xE = s === 1 ? xR : xL;
+      const c1 = xE + s * curveBump / 2, c2 = xE + s * curveBump * 0.75;
+      const f = n => n.toFixed(1);
+      return half === 'out'
+        ? `L${f(xE)},${f(yA)} C${f(c1)},${f(yA)} ${f(c2)},${f((3 * yA + yB) / 4)} ${f(c2)},${f(ym)}`
+        : `M${f(c2)},${f(ym)} C${f(c2)},${f((yA + 3 * yB) / 4)} ${f(c1)},${f(yB)} ${f(xE)},${f(yB)}`;
+    };
+
     // Sotto-corsie: pillole schedule per entità, per giorno.
     const offsets = entities.map((_, i) => (i - (nEnt - 1) / 2) * SUBLANE_STEP);
     let pills = '';
@@ -251,22 +267,47 @@ class WeeklySerpentineCard extends WeeklyScheduleBase {
         for (const b of blocks) {
           const x1 = even ? xL + (b.t1 / 1440) * (xR - xL) : xR - (b.t1 / 1440) * (xR - xL);
           const x2 = even ? xL + (b.t2 / 1440) * (xR - xL) : xR - (b.t2 / 1440) * (xR - xL);
-          let rx0 = Math.min(x1, x2), rx1 = Math.max(x1, x2);
-          // Un blocco che tocca la mezzanotte (inizio/fine giornata) si estende un po' dentro
-          // la curva invece di fermarsi di netto sul bordo — altrimenti due slot adiacenti a
-          // cavallo di mezzanotte (es. 23:45-00:00 + 00:00-00:15) sembrano due pillole staccate
-          // "prima e dopo" la curva invece di leggersi come un unico flusso continuo.
-          const NEAR_MIDNIGHT = 15; // minuti, stessa granularità dello snap/time_step del progetto
-          const bleed = curveBump * 0.6;
-          if (b.t1 <= NEAR_MIDNIGHT) { if (even) rx0 -= bleed; else rx1 += bleed; }
-          if (b.t2 >= 1440 - NEAR_MIDNIGHT) { if (even) rx1 += bleed; else rx0 -= bleed; }
-          const rw = Math.max(1, rx1 - rx0);
           const h = b.isActive ? PILL_H + 3 : PILL_H;
-          const ry = y0 + offsets[ei] - h / 2;
+          const laneY = y0 + offsets[ei];
           const opacity = b.isOff ? 0.35 : (b.isActive ? 1 : 0.88);
           const fill = b.isActive ? color : `url(#serp-grad-${ei})`;
           const glow = b.isActive ? ` style="filter:drop-shadow(0 0 3px ${color})"` : '';
-          pills += `<rect class="serp-pill" data-schedule="${this._escAttr(b.schedule.entity_id)}" x="${rx0.toFixed(1)}" y="${ry.toFixed(1)}" width="${rw.toFixed(1)}" height="${h}" rx="${PILL_RX}" fill="${fill}" opacity="${opacity}"${glow}></rect>`;
+          const attrs = `class="serp-pill" data-schedule="${this._escAttr(b.schedule.entity_id)}" opacity="${opacity}"${glow}`;
+          // Un blocco che tocca la mezzanotte (inizio/fine giornata) fluisce DENTRO la
+          // curva a U fino all'apice (mezzanotte = apice): reso come <path> con stroke
+          // round-cap che segue la metà-curva del nastro, così due slot adiacenti a
+          // cavallo di mezzanotte (es. 23:25-00:00 + 00:00-00:45) si incontrano
+          // esattamente all'apice e si leggono come un unico flusso continuo.
+          const NEAR_MIDNIGHT = 15; // minuti, stessa granularità dello snap/time_step del progetto
+          const startsMid = b.t1 <= NEAR_MIDNIGHT && d > 0;      // curva in ingresso (riga d-1 → d)
+          const endsMid = b.t2 >= 1440 - NEAR_MIDNIGHT && d < 6; // curva in uscita (riga d → d+1)
+          if (startsMid || endsMid) {
+            const h2 = h / 2; // i round-cap sporgono di h/2 oltre gli estremi del path
+            let dp;
+            if (startsMid) {
+              dp = halfCurveD(d - 1, offsets[ei], 'in'); // dall'apice fino al bordo della riga d
+            } else {
+              const sx = even ? Math.min(x1 + h2, xR) : Math.max(x1 - h2, xL);
+              dp = `M${sx.toFixed(1)},${laneY.toFixed(1)}`;
+            }
+            if (endsMid) {
+              dp += ' ' + halfCurveD(d, offsets[ei], 'out'); // dal bordo della riga d fino all'apice
+            } else {
+              const ex = even ? Math.max(x2 - h2, xL) : Math.min(x2 + h2, xR);
+              dp += ` L${ex.toFixed(1)},${laneY.toFixed(1)}`;
+            }
+            pills += `<path ${attrs} d="${dp}" fill="none" stroke="${fill}" stroke-width="${h}" stroke-linecap="round"></path>`;
+          } else {
+            let rx0 = Math.min(x1, x2), rx1 = Math.max(x1, x2);
+            // Bordo settimana (inizio lunedì / fine domenica): lì il nastro non ha curva,
+            // resta solo il piccolo bleed verso il round-cap del nastro.
+            const bleed = curveBump * 0.6;
+            if (b.t1 <= NEAR_MIDNIGHT && d === 0) rx0 -= bleed;
+            if (b.t2 >= 1440 - NEAR_MIDNIGHT && d === 6) rx1 += bleed;
+            const rw = Math.max(1, rx1 - rx0);
+            const ry = laneY - h / 2;
+            pills += `<rect ${attrs} x="${rx0.toFixed(1)}" y="${ry.toFixed(1)}" width="${rw.toFixed(1)}" height="${h}" rx="${PILL_RX}" fill="${fill}"></rect>`;
+          }
         }
       });
     }

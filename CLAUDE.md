@@ -44,7 +44,7 @@ dist/
   weekly-serpentine-card.js      # IIFE bundle (base + serpentine-card), standalone
 ```
 
-## Weekly Serpentine Card (`custom:weekly-serpentine-card`, v1.3.0 → v1.3.1)
+## Weekly Serpentine Card (`custom:weekly-serpentine-card`, v1.3.0 → v1.3.3)
 Card **decorativa** (`src/weekly-serpentine-card.js`, 4ª entry rollup, `extends
 WeeklyScheduleBase`). Dalla v1.3.1 **NON** override più `hass`/`connectedCallback` del base:
 eredita il ciclo di vita STANDARD (fetch/mantieni `_storageData`, bootstrap profilo default,
@@ -74,13 +74,20 @@ l'attributo di presentazione grezzo, per compatibilità var() cross-browser).
   mockup approvato per N=3 (`strokeWidth = max(18, (n-1)*9 + 7 + 3)`, `rowStep = strokeWidth+18`,
   `curveBump = strokeWidth+2`, `xL/xR` calcolati da `curveBump` per mantenere i margini). Pillole
   posizionate per tempo→x **lineare** sulla riga (righe pari: `xL + t/1440*(xR-xL)`; dispari:
-  `xR - t/1440*(xR-xL)`) — NON mappate lungo le curve (approvato così, troppo complesso per v1).
-  **Bleed a mezzanotte** (fix utente reale in HA): un blocco che tocca l'inizio/fine giornata
-  (`t1<=15` o `t2>=1425`, soglia = granularità snap del progetto) estende il proprio bordo di
-  `curveBump*0.6` OLTRE `xL`/`xR`, dentro la curva — altrimenti due slot adiacenti a cavallo di
-  mezzanotte (es. mer 23:25-00:00 + gio 00:01-00:45) si fermavano di netto sul bordo del nastro,
-  sembrando due pillole scollegate "prima e dopo" la curva invece di leggersi come un unico
-  flusso continuo (screenshot utente). Il resto della curva resta senza mapping (invariato).
+  `xR - t/1440*(xR-xL)`) — il CORPO della pillola non è mappato lungo le curve (approvato così,
+  troppo complesso per v1). **Mezzanotte nella curva (v1.3.3, sostituisce il "bleed" v1.3.0)**:
+  un blocco che tocca l'inizio/fine giornata (`t1<=15` o `t2>=1425`, soglia = granularità snap
+  del progetto) è reso come `<path>` con `stroke` round-cap (stessa altezza `h` della pillola)
+  che segue la METÀ-CURVA della U fino all'apice: helper locale `halfCurveD(i, off, half)` in
+  `_buildSvg` = split de Casteljau a t=0.5 della STESSA cubica del nastro, traslata verticalmente
+  di `off` (la sotto-corsia dell'entità) — apice a `xE ± curveBump*0.75`, a metà altezza tra le
+  due righe. L'apice è lo STESSO punto per il blocco di fine giornata `d` e quello di inizio
+  giornata `d+1` (stessa corsia) → i due round-cap si sovrappongono lì e i due slot si leggono
+  come un unico flusso continuo che gira col nastro (richiesta esplicita utente: il precedente
+  bleed orizzontale di `curveBump*0.6` si fermava appena oltre il bordo e le pillole sembravano
+  ancora staccate). I blocchi che NON toccano mezzanotte restano `<rect>` invariati; inizio
+  lunedì / fine domenica (nessuna curva adiacente: `d===0`/`d===6`) mantengono il vecchio piccolo
+  bleed. Il click-to-edit funziona identico sui `<path>` (stesso attributo `data-schedule`).
   Blocco attivo ORA: confronto diretto giorno/minuti correnti coi timeslot (niente dipendenza da
   `current_slot`/storage) → più semplice e corretto anche senza profili.
 - **Dati**: riusa `_getSchedules(entityId)`, `_appliesToDay`, `_parseTime`, `t()`, `_esc()`/
@@ -491,6 +498,22 @@ notifications:
 
 ## Last modified
 always update last modified date with day an hour Rome utc
+2026-07-03 16:05 Rome (v1.3.3 — serpentine: i blocchi a cavallo di mezzanotte girano DENTRO la
+curva fino all'apice) — feedback utente da HA reale (screenshot): il bleed v1.3.0 (`curveBump*0.6`
+orizzontale oltre il bordo) era troppo timido — le pillole si fermavano comunque "di netto" appena
+dentro la curva e la mezzanotte non si leggeva affatto come apice della curva. Richiesta esplicita:
+"il mezzanotte doveva essere nella curva, in mezzo". **Fix** (solo `src/weekly-serpentine-card.js`,
+dentro `_buildSvg`): le pillole che toccano mezzanotte diventano `<path>` con stroke round-cap che
+segue la metà-curva della U fino all'apice — nuovo helper locale `halfCurveD(i, off, half)` = split
+de Casteljau a t=0.5 della stessa cubica del nastro traslata di `off` (sotto-corsia); l'apice
+(`xE ± curveBump*0.75`, metà altezza tra le righe) è lo stesso punto per fine-giornata e
+inizio-giornata-dopo → i round-cap si sovrappongono lì e i due slot si leggono come un flusso
+continuo. Blocchi normali restano `<rect>`; `d===0`/`d===6` (bordo settimana, nessuna curva)
+mantengono il vecchio bleed. Verificato headless (Chromium): screenshot col caso esatto segnalato
+(mer 23:25-00:00 + gio 00:01-00:45) + blocco notturno ricorrente su tutte le curve, stress-test a
+3 entità tutte a cavallo di mezzanotte (corsie parallele nella curva, niente incroci), e test DOM
+del click (path → `_openEditPopup` con l'entity_id giusto, rect invariato). Bump 1.3.2→1.3.3
+(package.json, workflow release default+note). Da validare in HA reale dall'utente.
 2026-07-01 16:33 Rome (v1.3.2 — bump) — l'utente non ha ancora confermato in HA reale il fix
 `automation.trigger`/countdown (sotto), ma ha chiesto di bumpare comunque la versione ora e fare
 la prova dopo. Bump 1.3.1→1.3.2 (package.json, workflow release default + note aggiornate solo
