@@ -31,7 +31,10 @@ all on top of the [Scheduler Component](https://github.com/nielsfaber/scheduler-
   stops re-applying until the next slot (safety direction still fires)
 - **Notifications** when a schedule fires — server-side HA automation, works
   even with every dashboard closed (with smart default message)
-- **Climate, light, fan, cover, switch** domains with per-domain popup controls
+- **Climate, light, fan, cover, valve, switch, lock, input_boolean, humidifier,
+  water_heater** domains with per-domain popup controls
+- **One-shot schedules** — mark a schedule "use and discard" and it deletes
+  itself after the last selected day runs
 - **Keyboard accessible**: interactive controls are reachable by Tab and
   activate with Enter/Space (`role`/`tabindex`, `aria-pressed`/`aria-expanded`,
   `:focus-visible`)
@@ -123,6 +126,11 @@ a **duration _or_ end time** → it applies the value, then restores the entity 
 **previous state** when the timer ends. Examples: thermostat 21 °C for 45 min,
 lights red for 5 min, irrigation on for 10 min.
 
+<p align="center">
+  <img src="docs/images/08-quick-timer.png" alt="Quick Timer card — holding a value with a live countdown" width="420"><br>
+  <sub><b>Holding a value with a live countdown and one-tap restore</b></sub>
+</p>
+
 - **No scenes left behind** — the restore is computed at start and baked into a
   *transient* automation (`automation.qt_timer_*`) that is auto-removed ~30 s after
   the timer ends (or immediately on cancel). Nothing lingers at rest.
@@ -155,10 +163,19 @@ Tuesday right→left, Wednesday left→right, and so on, each row joined to the 
 rounded U-turn. Midnight sits at the apex of each curve — there are no hour ticks or
 midnight markers, the shape tells the story.
 
+<p align="center">
+  <img src="docs/images/09-serpentine.png" alt="Weekly Serpentine card — three entities as concentric ribbon lanes" width="420"><br>
+  <sub><b>Three entities (Camera, Salotto, AC) as concentric sub-lanes folding through each U-turn</b></sub>
+</p>
+
 - **Multi-entity**: pick any entities in `entities:`; each gets its own color and a
   swatch in the legend, rendered as a parallel sub-lane inside the ribbon. Up to 3 is the
   sweet spot for readability — past that a soft, dismissible-by-config-change warning
-  appears, but there's **no hard limit**.
+  appears, but there's **no hard limit**. Sub-lanes **alternate order every row** (v1.3.4)
+  so that through each U-turn they stay **concentric** and never cross.
+- **Midnight flows through the curve** (v1.3.3): a slot that touches the start or end of a
+  day bends along the U-turn to its apex instead of stopping flat at the edge, so a block
+  ending at 24:00 and one starting at 00:00 read as a single continuous stream around the bend.
 - **Thin "now" indicator**: a small perpendicular tick + dot on today's row, no glow or label.
 - Schedule pills are colored by entity; the one active **right now** is brighter with a
   soft glow. Disabled schedules are dimmed.
@@ -307,6 +324,7 @@ entities owned by the [Scheduler Component](https://github.com/nielsfaber/schedu
 | Profiles & groups | this card | **Shared** `input_text` helpers (`input_text.wsc_store_*`) — global, same for every HA user | One JSON blob `{ groups, profiles[], activeProfiles[] }` (each profile holds its `groups`, `schedules`, `scheduleLinks`), compressed and split into ≤255-char chunks |
 | Conditions | this card | `automation.wsc_*` (generated) | One HA automation per conditional schedule, lifecycle-bound to it |
 | Auto-off / auto-on | this card | `automation.wsc_autooff_*` (generated) | One HA automation per schedule, fires the end-of-slot action when `current_slot` clears |
+| One-shot | this card | `automation.wsc_oneshot_*` (generated) | One HA automation per "use and discard" schedule, calls `scheduler.remove` after the last selected day runs |
 
 **Implication for users**: deleting a `switch.schedule_*` entity from HA
 removes the schedule globally — the card just reflects HA state.
@@ -383,6 +401,10 @@ See [Conditions & Notifications](#conditions--notifications) and
 | `cover`   | **open / close / stop / set position** (mutually exclusive). The position slider is directional — dragging **right closes more** (0 % = closed, 100 % = open) | `cover.open_cover` / `close_cover` / `stop_cover` / `set_cover_position` |
 | `valve`   | **open / close / stop / set position** — same controls as `cover` | `valve.open_valve` / `close_valve` / `stop_valve` / `set_valve_position` |
 | `switch`  | on/off toggle | `switch.turn_on` / `switch.turn_off` |
+| `lock`    | lock / unlock | `lock.lock` / `lock.unlock` |
+| `input_boolean` | on/off toggle | `input_boolean.turn_on` / `turn_off` |
+| `humidifier` | on/off + optional target **humidity %** + optional **mode** | `humidifier.turn_on` (`set_humidity` / `set_mode`) / `turn_off` |
+| `water_heater` | target **temperature** + optional **operation mode** | `water_heater.set_temperature` / `set_operation_mode` |
 | _other_   | recognized as `unknown`; basic on/off only | `homeassistant.turn_on` / `turn_off` |
 
 The popup adapts at render time via `_detectDomain(entity_id)`. The
@@ -476,7 +498,6 @@ EN:
 - [ ] Layout toggle on the view card toggles `focus ↔ compact`
 - [ ] Hover on a block → tooltip
 - [ ] Empty click on the view card → create popup (shared with editing card)
-- [ ] View card status bar shows `Viewing: default · Active`
 
 IT:
 
@@ -488,7 +509,6 @@ IT:
 - [ ] Toggle vista nella view card alterna `focus ↔ compact`
 - [ ] Hover su blocco → tooltip
 - [ ] Click vuoto nella view card → popup di creazione (stesso della editing card)
-- [ ] Status bar view card mostra `Viewing: default · Active`
 
 ---
 
@@ -532,20 +552,35 @@ The Scheduler Component does **not** support `conditions` on timeslots, so
 this card emits a dedicated HA automation per conditional schedule. The
 automation is created / updated / deleted in lockstep with the schedule.
 
-Mechanism:
+Mechanism (**event-driven** — no polling):
 
-- **Trigger**: state change on the condition entity + `time_pattern` every
-  N minutes (configurable, default 15)
+- **Trigger**: slot start/end (the schedule's `current_slot` attribute) **plus**
+  every state *and* attribute change of the condition entities — so the
+  automation only runs when something actually changes, never on a timer.
 - **Condition**: `current_slot != null` on the parent schedule switch +
   user-defined conditions (operator + value)
-- **Action**: `turn_off` the schedule's target entities if conditions fail,
-  `turn_on` if they pass
+- **Action**: the schedule's **active** actions when the conditions pass, the
+  **stop** actions (turn off / set back) when they fail
 
-The schedule switch itself stays `on` — only the downstream actions are
+The schedule switch itself stays enabled — only the downstream actions are
 gated. The popup UI adapts to the selected condition entity (numeric slider
 for sensors, dropdown for selects, etc.), and the entity field has a custom
 **autocomplete** (filters by entity id and friendly name) that works on
 desktop **and** mobile / the HA companion app.
+
+#### Hysteresis (deadband)
+
+Numeric conditions support a **deadband** to avoid rapid on/off flapping around
+the threshold. Leave the **± tolerance** field empty for the default (**5 % of
+the value**), type a number for an absolute band, or `0` for a hard threshold.
+The generated template is *stateful*: the effective threshold shifts depending
+on whether the active action is already applied (e.g. a `< 60` condition with a
+band of 3 turns on below 57 and back off above 63).
+
+<p align="center">
+  <img src="docs/images/10-conditions.png" alt="Conditions section — entity, operator, value, ± deadband and manual override" width="480"><br>
+  <sub><b>A numeric condition with its ± deadband and the manual-override toggle</b></sub>
+</p>
 
 #### Manual override (conditional schedules)
 
@@ -598,8 +633,28 @@ automation** (`automation.wsc_autooff_*`):
 The automation is created / updated / deleted in lockstep with the schedule.
 
 > 🔧 The **Linked objects** panel at the bottom of the edit popup lists every
-> generated object (auto-off, condition, notify automations) with a live
-> status badge and **Open** / **Edit YAML** shortcuts.
+> generated object (auto-off, condition, notify, one-shot automations) with a
+> live status badge and **Open** / **Edit YAML** shortcuts.
+
+<p align="center">
+  <img src="docs/images/11-linked-objects.png" alt="Linked objects panel — generated automations with status badges and shortcuts" width="480"><br>
+  <sub><b>The Linked objects panel: every generated automation with its status and quick actions</b></sub>
+</p>
+
+### One-shot schedules (use and discard)
+
+Tick **Use and discard** (checkbox under the day picker) to make a schedule
+**delete itself** after it has run once. The semantics: it runs on the **next
+occurrence of every selected day**, then removes itself after the last one — e.g.
+set on a Wednesday for Mon/Tue/Fri, it fires next Fri, Mon and Tue, then calls
+`scheduler.remove`.
+
+- The expiry (the furthest of the upcoming end-of-slot occurrences) is computed
+  once at save time and stored as a local wall-clock timestamp.
+- A dedicated automation (`automation.wsc_oneshot_*`) triggers on slot end and
+  removes the schedule once the expiry passes — event-driven, like auto-off.
+- A safety net at card load (`_cleanupExpiredOneShots`) garbage-collects any
+  one-shot that already expired while HA was off.
 
 ---
 
