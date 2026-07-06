@@ -577,6 +577,11 @@ The generated template is *stateful*: the effective threshold shifts depending
 on whether the active action is already applied (e.g. a `< 60` condition with a
 band of 3 turns on below 57 and back off above 63).
 
+<p align="center">
+  <img src="docs/images/10-conditions.png" alt="Conditions section — entity, operator, value, ± deadband and manual override" width="480"><br>
+  <sub><b>A numeric condition with its ± deadband and the manual-override toggle</b></sub>
+</p>
+
 #### Manual override (conditional schedules)
 
 Enable **Allow manual override** (checkbox in the conditions section) and a
@@ -630,6 +635,11 @@ The automation is created / updated / deleted in lockstep with the schedule.
 > 🔧 The **Linked objects** panel at the bottom of the edit popup lists every
 > generated object (auto-off, condition, notify, one-shot automations) with a
 > live status badge and **Open** / **Edit YAML** shortcuts.
+
+<p align="center">
+  <img src="docs/images/11-linked-objects.png" alt="Linked objects panel — generated automations with status badges and shortcuts" width="480"><br>
+  <sub><b>The Linked objects panel: every generated automation with its status and quick actions</b></sub>
+</p>
 
 ### One-shot schedules (use and discard)
 
