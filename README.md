@@ -38,7 +38,8 @@ all on top of the [Scheduler Component](https://github.com/nielsfaber/scheduler-
 - **Keyboard accessible**: interactive controls are reachable by Tab and
   activate with Enter/Space (`role`/`tabindex`, `aria-pressed`/`aria-expanded`,
   `:focus-visible`)
-- **i18n**: English, Italian, French (auto-detect from HA locale)
+- **i18n**: English, Italian, French, Spanish, Portuguese, German, Dutch,
+  Polish, Swedish, Norwegian, Danish, Czech (auto-detect from HA locale)
 
 ---
 
@@ -298,7 +299,7 @@ notifications:
 | Field                  | Type            | Default       | Notes |
 |------------------------|-----------------|---------------|-------|
 | `title`                | string          | _(none)_      | Header title |
-| `language`             | `en` / `it` / `fr` | auto       | Falls back to HA locale, then browser |
+| `language`             | `en` `it` `fr` `es` `pt` `de` `nl` `pl` `sv` `no` `da` `cs` | auto | Falls back to HA locale, then browser |
 | `time_step`            | integer (min)   | `15`          | Snap interval for drag |
 | `entities[]`           | list            | `[]`          | Can also be edited from the card UI |
 | `entities[].entity`    | entity_id       | _required_    | Climate / light / switch |
