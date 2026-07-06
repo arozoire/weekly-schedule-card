@@ -506,6 +506,17 @@ notifications:
 
 ## Last modified
 always update last modified date with day an hour Rome utc
+2026-07-06 Rome (v1.3.5 — 9 nuove lingue UI) — aggiunte al blocco `LOCALES` di `src/base-card.js`
+9 lingue oltre a en/it/fr: **es, pt, de, nl, pl, sv, no, da, cs** (tutte le chiavi tradotte,
+placeholder `{state}/{start}/{end}/{value}/{n}/{action}` + emoji + token tecnici HVAC/YAML/AND/OR/
+`notify.mobile_app_phone` preservati). Rilevamento lingua invariato (già `LOCALES[raw] ? raw : 'en'`,
+accetta qualunque chiave presente). Aggiornati: select lingua dell'editor quick-timer
+(`src/quick-timer-card.js`, +9 opzioni) e README (Highlights + tabella opzioni `language`). Scelta
+lingue guidata dalla distribuzione geografica reale utenti HA (HA Analytics: DE/NL/PL top bacini non
+coperti; nordici alta densità pro-capite; CS Europa centrale) — dati live bloccati da Cloudflare 403,
+usata la ripartizione nota. Build+check verdi sui 4 bundle; verificate 9 lingue presenti nel bundle
+main. Bump 1.3.4→1.3.5 (package.json, default+nota del workflow release). Aggiunta puramente additiva,
+nessuna funzione esistente toccata. Traduzioni generate senza revisione umana (scelta esplicita utente).
 2026-07-03 16:35 Rome (v1.3.4 — serpentine: ordine sotto-corsie alternato per riga, curve
 concentriche senza accavallamenti) — richiesta utente subito dopo la v1.3.3 (voleva fermare la
 release ma era già pubblicata → questa è la v1.3.4): con più entità le corsie si accavallavano

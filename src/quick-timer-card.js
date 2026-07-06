@@ -687,6 +687,15 @@ class QuickTimerCardEditor extends WeeklyScheduleBase {
         { value: 'en', label: 'English' },
         { value: 'it', label: 'Italiano' },
         { value: 'fr', label: 'Français' },
+        { value: 'es', label: 'Español' },
+        { value: 'pt', label: 'Português' },
+        { value: 'de', label: 'Deutsch' },
+        { value: 'nl', label: 'Nederlands' },
+        { value: 'pl', label: 'Polski' },
+        { value: 'sv', label: 'Svenska' },
+        { value: 'no', label: 'Norsk' },
+        { value: 'da', label: 'Dansk' },
+        { value: 'cs', label: 'Čeština' },
       ] } } },
     ];
   }

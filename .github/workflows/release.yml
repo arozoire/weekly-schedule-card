@@ -4,9 +4,9 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: 'Version tag (e.g. v1.3.4)'
+        description: 'Version tag (e.g. v1.3.5)'
         required: true
-        default: 'v1.3.4'
+        default: 'v1.3.5'
 
 jobs:
   release:
@@ -35,16 +35,16 @@ jobs:
             dist/quick-timer-card.js
             dist/weekly-serpentine-card.js
           body: |
-            ## ${{ github.event.inputs.version }} — serpentine: corsie da nastro vero, niente accavallamenti nelle curve
+            ## ${{ github.event.inputs.version }} — 9 nuove lingue UI
 
-            ### Miglioria weekly-serpentine-card (multi-entità)
-            - **L'ordine verticale delle entità ora si alterna a ogni riga**, come in un
-              nastro fisico: lunedì 1ª entità sopra e 2ª sotto, martedì 2ª sopra e 1ª sotto,
-              e così via (vale per qualunque numero di entità). Attraverso ogni curva a U la
-              corsia esterna resta esterna e quella interna resta interna → **dentro le curve
-              le corsie sono archi concentrici che non si accavallano più**. I blocchi a
-              cavallo di mezzanotte continuano a incontrarsi all'apice della curva (v1.3.3),
-              ora ciascuno sul proprio arco concentrico.
+            ### Internazionalizzazione
+            - Aggiunte **9 lingue** all'interfaccia, oltre a inglese/italiano/francese:
+              **spagnolo (es), portoghese (pt), tedesco (de), olandese (nl), polacco (pl),
+              svedese (sv), norvegese (no), danese (da), ceco (cs)**. Rilevamento automatico
+              dalla lingua di Home Assistant (o via `language:` nella config della card).
+            - Scelta delle lingue basata sulla distribuzione geografica reale degli utenti HA
+              (HA Analytics): coperti i maggiori bacini d'installazione non ancora inclusi.
+            - Nessuna funzione esistente modificata: aggiunta puramente additiva alle stringhe.
 
             ### Aggiornare
             - **HACS**: Update → Ctrl-F5.
