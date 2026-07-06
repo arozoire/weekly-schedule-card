@@ -126,6 +126,11 @@ a **duration _or_ end time** → it applies the value, then restores the entity 
 **previous state** when the timer ends. Examples: thermostat 21 °C for 45 min,
 lights red for 5 min, irrigation on for 10 min.
 
+<p align="center">
+  <img src="docs/images/08-quick-timer.png" alt="Quick Timer card — holding a value with a live countdown" width="420"><br>
+  <sub><b>Holding a value with a live countdown and one-tap restore</b></sub>
+</p>
+
 - **No scenes left behind** — the restore is computed at start and baked into a
   *transient* automation (`automation.qt_timer_*`) that is auto-removed ~30 s after
   the timer ends (or immediately on cancel). Nothing lingers at rest.
@@ -157,6 +162,11 @@ continuous ribbon that folds back on itself row after row — a true
 Tuesday right→left, Wednesday left→right, and so on, each row joined to the next by a
 rounded U-turn. Midnight sits at the apex of each curve — there are no hour ticks or
 midnight markers, the shape tells the story.
+
+<p align="center">
+  <img src="docs/images/09-serpentine.png" alt="Weekly Serpentine card — three entities as concentric ribbon lanes" width="420"><br>
+  <sub><b>Three entities (Camera, Salotto, AC) as concentric sub-lanes folding through each U-turn</b></sub>
+</p>
 
 - **Multi-entity**: pick any entities in `entities:`; each gets its own color and a
   swatch in the legend, rendered as a parallel sub-lane inside the ribbon. Up to 3 is the
