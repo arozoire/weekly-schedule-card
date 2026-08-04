@@ -2989,7 +2989,7 @@ export default class WeeklyScheduleBase extends HTMLElement {
     if (ps.stopAction && ps.stopValue == null) ps.stopValue = this._endActionDefault(ps.stopAction, ps.entityConf.entity);
     const DAY_NAMES = ['mon','tue','wed','thu','fri','sat','sun'].map(k=>this.t(`days.${k}`));
     const SNAP_OPTIONS = [5,10,15,30];
-    const schedules = this._getSchedules(ps.entityConf.entity);
+    const schedules = this._getProfileSchedules(ps.entityConf.entity);
 
     const bgBlocks = schedules
       .filter(s => s.entity_id !== ps.entityId && ps.days.some(di => this._appliesToDay(s.attributes.weekdays || [], di)))
@@ -3956,11 +3956,8 @@ export default class WeeklyScheduleBase extends HTMLElement {
   // ── Save / Delete ─────────────────────────────────────────────────────────
 
   _checkOverlap(ps) {
-    const profile = this._getSelectedProfile();
-    const profileIds = new Set(profile?.schedules || []);
-    for (const s of this._getSchedules(ps.entityConf.entity)) {
+    for (const s of this._getProfileSchedules(ps.entityConf.entity)) {
       if (ps.mode==='edit' && s.entity_id===ps.entityId) continue;
-      if (profileIds.size && !profileIds.has(s.entity_id)) continue;
       const shared = ps.days.filter(di => this._appliesToDay(s.attributes.weekdays||[], di));
       if (!shared.length) continue;
       for (const slot of s.attributes.timeslots||[]) {
