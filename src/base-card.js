@@ -303,6 +303,9 @@ export default class WeeklyScheduleBase extends HTMLElement {
   set hass(hass) {
     const prev = this._prevHass;
     this._prevHass = hass;
+    const externalActive = WeeklyScheduleBase._profileActiveEntity;
+    if (prev && this._storageData && prev.states?.[externalActive]?.state !== hass.states?.[externalActive]?.state)
+      this._reconcileExternalActive(hass.states?.[externalActive]?.state).catch(e => console.warn('[WSC] External active-profile reconciliation failed', e));
     this._hass = hass;
     // Auto re-fetch storage when a schedule entity is added/removed (cross-card sync)
     // o quando lo store condiviso (input_text.wsc_store_*) cambia → sync cross-device/utente.
@@ -328,13 +331,16 @@ export default class WeeklyScheduleBase extends HTMLElement {
     }
     if (!this._storageData && !this._loadingStorage) {
       this._loadingStorage = true;
-      this._wsGet().then(data => {
+      this._wsGet().then(async data => {
         this._storageData = data;
         this._ensureDefaultProfile();
+        if (hass.states?.[WeeklyScheduleBase._profileActiveEntity])
+          await this._reconcileExternalActive(hass.states[WeeklyScheduleBase._profileActiveEntity].state);
         this._loadingStorage = false;
         this._cleanupOrphanAutomations().catch(() => {});
         this._cleanupExpiredOneShots().catch(() => {});
         this._hideStoreHelpers().catch(() => {});
+        this._syncExternalProfileControl().catch(e => console.warn('[WSC] External profile control initialization failed', e));
         if (!this._popupState && !this._profilesMode && !this._groupsMode && !this._dialogOpen) this.render();
       }).catch(() => {
         this._storageData = { groups: [], profiles: [], activeProfiles: [] };
@@ -488,6 +494,8 @@ export default class WeeklyScheduleBase extends HTMLElement {
   static _isAdmin(hass)    { return !!hass?.user?.is_admin; }
   static _chunkEntity(key, i) { return `input_text.${WeeklyScheduleBase._storePrefix(key)}_${i}`; }
   static _metaEntity(key)     { return `input_text.${WeeklyScheduleBase._storePrefix(key)}_meta`; }
+  static get _profileCommandEntity() { return 'input_text.wsc_profile_command'; }
+  static get _profileActiveEntity()  { return 'input_text.wsc_profile_active'; }
 
   static async _createInputText(hass, name) {
     return hass.connection.sendMessagePromise({ type: 'input_text/create', name, min: 0, max: 255, mode: 'text' });
@@ -618,6 +626,95 @@ export default class WeeklyScheduleBase extends HTMLElement {
     try {
       window.dispatchEvent(new CustomEvent('wsc-storage-changed', { detail: { source: this, data } }));
     } catch {}
+    this._syncExternalProfileControl().catch(e => console.warn('[WSC] External profile control sync failed', e));
+  }
+
+  // ── Server-side external profile control ────────────────────────────────
+  // The generated HA automation deliberately mirrors the small orchestration layer of
+  // _activateProfile; the card remains the owner of profile data and activeProfiles.
+  _externalProfileLabel(profile) {
+    const duplicates = (this._storageData?.profiles || []).filter(p => String(p.name).toLowerCase() === String(profile.name).toLowerCase());
+    return duplicates.length > 1 ? `${profile.name} [${profile.id}]` : profile.name;
+  }
+
+  _externalActiveValue(ids = this._storageData?.activeProfiles || []) {
+    const profiles = this._storageData?.profiles || [];
+    return ids.map(id => profiles.find(p => p.id === id)).filter(Boolean).map(p => this._externalProfileLabel(p)).join(' | ');
+  }
+
+  async _ensureExternalProfileHelper(entityId, name) {
+    if (this._hass?.states?.[entityId] || WeeklyScheduleBase._createdHelpers?.has(entityId)) return;
+    if (!WeeklyScheduleBase._isAdmin(this._hass)) throw new Error(`cannot create ${entityId}: admin required`);
+    if (!WeeklyScheduleBase._createdHelpers) WeeklyScheduleBase._createdHelpers = new Set();
+    await WeeklyScheduleBase._createInputText(this._hass, name);
+    WeeklyScheduleBase._createdHelpers.add(entityId);
+  }
+
+  _externalProfileSequence(profile) {
+    const profiles = this._storageData?.profiles || [];
+    const offProfiles = profile.exclusive === false ? [] : profiles.filter(p => p.id !== profile.id && p.exclusive !== false);
+    const offIds = [...new Set(offProfiles.flatMap(p => p.schedules || []))];
+    if (profile.exclusive !== false) {
+      const claimed = new Set([
+        ...profiles.flatMap(p => p.schedules || []),
+        ...profiles.flatMap(p => (p.scheduleLinks || []).map(l => l.autoChildId).filter(Boolean)),
+      ]);
+      for (const entityId of Object.keys(this._hass?.states || {}))
+        if (entityId.startsWith('switch.schedule_') && !claimed.has(entityId)) offIds.push(entityId);
+    }
+    const onIds = [...new Set([...(profile.schedules || []), ...(profile.scheduleLinks || []).map(l => l.autoChildId).filter(Boolean)])];
+    const excludedNames = JSON.stringify(offProfiles.map(p => this._externalProfileLabel(p)));
+    const profileName = JSON.stringify(this._externalProfileLabel(profile));
+    const active = WeeklyScheduleBase._profileActiveEntity;
+    const value = `{% set current = states('${active}').split(' | ') %}{% set ns = namespace(out=[]) %}`
+      + `{% for name in current %}{% if name and name not in ${excludedNames} and name not in ns.out %}{% set ns.out = ns.out + [name] %}{% endif %}{% endfor %}`
+      + `{% if ${profileName} not in ns.out %}{% set ns.out = ns.out + [${profileName}] %}{% endif %}{{ ns.out | join(' | ') }}`;
+    const sequence = [];
+    if (offIds.length) sequence.push({ service: 'switch.turn_off', target: { entity_id: offIds } });
+    if (onIds.length) sequence.push({ service: 'switch.turn_on', target: { entity_id: onIds } });
+    sequence.push({ service: 'input_text.set_value', target: { entity_id: active }, data: { value } });
+    return sequence;
+  }
+
+  async _syncExternalProfileControl() {
+    if (!this._hass || !this._storageData?.profiles) return;
+    const command = WeeklyScheduleBase._profileCommandEntity;
+    const active = WeeklyScheduleBase._profileActiveEntity;
+    await this._ensureExternalProfileHelper(command, 'WSC Profile Command');
+    await this._ensureExternalProfileHelper(active, 'WSC Profile Active');
+    await WeeklyScheduleBase._setInputText(this._hass, active, this._externalActiveValue());
+
+    const profiles = this._storageData.profiles;
+    const scheduleEntities = Object.keys(this._hass.states || {}).filter(id => id.startsWith('switch.schedule_')).sort();
+    const signature = JSON.stringify([profiles.map(p => [p.id, p.name, p.exclusive !== false, p.schedules || [], (p.scheduleLinks || []).map(l => l.autoChildId).filter(Boolean)]), scheduleEntities]);
+    if (signature === this._externalProfileControlSignature) return;
+    const choices = profiles.map(p => ({
+      conditions: [{ condition: 'template', value_template: `{{ trigger.to_state.state | trim | lower in ${JSON.stringify([p.id, ...((profiles.filter(x => String(x.name).toLowerCase() === String(p.name).toLowerCase()).length === 1) ? [p.name] : [])].map(v => String(v).toLowerCase()))} }}` }],
+      sequence: this._externalProfileSequence(p),
+    }));
+    const offSequence = [];
+    const allScheduleIds = [...new Set(profiles.flatMap(p => p.schedules || []))];
+    if (allScheduleIds.length) offSequence.push({ service: 'switch.turn_off', target: { entity_id: allScheduleIds } });
+    offSequence.push({ service: 'input_text.set_value', target: { entity_id: active }, data: { value: '' } });
+    choices.push({
+      conditions: [{ condition: 'template', value_template: "{{ trigger.to_state.state | trim | upper == 'OFF' }}" }],
+      sequence: offSequence,
+    });
+    const config = {
+      id: 'wsc_external_profile_control', alias: 'WSC External Profile Control', mode: 'queued',
+      trigger: [{ platform: 'state', entity_id: command }], condition: [],
+      action: [{ choose: choices, default: [{ service: 'system_log.write', data: { level: 'warning', message: "WSC profile command ignored: {{ trigger.to_state.state }}" } }] }],
+    };
+    await this._recreateAutomation('wsc_external_profile_control', config);
+    this._externalProfileControlSignature = signature;
+  }
+
+  async _reconcileExternalActive(value) {
+    if (!this._storageData?.profiles) return;
+    const names = String(value || '').split('|').map(v => v.trim().toLowerCase()).filter(Boolean);
+    const activeProfiles = this._storageData.profiles.filter(p => names.includes(this._externalProfileLabel(p).toLowerCase())).map(p => p.id);
+    if (JSON.stringify(activeProfiles) === JSON.stringify(this._storageData.activeProfiles || [])) return;
+    await this._wsSet({ ...this._storageData, activeProfiles });
   }
 
   // Batching delle scritture storage: dentro fn ogni _wsSet aggiorna solo _storageData in memoria
