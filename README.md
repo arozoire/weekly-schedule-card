@@ -212,6 +212,21 @@ entities:                   # accepts plain strings or {entity, name, color}
    so the single resource HACS registers exposes every card — no extra
    Lovelace resource needed. Just hard-refresh after install.
 
+### Updating through Home Assistant / HACS
+
+1. Open **HACS → Frontend → Weekly Schedule Card**.
+2. Select **Update** (or **Redownload** when testing a branch/release), then
+   restart Home Assistant if HACS requests it.
+3. Hard-refresh every browser or fully reload the Home Assistant companion app
+   so it stops using the previously cached JavaScript bundle.
+4. Open a dashboard containing a Weekly Schedule Card once as an **administrator**.
+   This lets the card create or refresh its Home Assistant helpers and generated
+   automations. After that provisioning step, external profile commands run
+   server-side and do not require any dashboard to remain open.
+
+Existing Lovelace YAML, profiles, schedules and `input_text.wsc_store_*` data are
+kept when upgrading; no storage migration or manual reconfiguration is required.
+
 ### Manual
 
 Copy the bundles from `dist/` into your HA config:
@@ -542,6 +557,57 @@ appear as a single chip in the toolbar. Useful for "all thermostats" or
 
 Both profiles and groups are managed from the **editing card only** —
 the view card lets users *activate* profiles but not create or rename them.
+
+### External profile control (ESPHome / automations)
+
+The card automatically provisions these two visible Home Assistant helpers:
+
+- `input_text.wsc_profile_command` — write a profile name or stable profile ID;
+- `input_text.wsc_profile_active` — read the currently active profile name(s).
+
+It also generates `automation.wsc_external_profile_control`. Therefore commands
+are processed by Home Assistant itself and continue to work when every Lovelace
+dashboard and browser is closed. Profile names are matched case-insensitively;
+IDs are recommended if two profiles have the same name. `OFF` disables all active
+profile schedules. Unknown or empty commands are ignored and logged without
+affecting the card.
+
+Home Assistant action example:
+
+```yaml
+action: input_text.set_value
+target:
+  entity_id: input_text.wsc_profile_command
+data:
+  value: "HOME"
+```
+
+ESPHome example:
+
+```yaml
+- homeassistant.action:
+    action: input_text.set_value
+    data:
+      entity_id: input_text.wsc_profile_command
+      value: "HOME"
+```
+
+Read the active profile in a Home Assistant template:
+
+```jinja2
+{{ states('input_text.wsc_profile_active') }}
+```
+
+Exclusive profiles deactivate other exclusive profiles; shared profiles remain
+active together and are displayed separated by ` | `. Changes made from the card
+are reflected in `wsc_profile_active`, while external changes are reconciled with
+the existing `activeProfiles` storage when a card connects. Creating, renaming or
+deleting profiles and changing their schedules/exclusivity automatically refreshes
+the generated automation on the next card save.
+
+> After first installing or updating, open the card once as a Home Assistant admin
+> to provision the helpers/automation. This is the only step that needs Lovelace;
+> subsequent commands are fully server-side.
 
 ---
 
