@@ -1,12 +1,11 @@
 // src/quick-timer-card.js
-// Last modified: 2026-06-22 Rome (v1.2.1 quick-timer card redesign)
+// Last modified: 2026-09-07 (server-side quick timer lifecycle)
 //
-// Card legata a UNA entità, in UN'unica ha-card (no divisori): scelta durata in alto → card HA
-// nativa incorporata (configurabile via blocco `card:` in YAML, default tile) per impostare il
-// valore → pulsante Avvia in fondo. "Il controllo arma il timer": il valore lo imposta l'utente
-// col controllo nativo (set reale), Avvia crea solo un'automazione transitoria che dopo la durata
-// RIPRISTINA lo stato precedente (baseline: ultimo stato stabile, debounce 30s — NIENTE scene).
-// Overlap con schedule: vince l'ultimo attivato (guardia al revert).
+// Card legata a UNA entità. Il controllo HA incorporato lavora su uno stato-bozza: nessun servizio
+// viene inviato prima di Avvia. Avvia acquisisce lo stato reale, crea un'automazione transitoria
+// server-side, applica la bozza e avvia il countdown. A scadenza l'automazione ripristina e chiede
+// al package packages/quick_timer.yaml di cancellarla. Uno schedule che entra in slot nel frattempo
+// vince: l'automazione viene cancellata senza ripristino.
 
 import WeeklyScheduleBase from './base-card.js';
 
@@ -16,19 +15,16 @@ class QuickTimerCard extends WeeklyScheduleBase {
     this._qtTick = null;
     this._childCard = null;
     this._childBuilding = false;
-    this._timers = null;          // { eid: { endTs, autoId, restore[], label, durationS } }
+    this._timers = null;          // { eid: { runId, createdTs, endTs, autoId, restore[], apply[], label } }
     this._loadingTimers = false;
     this._qtWriteCount = 0;       // versione scritture locali: un refetch stantio (in volo prima
                                    // di una nostra _saveTimers) va scartato, vedi _saveTimers
     this._timerMode = 'duration'; // 'duration' | 'until'
     this._timerMinutes = 30;
-    // baseline di ripristino: ultimo stato "stabile" dell'entità (azioni restore) usato come
-    // ripristino quando si arma il timer. Si aggiorna quando lo stato è fermo da SETTLE_MS.
-    this._settledRestore = null;
-    this._lastSig = null;
-    this._baselineDebounce = null;
-    this._baselineInit = false;
-    this._BASELINE_SETTLE_MS = 30000;
+    this._draftState = null;
+    this._draftDirty = false;
+    this._draftHass = null;
+    this._cancelling = false;
   }
 
   setConfig(config) {
@@ -38,11 +34,9 @@ class QuickTimerCard extends WeeklyScheduleBase {
     this._presets = Array.isArray(config.presets) && config.presets.length ? config.presets : [5, 10, 15, 30, 45, 60];
     this._timerMinutes = config.default_minutes || this._presets[0] || 30;
     this._childCard = null; // forza rebuild della card nativa al cambio config
-    // reset baseline (l'entità o la card potrebbero essere cambiate)
-    this._baselineInit = false;
-    this._settledRestore = null;
-    this._lastSig = null;
-    if (this._baselineDebounce) { clearTimeout(this._baselineDebounce); this._baselineDebounce = null; }
+    this._draftState = null;
+    this._draftDirty = false;
+    this._draftHass = null;
   }
 
   getCardSize() { return 4; }
@@ -54,8 +48,8 @@ class QuickTimerCard extends WeeklyScheduleBase {
     const prev = this._prevHass;
     this._prevHass = hass;
     this._hass = hass;
-    if (this._childCard) this._childCard.hass = hass;
-    this._trackBaseline();
+    this._syncDraftFromEntity();
+    this._updateChildHass();
 
     if (this._timers === null && !this._loadingTimers) {
       this._loadingTimers = true;
@@ -67,7 +61,7 @@ class QuickTimerCard extends WeeklyScheduleBase {
           // null = store vuoto O letto a metà scrittura (altro device): non distinguibile qui,
           // ma senza scritture nostre in corso è un fallback sicuro (nessun timer noto finora).
           this._timers = (d && d.timers) || {};
-          this._cleanupFinishedTimers().finally(() => this.render());
+          this._cleanupFinishedTimers().finally(() => { this._updateChildHass(); this.render(); });
         })
         .catch(() => { this._loadingTimers = false; if (this._qtWriteCount === ver) { this._timers = {}; this.render(); } });
       this.render();
@@ -92,6 +86,7 @@ class QuickTimerCard extends WeeklyScheduleBase {
             this._loadingTimers = false;
             if (this._qtWriteCount !== ver || !d) return; // scrittura nel frattempo, o lettura mid-write/corrotta
             this._timers = d.timers || {};
+            this._updateChildHass();
             this.render();
           })
           .catch(() => { this._loadingTimers = false; });
@@ -107,7 +102,9 @@ class QuickTimerCard extends WeeklyScheduleBase {
   _activeTimer() {
     const t = this._timers?.[this._entity];
     if (!t) return null;
-    return (t.endTs > Date.now() - 1000) ? t : null;   // scaduto → trattato come assente
+    // Dopo la scadenza resta attivo finché l'automazione esiste: se il restore fallisce,
+    // Home Assistant deve poter ritentare invece di permettere un secondo timer concorrente.
+    return (t.endTs > Date.now() - 1000 || this._findAutomationEntity(t.autoId)) ? t : null;
   }
 
   _syncTick() {
@@ -125,6 +122,11 @@ class QuickTimerCard extends WeeklyScheduleBase {
     const rec = this._timers?.[this._entity];
     if (!rec) { this._stopTick(); return; }
     const now = Date.now();
+    const born = rec.createdTs || rec.endTs - (rec.durationS || 0) * 1000;
+    if (now > born + 10000 && !this._findAutomationEntity(rec.autoId)) {
+      this._cleanupFinishedTimers().finally(() => { this.render(); this._syncTick(); });
+      return;
+    }
     if (rec.endTs > now) {
       const el = this.shadowRoot.querySelector('.qt-countdown');
       if (el) el.textContent = this._fmtRemaining(rec.endTs - now);
@@ -133,11 +135,7 @@ class QuickTimerCard extends WeeklyScheduleBase {
     }
     // scaduto: passa ai controlli una volta, poi GC dopo il buffer
     if (!this._expiredRendered) { this._expiredRendered = true; this.render(); }
-    if (now > rec.endTs + 30000) {
-      this._stopTick();
-      this._expiredRendered = false;
-      this._cleanupFinishedTimers().finally(() => { this.render(); this._syncTick(); });
-    }
+    if (now > rec.endTs + 5000) this._cleanupFinishedTimers().finally(() => { this.render(); this._syncTick(); });
   }
   _fmtRemaining(ms) {
     let s = Math.max(0, Math.round(ms / 1000));
@@ -147,33 +145,112 @@ class QuickTimerCard extends WeeklyScheduleBase {
     return h > 0 ? `${h}:${p(m)}:${p(s)}` : `${p(m)}:${p(s)}`;
   }
 
-  // ── Baseline di ripristino ─────────────────────────────────────────────────
-  // Il controllo nativo cambia l'entità "live": per ripristinare lo stato PRIMA che
-  // l'utente toccasse il controllo, teniamo l'ultimo stato stabile. Durante una raffica
-  // di modifiche NON aggiorniamo il baseline (resta il valore pre-raffica); quando lo
-  // stato resta fermo per SETTLE_MS il nuovo stato diventa il baseline.
+  // ── Stato-bozza del controllo nativo ───────────────────────────────────────
 
-  _trackBaseline() {
-    const eid = this._entity;
-    if (!eid || !this._hass) return;
-    const st = this._hass.states[eid];
-    if (!st) return;
-    if (this._activeTimer()) return;          // congelato: il restore è già nel record del timer
-    const restore = this._buildRestoreActions(eid);
-    const sig = JSON.stringify(restore);
-    if (!this._baselineInit) {
-      this._settledRestore = restore;
-      this._lastSig = sig;
-      this._baselineInit = true;
-      return;
+  _cloneState(st) {
+    return st ? { ...st, attributes: { ...(st.attributes || {}) }, context: { ...(st.context || {}) } } : null;
+  }
+
+  _syncDraftFromEntity(force = false) {
+    if (!this._entity || !this._hass || this._activeTimer()) return;
+    const real = this._hass.states[this._entity];
+    if (!real) return;
+    if (force || !this._draftState || !this._draftDirty) this._draftState = this._cloneState(real);
+  }
+
+  _draftHassObject() {
+    if (!this._hass || !this._draftState || this._activeTimer()) return this._hass;
+    const real = this._hass;
+    const draft = Object.create(real);
+    draft.states = { ...real.states, [this._entity]: this._draftState };
+    draft.callService = (domain, service, data = {}, target = {}) => {
+      const raw = target?.entity_id ?? data?.entity_id;
+      const ids = Array.isArray(raw) ? raw : (raw ? [raw] : []);
+      if (ids.length === 1 && ids[0] === this._entity) {
+        this._applyDraftService(domain, service, data);
+        return Promise.resolve();
+      }
+      return Promise.reject(new Error('Quick Timer draft blocked a service call for another entity'));
+    };
+    draft.callWS = msg => {
+      if (msg?.type === 'call_service') {
+        const data = msg.service_data || {};
+        const target = msg.target || {};
+        const raw = target.entity_id ?? data.entity_id;
+        const ids = Array.isArray(raw) ? raw : (raw ? [raw] : []);
+        if (ids.length === 1 && ids[0] === this._entity)
+          return draft.callService(msg.domain, msg.service, data, target);
+        return Promise.reject(new Error('Quick Timer draft blocked a service call for another entity'));
+      }
+      return real.callWS(msg);
+    };
+    this._draftHass = draft;
+    return draft;
+  }
+
+  _updateChildHass() {
+    if (this._childCard && this._hass) this._childCard.hass = this._draftHassObject();
+  }
+
+  _applyDraftService(domain, service, rawData = {}) {
+    if (!this._draftState) return;
+    const data = { ...rawData }; delete data.entity_id;
+    const st = this._cloneState(this._draftState);
+    const a = st.attributes;
+    const dom = this._detectDomain(this._entity);
+    const turnOn = service === 'turn_on' || (domain === 'homeassistant' && service === 'toggle' && st.state === 'off');
+    const turnOff = service === 'turn_off' || (domain === 'homeassistant' && service === 'toggle' && st.state !== 'off');
+    if (turnOn) st.state = dom === 'lock' ? 'locked' : (dom === 'cover' || dom === 'valve' ? 'open' : 'on');
+    if (turnOff) st.state = dom === 'lock' ? 'unlocked' : (dom === 'cover' || dom === 'valve' ? 'closed' : 'off');
+    if (domain === 'lock' && service === 'lock') st.state = 'locked';
+    if (domain === 'lock' && service === 'unlock') st.state = 'unlocked';
+    if (domain === 'climate') {
+      if (service === 'turn_on') st.state = (a.hvac_modes || []).find(m => m !== 'off') || 'heat';
+      if (service === 'set_hvac_mode') st.state = data.hvac_mode;
+      if (service === 'set_temperature') {
+        if (data.hvac_mode) st.state = data.hvac_mode;
+        if (data.temperature != null) a.temperature = data.temperature;
+        if (data.target_temp_low != null) a.target_temp_low = data.target_temp_low;
+        if (data.target_temp_high != null) a.target_temp_high = data.target_temp_high;
+      }
+      if (service === 'set_preset_mode') a.preset_mode = data.preset_mode;
+      if (service === 'set_fan_mode') a.fan_mode = data.fan_mode;
+      if (service === 'set_swing_mode') a.swing_mode = data.swing_mode;
+    } else if (domain === 'light' && service === 'turn_on') {
+      st.state = 'on';
+      if (data.brightness != null) a.brightness = data.brightness;
+      if (data.brightness_pct != null) a.brightness = Math.round(data.brightness_pct * 255 / 100);
+      for (const k of ['rgb_color', 'rgbw_color', 'rgbww_color', 'hs_color', 'xy_color', 'color_temp_kelvin', 'effect']) if (data[k] != null) a[k] = data[k];
+      if (data.rgb_color != null) a.color_mode = 'rgb';
+      else if (data.rgbw_color != null) a.color_mode = 'rgbw';
+      else if (data.rgbww_color != null) a.color_mode = 'rgbww';
+      else if (data.hs_color != null) a.color_mode = 'hs';
+      else if (data.xy_color != null) a.color_mode = 'xy';
+      else if (data.color_temp_kelvin != null) a.color_mode = 'color_temp';
+    } else if (domain === 'fan') {
+      if (service === 'set_percentage' || data.percentage != null) { st.state = 'on'; a.percentage = data.percentage; }
+      if (service === 'set_preset_mode') { st.state = 'on'; a.preset_mode = data.preset_mode; }
+      if (service === 'oscillate') a.oscillating = data.oscillating;
+      if (service === 'set_direction') a.direction = data.direction;
+    } else if (domain === 'cover' || domain === 'valve') {
+      if (service.startsWith('open_')) st.state = 'open';
+      if (service.startsWith('close_')) st.state = 'closed';
+      if (service.startsWith('set_')) {
+        a.current_position = data.position;
+        st.state = Number(data.position) === 0 ? 'closed' : 'open';
+      }
+    } else if (domain === 'humidifier') {
+      if (service === 'set_humidity') a.humidity = data.humidity;
+      if (service === 'set_mode') a.mode = data.mode;
+    } else if (domain === 'water_heater') {
+      if (service === 'turn_on') st.state = (a.operation_list || []).find(m => m !== 'off') || 'on';
+      if (service === 'set_temperature') a.temperature = data.temperature;
+      if (service === 'set_operation_mode') st.state = data.operation_mode;
     }
-    if (sig === this._lastSig) return;        // nessun cambiamento
-    this._lastSig = sig;                      // NON tocco _settledRestore: resta lo stato pre-modifica
-    if (this._baselineDebounce) clearTimeout(this._baselineDebounce);
-    this._baselineDebounce = setTimeout(() => {
-      this._baselineDebounce = null;
-      if (!this._activeTimer()) this._settledRestore = this._buildRestoreActions(eid);
-    }, this._BASELINE_SETTLE_MS);
+    st.last_changed = new Date().toISOString(); st.last_updated = st.last_changed;
+    this._draftState = st;
+    this._draftDirty = true;
+    this._updateChildHass();
   }
 
   // ── Render ────────────────────────────────────────────────────────────────
@@ -218,10 +295,19 @@ class QuickTimerCard extends WeeklyScheduleBase {
     try {
       const helpers = await window.loadCardHelpers();
       const el = helpers.createCardElement(this._buildNativeCardConfig());
-      el.hass = this._hass;
+      el.hass = this._draftHassObject();
       this._childCard = el;
       const host = this.shadowRoot.querySelector('.qt-native');
-      if (host) { host.innerHTML = ''; host.appendChild(el); }
+      if (host) {
+        // more-info vive fuori dalla card incorporata e riceverebbe il vero hass. Fermarlo
+        // durante la bozza evita modifiche reali; durante un timer resta invece disponibile.
+        if (!host._qtMoreInfoGuard) {
+          host.addEventListener('hass-more-info', ev => this._guardDraftMoreInfo(ev), true);
+          host._qtMoreInfoGuard = true;
+        }
+        host.innerHTML = '';
+        host.appendChild(el);
+      }
     } catch (e) {
       console.error('QT: embed card nativa fallito', e);
       const host = this.shadowRoot.querySelector('.qt-native');
@@ -231,9 +317,10 @@ class QuickTimerCard extends WeeklyScheduleBase {
 
   _buildNativeCardConfig() {
     // YAML: blocco `card:` con la config completa di qualsiasi card HA (type + opzioni).
-    // L'entity di default è quella della quick-timer-card (l'eventuale entity nel blocco vince).
-    if (this._config.card) return { entity: this._entity, ...this._config.card };
-    if (this._config.tile) return { type: 'tile', entity: this._entity, ...this._config.tile };
+    // La card incorporata deve controllare la stessa entità: i suoi service call vengono
+    // intercettati e applicati alla bozza, non a Home Assistant.
+    if (this._config.card) return { ...this._config.card, entity: this._entity };
+    if (this._config.tile) return { type: 'tile', ...this._config.tile, entity: this._entity };
     const dom = this._detectDomain(this._entity);
     const caps = this._entityCaps(this._entity);
     const features = [];
@@ -253,6 +340,13 @@ class QuickTimerCard extends WeeklyScheduleBase {
     if (this._config.name) cfg.name = this._config.name;
     if (features.length) cfg.features = features;
     return cfg;
+  }
+
+  _guardDraftMoreInfo(ev) {
+    if (this._activeTimer()) return;
+    ev.preventDefault?.();
+    ev.stopImmediatePropagation?.();
+    ev.stopPropagation?.();
   }
 
   _activeHtml(t) {
@@ -337,11 +431,18 @@ class QuickTimerCard extends WeeklyScheduleBase {
     return st.state === 'off' ? this.t('qtimer.off') : this.t('qtimer.on');
   }
 
+  _isSupportedEntity(eid) {
+    return ['light', 'fan', 'cover', 'valve', 'climate', 'lock', 'humidifier',
+      'water_heater', 'switch', 'input_boolean'].includes(this._detectDomain(eid));
+  }
+
   // ── Azioni di ripristino esplicite (NIENTE scene) ─────────────────────────
 
-  _buildRestoreActions(eid) {
-    const st = this._hass.states[eid];
-    if (!st) return [];
+  _buildRestoreActions(eid, state = null) {
+    const st = state || this._hass.states[eid];
+    // Non inventare uno stato ripristinabile per entità assenti/non disponibili: un timer
+    // avviato in queste condizioni potrebbe spegnere l'entità appena torna online.
+    if (!st || !st.state || st.state === 'unavailable' || st.state === 'unknown') return [];
     const dom = this._detectDomain(eid);
     const a = st.attributes || {};
     const tgt = { entity_id: eid };
@@ -351,14 +452,22 @@ class QuickTimerCard extends WeeklyScheduleBase {
       const data = {};
       if (a.brightness != null) data.brightness = a.brightness;
       if (a.color_mode === 'color_temp' && a.color_temp_kelvin != null) data.color_temp_kelvin = a.color_temp_kelvin;
+      else if (a.color_mode === 'rgbww' && a.rgbww_color) data.rgbww_color = a.rgbww_color;
+      else if (a.color_mode === 'rgbw' && a.rgbw_color) data.rgbw_color = a.rgbw_color;
       else if (a.rgb_color) data.rgb_color = a.rgb_color;
       else if (a.hs_color) data.hs_color = a.hs_color;
+      else if (a.xy_color) data.xy_color = a.xy_color;
+      if (a.effect && a.effect !== 'none') data.effect = a.effect;
       return [{ service: 'light.turn_on', target: tgt, data }];
     }
     if (dom === 'fan') {
       if (st.state !== 'on') return [{ service: 'fan.turn_off', target: tgt }];
       const data = {}; if (a.percentage != null) data.percentage = a.percentage;
-      return [{ service: 'fan.turn_on', target: tgt, data }];
+      const out = [{ service: 'fan.turn_on', target: tgt, data }];
+      if (a.preset_mode) out.push({ service: 'fan.set_preset_mode', target: tgt, data: { preset_mode: a.preset_mode } });
+      if (a.oscillating != null) out.push({ service: 'fan.oscillate', target: tgt, data: { oscillating: a.oscillating } });
+      if (a.direction) out.push({ service: 'fan.set_direction', target: tgt, data: { direction: a.direction } });
+      return out;
     }
     if (dom === 'cover') {
       if (a.current_position != null) return [{ service: 'cover.set_cover_position', target: tgt, data: { position: a.current_position } }];
@@ -369,10 +478,19 @@ class QuickTimerCard extends WeeklyScheduleBase {
       return [{ service: `valve.${st.state === 'open' ? 'open_valve' : 'close_valve'}`, target: tgt }];
     }
     if (dom === 'climate') {
-      const out = [];
-      if (st.state) out.push({ service: 'climate.set_hvac_mode', target: tgt, data: { hvac_mode: st.state } });
-      if (a.temperature != null) out.push({ service: 'climate.set_temperature', target: tgt, data: { temperature: a.temperature } });
-      if (a.preset_mode) out.push({ service: 'climate.set_preset_mode', target: tgt, data: { preset_mode: a.preset_mode } });
+      if (!st.state || st.state === 'unavailable' || st.state === 'unknown') return [];
+      const params = [];
+      const temp = {};
+      if (a.target_temp_low != null || a.target_temp_high != null) {
+        if (a.target_temp_low != null) temp.target_temp_low = a.target_temp_low;
+        if (a.target_temp_high != null) temp.target_temp_high = a.target_temp_high;
+      } else if (a.temperature != null) temp.temperature = a.temperature;
+      if (Object.keys(temp).length) params.push({ service: 'climate.set_temperature', target: tgt, data: temp });
+      if (a.preset_mode) params.push({ service: 'climate.set_preset_mode', target: tgt, data: { preset_mode: a.preset_mode } });
+      if (a.fan_mode) params.push({ service: 'climate.set_fan_mode', target: tgt, data: { fan_mode: a.fan_mode } });
+      if (a.swing_mode) params.push({ service: 'climate.set_swing_mode', target: tgt, data: { swing_mode: a.swing_mode } });
+      const mode = { service: 'climate.set_hvac_mode', target: tgt, data: { hvac_mode: st.state } };
+      const out = st.state === 'off' ? [...params, mode] : [mode, ...params];
       return out;
     }
     if (dom === 'lock') {
@@ -391,32 +509,63 @@ class QuickTimerCard extends WeeklyScheduleBase {
       if (a.temperature != null) out.push({ service: 'water_heater.set_temperature', target: tgt, data: { temperature: a.temperature } });
       return out.length ? out : [{ service: 'water_heater.turn_off', target: tgt }];
     }
-    return [{ service: `${dom}.turn_${on ? 'on' : 'off'}`, target: tgt }];
+    const svcDom = ['switch', 'input_boolean'].includes(dom) ? dom : 'homeassistant';
+    return [{ service: `${svcDom}.turn_${on ? 'on' : 'off'}`, target: tgt }];
   }
 
-  _buildTimerAutomation(eid, autoId, durationS, restore) {
-    const p = n => String(n).padStart(2, '0');
-    const hh = Math.floor(durationS / 3600), mm = Math.floor((durationS % 3600) / 60), ss = Math.floor(durationS % 60);
-    const win = Math.round(durationS);
-    // GUARDIA "vince l'ultimo attivato": salta il revert se uno schedule WSC è entrato in slot
-    // (current_slot, state!=off) su questa entità DOPO l'avvio del timer (last_changed > now()-durata).
-    const guard = `{% set ns = namespace(a=false) %}{% for s in states.switch if s.entity_id.startswith('switch.schedule_') and s.state != 'off' and state_attr(s.entity_id, 'current_slot') is not none and '${eid}' in (s.attributes.entities | default([])) and s.last_changed.timestamp() > (now().timestamp() - ${win}) %}{% set ns.a = true %}{% endfor %}{{ not ns.a }}`;
+  _buildApplyActions(eid) {
+    return this._buildRestoreActions(eid, this._draftState || this._hass.states[eid]);
+  }
+
+  _scheduleIdsForEntity(eid) {
+    const found = [];
+    for (const s of Object.values(this._hass.states || {})) {
+      if (!s.entity_id.startsWith('switch.schedule_')) continue;
+      const ids = new Set(Array.isArray(s.attributes?.entities) ? s.attributes.entities : []);
+      for (const a of (s.attributes?.actions || [])) {
+        const raw = a?.entity_id ?? a?.target?.entity_id ?? a?.service_data?.entity_id ?? a?.data?.entity_id;
+        for (const id of (Array.isArray(raw) ? raw : [raw])) if (typeof id === 'string') ids.add(id);
+      }
+      if (ids.has(eid)) found.push(s.entity_id);
+    }
+    return found;
+  }
+
+  _buildTimerAutomation(eid, autoId, runId, createdTs, endTs, restore) {
+    const schedules = this._scheduleIdsForEntity(eid);
+    const triggers = [
+      { platform: 'time_pattern', seconds: '/5', id: 'watchdog' },
+      { platform: 'homeassistant', event: 'start', id: 'startup' },
+    ];
+    if (schedules.length) {
+      triggers.push({ platform: 'state', entity_id: schedules, id: 'schedule_state' });
+      triggers.push({ platform: 'state', entity_id: schedules, attribute: 'current_slot', id: 'schedule_slot' });
+    }
+    const cleanup = [{
+      service: 'script.turn_on',
+      target: { entity_id: 'script.wsc_quick_timer_cleanup' },
+      data: { variables: { automation_id: autoId, run_id: runId } },
+    }];
+    const knownSchedules = JSON.stringify(schedules);
+    const triggeredTakeover = `trigger.id in ['schedule_state','schedule_slot'] and trigger.from_state is not none and trigger.to_state is not none and trigger.to_state.state != 'off' and (trigger.to_state.attributes.current_slot | default(none)) is not none and (trigger.from_state.state == 'off' or (trigger.from_state.attributes.current_slot | default(none)) != (trigger.to_state.attributes.current_slot | default(none)))`;
+    // Safety net for a schedule created after this timer: static state triggers cannot know its
+    // entity_id, so the 5-second watchdog discovers only previously unknown active schedules.
+    const newScheduleTakeover = `{% set known = ${knownSchedules} %}{% set ns = namespace(hit=false) %}{% for s in states.switch if s.entity_id.startswith('switch.schedule_') and s.entity_id not in known and s.state != 'off' and state_attr(s.entity_id, 'current_slot') is not none %}{% if '${eid}' in (s.attributes.entities | default([], true)) %}{% set ns.hit = true %}{% endif %}{% for a in (s.attributes.actions | default([], true)) %}{% set at = a.get('target') or {} %}{% set sd = a.get('service_data') or a.get('data') or {} %}{% set target = a.get('entity_id') or at.get('entity_id') or sd.get('entity_id') %}{% if target == '${eid}' or (target is iterable and target is not string and '${eid}' in target) %}{% set ns.hit = true %}{% endif %}{% endfor %}{% endfor %}{{ ns.hit }}`;
+    const takeover = `{% if ${triggeredTakeover} %}true{% else %}${newScheduleTakeover}{% endif %}`;
+    const expired = `{{ as_timestamp(now()) * 1000 >= ${endTs} }}`;
     return {
       id: autoId,
       alias: `QT Timer - ${eid}`,
-      mode: 'restart',
-      // Forza sempre abilitata alla ricreazione: se un giro precedente l'aveva disabilitata
-      // (es. un DELETE fallito in _cancelTimer che l'ha lasciata orfana e off), senza questo
-      // campo HA la ricrea mantenendo lo stato disabilitato precedente e il delay/restore non
-      // parte mai più finché non la si riabilita a mano. Stesso pattern di _syncOverrideFlag.
+      description: `Auto-generated by Weekly Schedule Card quick timer (${runId}). Do not edit.`,
+      mode: 'single',
+      max_exceeded: 'silent',
       initial_state: true,
-      trigger: [{ platform: 'template', value_template: '{{ false }}' }],
+      trigger: triggers,
       condition: [],
-      action: [
-        { delay: `${p(hh)}:${p(mm)}:${p(ss)}` },
-        { condition: 'template', value_template: guard },
-        ...restore,
-      ],
+      action: [{ choose: [
+        { conditions: [{ condition: 'template', value_template: takeover }], sequence: cleanup },
+        { conditions: [{ condition: 'template', value_template: expired }], sequence: [...restore, ...cleanup] },
+      ] }],
     };
   }
 
@@ -487,12 +636,22 @@ class QuickTimerCard extends WeeklyScheduleBase {
     const durationS = this._readDurationSeconds(root);
     if (!durationS || durationS < 1) { await this._alert(this.t('qtimer.bad_duration')); return; }
 
+    if (!this._isSupportedEntity(eid)) {
+      await this._alert(`Quick Timer cannot safely restore ${eid}. Choose a light, fan, cover, valve, climate, lock, humidifier, water heater, switch or input boolean.`);
+      return;
+    }
+
+    if (!this._hass.states['script.wsc_quick_timer_cleanup']) {
+      await this._alert('Quick Timer server support is not installed. Install packages/quick_timer.yaml and restart Home Assistant.');
+      return;
+    }
+
     this._starting = true;
-    // 1) acquisizione stato (target di ripristino = baseline pre-modifica)
+    // 1) snapshot reale + azioni temporanee dalla card-bozza
     this._setFootStatus(this.t('qtimer.acquiring'), 'progress');
-    await this._sleep(200);                      // rende percepibile lo step (l'acquisizione è istantanea)
-    const existing = this._activeTimer();
-    const restore = existing?.restore || this._settledRestore || this._buildRestoreActions(eid);
+    const current = this._hass.states[eid];
+    const restore = this._buildRestoreActions(eid, current);
+    const apply = this._buildApplyActions(eid);
     if (!restore || !restore.length) {
       this._setFootStatus(this.t('qtimer.acquire_failed'), 'error');
       this._starting = false;
@@ -500,45 +659,34 @@ class QuickTimerCard extends WeeklyScheduleBase {
       if (!this._activeTimer()) this.render();   // ripristina il pulsante "Avvia"
       return;
     }
-    // 2) stato acquisito (resta visibile durante la creazione dell'automazione)
+    if (!apply || !apply.length) {
+      this._setFootStatus(this.t('qtimer.start_failed'), 'error');
+      this._starting = false;
+      await this._sleep(2500);
+      this.render();
+      return;
+    }
     this._setFootStatus(this.t('qtimer.acquired', { state: this._restoreLabel(restore, eid) }), 'ok');
 
+    const runId = `${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
+    const autoId = `qt_timer_${this._slug(eid)}_${runId}`;
+    const createdTs = Date.now();
+    const endTs = createdTs + durationS * 1000;
+    const record = { runId, createdTs, endTs, autoId, restore, apply, label: this._actionsLabel(apply, eid), durationS };
+    let applyStarted = false;
     try {
-      const autoId = `qt_timer_${this._slug(eid)}`;
-      await this._recreateAutomation(autoId, this._buildTimerAutomation(eid, autoId, durationS, restore));
-      const ent = await this._resolveAutomationEntity(autoId);
-
-      // automation.trigger is a KNOWN HA quirk: unlike a real state-change trigger (which HA
-      // dispatches as a detached background task), calling this service directly awaits the
-      // WHOLE action script to completion — INCLUDING its own `delay` step. Without this race,
-      // the card would freeze on "acquired" for the entire timer duration, then compute
-      // endTs from THAT (already-late) moment and show a second, bogus countdown that doesn't
-      // correspond to any further action (real bug, reported+diagnosed against a live HA
-      // instance: a 5-min timer showed nothing for 5 min, then a fresh "5 min left" countdown,
-      // and the automation lingered ~10 min total before cleanup).
-      // Real failures (bad entity, missing service) surface near-instantly, before any delay
-      // runs — so racing against a short ack window keeps the original "no ghost timer on
-      // failure" safety for those, without blocking the UI for the success path.
-      const TRIGGER_ACK_MS = 2500;
-      const triggerPromise = this._hass.callService('automation', 'trigger', { entity_id: ent });
-      const early = await Promise.race([
-        triggerPromise.then(() => ({ settled: true, ok: true })).catch(err => ({ settled: true, ok: false, error: err })),
-        this._sleep(TRIGGER_ACK_MS).then(() => ({ settled: false })),
-      ]);
-      if (early.settled && !early.ok) throw early.error;
-      if (!early.settled) {
-        // Not settled yet within the ack window: assume accepted, keep watching in the
-        // background so a genuine (rare) late failure still gets cleaned up instead of
-        // leaving a ghost timer that will never actually restore anything.
-        triggerPromise.catch(err => this._handleLateTriggerFailure(eid, autoId, err));
-      }
-
-      // 3) timer avviato → salva record e mostra countdown
+      await this._recreateAutomation(autoId, this._buildTimerAutomation(eid, autoId, runId, createdTs, endTs, restore));
+      await this._resolveAutomationEntity(autoId);
       this._timers = this._timers || {};
-      this._timers[eid] = { endTs: Date.now() + durationS * 1000, autoId, restore, label: this._heldLabel(eid), durationS };
+      this._timers[eid] = record;
       this._expiredRendered = false;
       await this._saveTimers();
+
+      // Solo ora cambia l'entità reale. Se un servizio fallisce, il catch ripristina e pulisce.
+      applyStarted = true;
+      for (const a of apply) await this._callAction(a);
       this._starting = false;
+      this._updateChildHass();
       this.render();
     } catch (e) {
       // Stampa un riassunto leggibile in cima (i rifiuti di hass.callService arrivano come
@@ -546,61 +694,136 @@ class QuickTimerCard extends WeeklyScheduleBase {
       // scomodo da leggere senza sapere come espanderlo). L'oggetto raw resta comunque loggato.
       const detail = e?.error ? `${e.error.code || ''} ${e.error.message || ''}`.trim() || JSON.stringify(e.error) : (e?.message || String(e));
       console.error(`QT startTimer failed: ${detail}`, e);
+      let rollbackOk = true;
+      if (applyStarted) {
+        for (const a of restore) {
+          try { await this._callAction(a); }
+          catch (restoreError) { rollbackOk = false; console.error('QT rollback failed', restoreError); }
+        }
+      }
+      let cleanupOk = false;
+      if (rollbackOk) {
+        try { await this._deleteAutomation(autoId, runId); cleanupOk = true; }
+        catch (cleanupError) { console.error('QT cleanup after failed start failed', cleanupError); }
+      }
+      if (cleanupOk) {
+        if (this._timers?.[eid]?.runId === runId) {
+          delete this._timers[eid];
+          try { await this._saveTimers(); } catch {}
+        }
+      } else {
+        // Se restore o cleanup non sono confermati, conservare automazione + record è il
+        // comportamento fail-safe: il watchdog server potrà riprovare a scadenza.
+        this._timers = this._timers || {};
+        this._timers[eid] = record;
+        try { await this._saveTimers(); } catch {}
+        const ent = await this._resolveAutomationEntity(autoId, 1000);
+        try { await this._hass.callService('automation', 'turn_on', { entity_id: ent }); } catch {}
+        await this._alert('Quick Timer could not complete its rollback or cleanup. The timer was kept so Home Assistant can retry safely.');
+      }
       this._setFootStatus(this.t('qtimer.start_failed'), 'error');
       this._starting = false;
       await this._sleep(2500);
-      if (!this._activeTimer()) this.render();
+      this.render();
     }
   }
 
-  // Catches a trigger failure that arrives AFTER the ack-window race already let the countdown
-  // show (see _startTimer). Rare (real failures usually surface immediately), but without this
-  // a failed trigger would leave a ghost timer counting down to a restore that never happens.
-  // Guarded against being superseded by a newer timer/cancel for the same entity in the meantime.
-  async _handleLateTriggerFailure(eid, autoId, e) {
-    const detail = e?.error ? `${e.error.code || ''} ${e.error.message || ''}`.trim() || JSON.stringify(e.error) : (e?.message || String(e));
-    console.error(`QT background trigger failed for ${eid}: ${detail}`, e);
-    const t = this._timers?.[eid];
-    if (!t || t.autoId !== autoId) return; // already cancelled or superseded — nothing to undo
-    delete this._timers[eid];
-    try { await this._saveTimers(); } catch {}
-    try { await this._hass.callApi('DELETE', `config/automation/config/${autoId}`); } catch {}
-    if (this._entity !== eid) return;
-    this._setFootStatus(this.t('qtimer.start_failed'), 'error');
-    await this._sleep(2500);
-    if (!this._activeTimer()) this.render();
+  _actionsLabel(actions, eid) {
+    return this._restoreLabel(actions, eid);
+  }
+
+  _findAutomationEntity(autoId) {
+    return Object.values(this._hass.states || {}).find(s => s.entity_id.startsWith('automation.') && s.attributes?.id === autoId)?.entity_id || null;
+  }
+
+  async _requestServerCleanup(autoId, runId = '') {
+    await this._hass.callService('script', 'turn_on', {
+      entity_id: 'script.wsc_quick_timer_cleanup',
+      variables: { automation_id: autoId, run_id: runId },
+    });
+  }
+
+  async _deleteAutomation(autoId, runId = '') {
+    try { await this._hass.callApi('DELETE', `config/automation/config/${autoId}`); return; }
+    catch (e) {
+      console.warn('QT direct automation delete failed; delegating to server cleanup', e);
+      await this._requestServerCleanup(autoId, runId);
+      const deadline = Date.now() + 15000;
+      while (Date.now() < deadline) {
+        if (!this._findAutomationEntity(autoId)) return;
+        await this._sleep(500);
+      }
+      throw new Error(`Quick Timer cleanup did not delete ${autoId}`);
+    }
   }
 
   async _cancelTimer(eid) {
+    if (this._cancelling) return;
     const t = this._timers?.[eid];
     if (!t) { this.render(); return; }
-    const ent = await this._resolveAutomationEntity(t.autoId, 2000);
-    try { await this._hass.callService('automation', 'turn_off', { entity_id: ent }); } catch {}
-    try { await this._hass.callApi('DELETE', `config/automation/config/${t.autoId}`); } catch {}
-    for (const a of (t.restore || [])) { try { await this._callAction(a); } catch (e) { console.error('QT restore-now failed', e); } }
-    delete this._timers[eid];
-    await this._saveTimers();
-    this.render();
+    this._cancelling = true;
+    try {
+      const ent = await this._resolveAutomationEntity(t.autoId, 2000);
+      try { await this._hass.callService('automation', 'turn_off', { entity_id: ent }); } catch {}
+      try {
+        for (const a of (t.restore || [])) await this._callAction(a);
+      } catch (e) {
+        console.error('QT restore-now failed', e);
+        try { await this._hass.callService('automation', 'turn_on', { entity_id: ent }); } catch {}
+        await this._alert('Restore failed. The timer was kept so Home Assistant can retry.');
+        return;
+      }
+      try { await this._deleteAutomation(t.autoId, t.runId); }
+      catch (e) {
+        console.error('QT cleanup after cancel failed', e);
+        // Il restore è già riuscito, ma lasciarla spenta la renderebbe un orfano senza retry.
+        try { await this._hass.callService('automation', 'turn_on', { entity_id: ent }); } catch {}
+        await this._alert('The entity was restored, but cleanup failed. The timer was kept enabled so Home Assistant can retry deleting it.');
+        return;
+      }
+      delete this._timers[eid];
+      try { await this._saveTimers(); }
+      catch (e) { console.error('QT save after cancel failed', e); }
+      this._draftState = null; this._draftDirty = false; this._syncDraftFromEntity(true);
+      this._updateChildHass();
+      this.render();
+    } finally {
+      this._cancelling = false;
+    }
   }
 
   async _cleanupFinishedTimers() {
-    if (!this._timers) return;
+    if (!this._timers || this._cleaningTimers) return;
+    this._cleaningTimers = true;
     const now = Date.now();
     let changed = false;
-    for (const [eid, t] of Object.entries(this._timers)) {
-      if (now > t.endTs + 30000) {   // buffer: il revert lato server è già scattato
-        try { await this._hass.callApi('DELETE', `config/automation/config/${t.autoId}`); } catch {}
-        delete this._timers[eid];
-        changed = true;
+    try {
+      for (const [eid, t] of Object.entries(this._timers)) {
+        // Migrazione best-effort dei timer creati da versioni precedenti, che non avevano
+        // runId né cleanup server-side.
+        if (!t.runId && now > t.endTs + 30000) {
+          try { await this._deleteAutomation(t.autoId); } catch {}
+          delete this._timers[eid]; changed = true; continue;
+        }
+        // L'assenza dell'automazione è la conferma di cleanup. Non cancellare mai lato browser
+        // un'automazione nuova scaduta ancora presente: potrebbe essere rimasta per ritentare.
+        if (now > (t.createdTs || t.endTs - (t.durationS || 0) * 1000) + 10000 && !this._findAutomationEntity(t.autoId)) {
+          delete this._timers[eid];
+          changed = true;
+        }
       }
-    }
-    if (changed) await this._saveTimers();
+      if (changed) {
+        await this._saveTimers();
+        this._draftState = null; this._draftDirty = false; this._syncDraftFromEntity(true);
+        this._updateChildHass();
+      }
+    } finally { this._cleaningTimers = false; }
   }
 
   async _saveTimers() {
     this._qtWriteCount++; // invalida ogni refetch già in volo iniziato prima di questa scrittura
     try { await WeeklyScheduleBase._sharedSet(this._hass, 'quick_timer_card', { timers: this._timers || {} }); }
-    catch (e) { console.error('QT saveTimers failed', e); }
+    catch (e) { console.error('QT saveTimers failed', e); throw e; }
   }
 
   // ── Stili ─────────────────────────────────────────────────────────────────
@@ -678,7 +901,10 @@ class QuickTimerCardEditor extends WeeklyScheduleBase {
 
   _schema() {
     return [
-      { name: 'entity', required: true, selector: { entity: {} } },
+      { name: 'entity', required: true, selector: { entity: { domain: [
+        'light', 'fan', 'cover', 'valve', 'climate', 'lock', 'humidifier',
+        'water_heater', 'switch', 'input_boolean',
+      ] } } },
       { name: 'name', selector: { text: {} } },
       { name: 'default_minutes', selector: { number: { min: 1, mode: 'box' } } },
       { name: 'presets', selector: { text: {} } },

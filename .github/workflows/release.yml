@@ -4,9 +4,8 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: 'Version tag (e.g. v1.3.5)'
+        description: 'Version tag (e.g. v1.4.0)'
         required: true
-        default: 'v1.3.5'
 
 jobs:
   release:
@@ -29,23 +28,10 @@ jobs:
         with:
           tag_name: ${{ github.event.inputs.version }}
           name: ${{ github.event.inputs.version }}
+          generate_release_notes: true
           files: |
             dist/weekly-schedule-card.js
             dist/weekly-schedule-view-card.js
             dist/quick-timer-card.js
             dist/weekly-serpentine-card.js
-          body: |
-            ## ${{ github.event.inputs.version }} — 9 nuove lingue UI
-
-            ### Internazionalizzazione
-            - Aggiunte **9 lingue** all'interfaccia, oltre a inglese/italiano/francese:
-              **spagnolo (es), portoghese (pt), tedesco (de), olandese (nl), polacco (pl),
-              svedese (sv), norvegese (no), danese (da), ceco (cs)**. Rilevamento automatico
-              dalla lingua di Home Assistant (o via `language:` nella config della card).
-            - Scelta delle lingue basata sulla distribuzione geografica reale degli utenti HA
-              (HA Analytics): coperti i maggiori bacini d'installazione non ancora inclusi.
-            - Nessuna funzione esistente modificata: aggiunta puramente additiva alle stringhe.
-
-            ### Aggiornare
-            - **HACS**: Update → Ctrl-F5.
-            - **Manuale**: scarica `weekly-schedule-card.js` (Assets) → in `/config/www/` → Ctrl-F5.
+            packages/quick_timer.yaml
