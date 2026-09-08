@@ -570,6 +570,7 @@ class WeeklyScheduleMiniCard extends HTMLElement {
     const allSched=Object.values(states)
       .filter(s=>s.entity_id.startsWith('switch.schedule_'))
       .filter(s=>!(s.attributes.tags||[]).includes('weekly_schedule_auto'))
+      .filter(s=>!WeeklyScheduleBase._isQuickTimerSchedule(s))
       .filter(entFilter);
 
     const activeAll=allSched.filter(s=>s.state!=='off'&&this._isActiveNow(s));

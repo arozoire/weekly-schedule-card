@@ -107,7 +107,7 @@ class WeeklySerpentineCard extends WeeklyScheduleBase {
   }
 
   _blocksFor(entity, dayIndex, nowInfo) {
-    const scheds = this._getSchedules(entity).filter(s => !(s.attributes.tags || []).includes('weekly_schedule_auto'));
+    const scheds = this._getSchedules(entity).filter(s => !this._isInternalSchedule(s));
     const out = [];
     for (const s of scheds) {
       if (!this._appliesToDay(s.attributes.weekdays || [], dayIndex)) continue;
