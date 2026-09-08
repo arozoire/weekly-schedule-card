@@ -37,8 +37,8 @@ const climateState = (overrides = {}) => ({
   const restore = card._buildRestoreActions('climate.office');
   assert.deepEqual(restore.map(a => a.service), [
     'climate.set_hvac_mode',
-    'climate.set_temperature',
     'climate.set_preset_mode',
+    'climate.set_temperature',
     'climate.set_fan_mode',
     'climate.set_swing_mode',
   ]);
@@ -305,6 +305,7 @@ const climateState = (overrides = {}) => ({
   card._hass = { states: {}, callService: async (domain, service) => { serviceCalls.push(`${domain}.${service}`); } };
   card._resolveAutomationEntity = async () => 'automation.qt_test';
   card._callAction = async () => {};
+  card._saveTimers = async () => {};
   card._deleteAutomation = async () => { throw new Error('delete failed'); };
   card._alert = async () => {};
   const savedError = console.error;
@@ -394,6 +395,148 @@ const climateState = (overrides = {}) => ({
     },
   };
   assert.equal(card._hassChangedRelevant(scheduleBefore, scheduleAfter), true);
+}
+
+// Regression: HA native features consume Lit contexts, ignoring child.hass.
+// Protocol: frontend/src/data/context/index.ts + consume-context-entry.ts.
+{
+  const card = new QuickTimerCard();
+  card._entity = 'climate.office';
+  card._timers = {};
+  let liveCalls = 0;
+  card._hass = {
+    states: { 'climate.office': climateState() },
+    callService: async () => { liveCalls++; },
+    callWS: async () => { liveCalls++; },
+    callApi: async () => { liveCalls++; },
+    connection: { sendMessagePromise: async () => { liveCalls++; } },
+  };
+  let api, states, connection;
+  const disposers = [];
+  let intercepted = 0;
+  for (const [context, receive] of [
+    ['hassApi', value => { api = value; }],
+    ['states', value => { states = value; }],
+    ['connection', value => { connection = value; }],
+  ]) {
+    card._provideDraftContext({
+      context, subscribe: true, stopPropagation() { intercepted++; },
+      callback(value, dispose) { receive(value); disposers.push(dispose); },
+    });
+  }
+  assert.equal(intercepted, 3, 'all sensitive requests stop before HA root provider');
+  await api.callService('climate', 'set_hvac_mode', { hvac_mode: 'fan_only' }, { entity_id: 'climate.office' });
+  await connection.sendMessagePromise({ type: 'call_service', domain: 'climate', service: 'set_fan_mode', service_data: { entity_id: 'climate.office', fan_mode: '100%' } });
+  assert.equal(states['climate.office'].state, 'fan_only');
+  assert.equal(states['climate.office'].attributes.fan_mode, '100%');
+  assert.deepEqual(card._buildApplyActions('climate.office').map(a => a.service), ['climate.set_hvac_mode', 'climate.set_fan_mode'], 'do not apply unrelated old snapshot values');
+  assert.equal(card._hass.states['climate.office'].state, 'cool');
+  assert.equal(liveCalls, 0);
+  await assert.rejects(api.callWS({ type: 'automation/trigger' }));
+  await assert.rejects(api.callApi('POST', 'config/automation/config/unrelated', {}));
+  await assert.rejects(api.callService('switch', 'turn_on', { entity_id: 'switch.unrelated' }));
+  assert.equal(liveCalls, 0, 'unsupported writes cannot escape the draft');
+
+  // Switching to a live running timer must update already-subscribed contexts.
+  card._timers['climate.office'] = { autoId: 'running', endTs: Date.now() + 60000 };
+  card._updateChildHass();
+  await api.callService('climate', 'set_hvac_mode', { hvac_mode: 'cool' });
+  assert.equal(liveCalls, 1);
+  delete card._timers['climate.office'];
+  card._updateChildHass();
+  await api.callService('climate', 'set_hvac_mode', { entity_id: 'climate.office', hvac_mode: 'off' });
+  assert.equal(liveCalls, 1, 'finished timers return to draft API');
+  for (const dispose of disposers) dispose();
+  assert.equal(card._contextSubscriptions.size, 0);
+}
+
+{
+  const card = new QuickTimerCard();
+  card._entity = 'switch.office';
+  card._timers = {};
+  card._hass = { states: { 'switch.office': { entity_id: 'switch.office', state: 'off', attributes: {} } } };
+  const draft = card._draftHassObject();
+  await draft.callService('switch', 'toggle', { entity_id: 'switch.office' });
+  assert.equal(card._draftState.state, 'on');
+  await draft.callService('switch', 'toggle', { entity_id: 'switch.office' });
+  assert.equal(card._draftState.state, 'off');
+  card._entity = 'cover.office';
+  card._draftActions = [];
+  card._draftState = { state: 'open', attributes: { current_position: 70 } };
+  card._applyDraftService('cover', 'close_cover');
+  assert.equal(card._draftState.attributes.current_position, 0);
+  assert.equal(card._buildApplyActions('cover.office')[0].service, 'cover.close_cover');
+  card._entity = 'fan.office';
+  card._draftActions = [];
+  card._draftState = { state: 'on', attributes: { percentage: 60 } };
+  card._applyDraftService('fan', 'set_percentage', { percentage: 0 });
+  assert.equal(card._draftState.state, 'off');
+  assert.equal(card._buildApplyActions('fan.office')[0].data.percentage, 0);
+}
+
+// Realistic preset side effect: it resets the thermostat setpoint.
+{
+  const card = new QuickTimerCard();
+  card._entity = 'climate.office';
+  card._hass = { states: { 'climate.office': climateState() } };
+  let temperature = 30;
+  for (const action of card._buildRestoreActions('climate.office')) {
+    if (action.service === 'climate.set_preset_mode') temperature = 20;
+    if (action.service === 'climate.set_temperature') temperature = action.data.temperature;
+  }
+  assert.equal(temperature, 24, 'restore must survive preset overwriting the setpoint');
+  card._config = { entity: 'climate.office' };
+  card._hass.states['climate.office'].attributes.fan_modes = ['low', 'high'];
+  card._hass.states['climate.office'].attributes.preset_modes = ['none', 'eco'];
+  assert(card._buildNativeCardConfig().features.some(f => f.type === 'climate-fan-modes'));
+  assert(card._buildNativeCardConfig().features.some(f => f.type === 'climate-preset-modes'));
+}
+
+// A failed schedule removal after Cancel must retry cleanup, without a second restore.
+{
+  const card = new QuickTimerCard();
+  const eid = 'switch.office';
+  const scheduleId = 'switch.schedule_wsc_quick_timer_retry';
+  card._entity = eid;
+  card._timers = { [eid]: {
+    runId: 'retry', autoId: 'qt_retry', createdTs: Date.now() - 30000,
+    endTs: Date.now() + 60000, scheduleIds: [scheduleId],
+    restore: [{ service: 'switch.turn_off', target: { entity_id: eid } }],
+  } };
+  let restored = 0, removes = 0, deleted = 0;
+  card._hass = {
+    states: {
+      [scheduleId]: { entity_id: scheduleId, state: 'on', attributes: {} },
+      'automation.qt_retry': { entity_id: 'automation.qt_retry', state: 'on', attributes: { id: 'qt_retry' } },
+    },
+    callService: async () => {},
+  };
+  card._callAction = async () => { restored++; };
+  card._removeQuickSchedules = async () => { if (++removes === 1) throw new Error('temporary failure'); };
+  card._deleteAutomation = async () => { deleted++; };
+  card._saveTimers = async () => {};
+  card._alert = async () => {};
+  card.render = () => {};
+  const log = console.error;
+  console.error = () => {};
+  try { await card._cancelTimer(eid); } finally { console.error = log; }
+  assert.equal(card._timers[eid].phase, 'cleanup');
+  await card._cleanupFinishedTimers();
+  assert.equal(restored, 1);
+  assert.equal(removes, 2);
+  assert.equal(deleted, 1);
+  assert.equal(card._timers[eid], undefined);
+}
+
+{
+  const card = new QuickTimerCard();
+  card._hass = { states: {}, callApi: async () => { throw new Error('network failure'); } };
+  await assert.rejects(card._deleteAutomation('missing-from-state'), /network failure/);
+  await assert.rejects(card._resolveAutomationEntity('missing-from-state', 0), /did not become available/);
+  card._entity = 'switch.office';
+  card._timers = { 'switch.office': { autoId: 'busy', endTs: Date.now() + 60000 } };
+  card._readDurationSeconds = () => { throw new Error('must not begin a second run'); };
+  await card._startTimer({});
 }
 
 console.log('Quick Timer tests passed');
