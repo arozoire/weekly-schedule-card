@@ -1,11 +1,12 @@
 // src/quick-timer-card.js
-// Last modified: 2026-09-07 (server-side quick timer lifecycle)
+// Last modified: 2026-09-08 (temporary Scheduler one-shot lifecycle)
 //
 // Card legata a UNA entità. Il controllo HA incorporato lavora su uno stato-bozza: nessun servizio
-// viene inviato prima di Avvia. Avvia acquisisce lo stato reale, crea un'automazione transitoria
-// server-side, applica la bozza e avvia il countdown. A scadenza l'automazione ripristina e chiede
-// al package packages/quick_timer.yaml di cancellarla. Uno schedule che entra in slot nel frattempo
-// vince: l'automazione viene cancellata senza ripristino.
+// viene inviato prima di Avvia. Avvia acquisisce lo stato reale, crea uno schedule Scheduler
+// transitorio indipendente dai profili e una piccola automazione server-side di controllo, quindi
+// esegue lo schedule. A scadenza l'automazione ripristina e rimuove lo schedule; la card elimina
+// poi l'automazione orfana via API autenticata della sessione HA. Uno schedule normale che entra
+// in slot nel frattempo vince: il Quick Timer viene rimosso senza ripristino.
 
 import WeeklyScheduleBase from './base-card.js';
 
@@ -15,7 +16,7 @@ class QuickTimerCard extends WeeklyScheduleBase {
     this._qtTick = null;
     this._childCard = null;
     this._childBuilding = false;
-    this._timers = null;          // { eid: { runId, createdTs, endTs, autoId, restore[], apply[], label } }
+    this._timers = null;          // { eid: { runId, createdTs, endTs, autoId, scheduleIds[], restore[], apply[], label } }
     this._loadingTimers = false;
     this._qtWriteCount = 0;       // versione scritture locali: un refetch stantio (in volo prima
                                    // di una nostra _saveTimers) va scartato, vedi _saveTimers
@@ -102,8 +103,10 @@ class QuickTimerCard extends WeeklyScheduleBase {
   _activeTimer() {
     const t = this._timers?.[this._entity];
     if (!t) return null;
-    // Dopo la scadenza resta attivo finché l'automazione esiste: se il restore fallisce,
-    // Home Assistant deve poter ritentare invece di permettere un secondo timer concorrente.
+    // Lo schedule transitorio è la fonte di verità del run. Dopo la scadenza resta attivo se
+    // esiste ancora: significa che il restore è in retry e non va avviato un timer concorrente.
+    if (this._quickScheduleIds(t).length) return this._hasQuickSchedule(t) ? t : null;
+    // Compatibilità record creati da v1.4.0 e precedenti.
     return (t.endTs > Date.now() - 1000 || this._findAutomationEntity(t.autoId)) ? t : null;
   }
 
@@ -123,7 +126,9 @@ class QuickTimerCard extends WeeklyScheduleBase {
     if (!rec) { this._stopTick(); return; }
     const now = Date.now();
     const born = rec.createdTs || rec.endTs - (rec.durationS || 0) * 1000;
-    if (now > born + 10000 && !this._findAutomationEntity(rec.autoId)) {
+    const quickIds = this._quickScheduleIds(rec);
+    if (now > born + 10000 && (!this._findAutomationEntity(rec.autoId)
+      || (quickIds.length && !this._hasQuickSchedule(rec)))) {
       this._cleanupFinishedTimers().finally(() => { this.render(); this._syncTick(); });
       return;
     }
@@ -517,10 +522,12 @@ class QuickTimerCard extends WeeklyScheduleBase {
     return this._buildRestoreActions(eid, this._draftState || this._hass.states[eid]);
   }
 
-  _scheduleIdsForEntity(eid) {
+  _scheduleIdsForEntity(eid, excluded = []) {
     const found = [];
+    const skip = new Set(excluded);
     for (const s of Object.values(this._hass.states || {})) {
       if (!s.entity_id.startsWith('switch.schedule_')) continue;
+      if (skip.has(s.entity_id) || this._isQuickTimerSchedule(s)) continue;
       const ids = new Set(Array.isArray(s.attributes?.entities) ? s.attributes.entities : []);
       for (const a of (s.attributes?.actions || [])) {
         const raw = a?.entity_id ?? a?.target?.entity_id ?? a?.service_data?.entity_id ?? a?.data?.entity_id;
@@ -531,8 +538,8 @@ class QuickTimerCard extends WeeklyScheduleBase {
     return found;
   }
 
-  _buildTimerAutomation(eid, autoId, runId, createdTs, endTs, restore) {
-    const schedules = this._scheduleIdsForEntity(eid);
+  _buildTimerAutomation(eid, autoId, runId, createdTs, endTs, restore, quickScheduleIds = []) {
+    const schedules = this._scheduleIdsForEntity(eid, quickScheduleIds);
     const triggers = [
       { platform: 'time_pattern', seconds: '/5', id: 'watchdog' },
       { platform: 'homeassistant', event: 'start', id: 'startup' },
@@ -541,18 +548,31 @@ class QuickTimerCard extends WeeklyScheduleBase {
       triggers.push({ platform: 'state', entity_id: schedules, id: 'schedule_state' });
       triggers.push({ platform: 'state', entity_id: schedules, attribute: 'current_slot', id: 'schedule_slot' });
     }
-    const cleanup = [{
-      service: 'script.turn_on',
-      target: { entity_id: 'script.wsc_quick_timer_cleanup' },
-      data: { variables: { automation_id: autoId, run_id: runId } },
+    const removeQuickSchedules = quickScheduleIds.map(entityId => ({
+      // Deliberatamente senza continue_on_error: se la rimozione fallisce il controller deve
+      // restare attivo e ritentare al watchdog successivo.
+      service: 'scheduler.remove', data: { entity_id: entityId },
+    }));
+    // Non può cancellare la propria configurazione senza un token esterno. Si disabilita dopo
+    // aver rimosso lo schedule; la card la cancella via callApi alla prima sincronizzazione.
+    const cleanup = [...removeQuickSchedules, {
+      service: 'automation.turn_off',
+      target: { entity_id: '{{ this.entity_id }}' },
+      data: { stop_actions: false },
+      continue_on_error: true,
     }];
-    const knownSchedules = JSON.stringify(schedules);
-    const triggeredTakeover = `trigger.id in ['schedule_state','schedule_slot'] and trigger.from_state is not none and trigger.to_state is not none and trigger.to_state.state != 'off' and (trigger.to_state.attributes.current_slot | default(none)) is not none and (trigger.from_state.state == 'off' or (trigger.from_state.attributes.current_slot | default(none)) != (trigger.to_state.attributes.current_slot | default(none)))`;
-    // Safety net for a schedule created after this timer: static state triggers cannot know its
-    // entity_id, so the 5-second watchdog discovers only previously unknown active schedules.
-    const newScheduleTakeover = `{% set known = ${knownSchedules} %}{% set ns = namespace(hit=false) %}{% for s in states.switch if s.entity_id.startswith('switch.schedule_') and s.entity_id not in known and s.state != 'off' and state_attr(s.entity_id, 'current_slot') is not none %}{% if '${eid}' in (s.attributes.entities | default([], true)) %}{% set ns.hit = true %}{% endif %}{% for a in (s.attributes.actions | default([], true)) %}{% set at = a.get('target') or {} %}{% set sd = a.get('service_data') or a.get('data') or {} %}{% set target = a.get('entity_id') or at.get('entity_id') or sd.get('entity_id') %}{% if target == '${eid}' or (target is iterable and target is not string and '${eid}' in target) %}{% set ns.hit = true %}{% endif %}{% endfor %}{% endfor %}{{ ns.hit }}`;
-    const takeover = `{% if ${triggeredTakeover} %}true{% else %}${newScheduleTakeover}{% endif %}`;
+    const knownSchedules = JSON.stringify([...schedules, ...quickScheduleIds]);
+    const baseline = Object.fromEntries(schedules.map(id => [id, this._hass.states[id]?.attributes?.current_slot ?? null]));
+    // JSON usa null, Jinja usa none: costruisci un literal Jinja valido anche per schedule idle.
+    const baselineTpl = `{${Object.entries(baseline).map(([id, slot]) => `${JSON.stringify(id)}:${slot == null ? 'none' : JSON.stringify(slot)}`).join(',')}}`;
+    const triggeredTakeover = `trigger.id in ['schedule_state','schedule_slot'] and trigger.from_state is not none and trigger.to_state is not none and trigger.to_state.state != 'off' and (trigger.to_state.attributes.current_slot | default(none)) is not none and (trigger.to_state.attributes.current_slot | default(none)) != (${baselineTpl}).get(trigger.entity_id)`;
+    // Baseline persistente: dopo un riavvio HA non dipendiamo dalla from_state del trigger.
+    // Uno schedule già attivo quando il timer parte conserva lo stesso current_slot e non vince;
+    // appena entra in uno slot differente, il watchdog lo rileva anche dopo un restart. Lo stesso
+    // loop scopre schedule creati dopo il timer, che non possono essere trigger statici.
+    const takeover = `{% if ${triggeredTakeover} %}true{% else %}{% set baseline = ${baselineTpl} %}{% set known = ${knownSchedules} %}{% set ns = namespace(hit=false) %}{% for id, old_slot in baseline.items() %}{% set slot = state_attr(id, 'current_slot') %}{% if states(id) != 'off' and slot is not none and slot != old_slot %}{% set ns.hit = true %}{% endif %}{% endfor %}{% for s in states.switch if s.entity_id.startswith('switch.schedule_') and s.entity_id not in known and s.state != 'off' and state_attr(s.entity_id, 'current_slot') is not none %}{% if '${eid}' in (s.attributes.entities | default([], true)) %}{% set ns.hit = true %}{% endif %}{% for a in (s.attributes.actions | default([], true)) %}{% set at = a.get('target') or {} %}{% set sd = a.get('service_data') or a.get('data') or {} %}{% set target = a.get('entity_id') or at.get('entity_id') or sd.get('entity_id') %}{% if target == '${eid}' or (target is iterable and target is not string and '${eid}' in target) %}{% set ns.hit = true %}{% endif %}{% endfor %}{% endfor %}{{ ns.hit }}{% endif %}`;
     const expired = `{{ as_timestamp(now()) * 1000 >= ${endTs} }}`;
+    const scheduleExists = `{{ expand(${JSON.stringify(quickScheduleIds)}) | count > 0 }}`;
     return {
       id: autoId,
       alias: `QT Timer - ${eid}`,
@@ -563,8 +583,14 @@ class QuickTimerCard extends WeeklyScheduleBase {
       trigger: triggers,
       condition: [],
       action: [{ choose: [
-        { conditions: [{ condition: 'template', value_template: takeover }], sequence: cleanup },
-        { conditions: [{ condition: 'template', value_template: expired }], sequence: [...restore, ...cleanup] },
+        { conditions: [
+          { condition: 'template', value_template: scheduleExists },
+          { condition: 'template', value_template: takeover },
+        ], sequence: cleanup },
+        { conditions: [
+          { condition: 'template', value_template: scheduleExists },
+          { condition: 'template', value_template: expired },
+        ], sequence: [...restore, ...cleanup] },
       ] }],
     };
   }
@@ -583,6 +609,77 @@ class QuickTimerCard extends WeeklyScheduleBase {
   async _callAction(a) {
     const [dom, srv] = a.service.split('.');
     await this._hass.callService(dom, srv, { ...(a.data || {}), ...(a.target || {}) });
+  }
+
+  _quickScheduleIds(t) {
+    return Array.isArray(t?.scheduleIds) ? t.scheduleIds.filter(Boolean) : [];
+  }
+
+  _hasQuickSchedule(t) {
+    return this._quickScheduleIds(t).some(id => !!this._hass?.states?.[id]);
+  }
+
+  _localDate(d) {
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  }
+
+  _localTime(d) {
+    return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}:00`;
+  }
+
+  _schedulerActions(actions, eid) {
+    return actions.map(a => ({
+      entity_id: a.target?.entity_id || eid,
+      service: a.service,
+      service_data: { ...(a.data || {}) },
+    }));
+  }
+
+  async _waitForQuickSchedule(beforeIds, name, timeoutMs = 8000) {
+    const deadline = Date.now() + timeoutMs;
+    const expectedId = `switch.schedule_${this._slug(name)}`;
+    while (Date.now() < deadline) {
+      const found = Object.values(this._hass.states || {}).find(s =>
+        s.entity_id.startsWith('switch.schedule_') && !beforeIds.has(s.entity_id)
+        && (s.attributes?.friendly_name === name || s.entity_id === expectedId || s.entity_id.startsWith(`${expectedId}_`)));
+      if (found) return found.entity_id;
+      await this._sleep(300);
+    }
+    throw new Error('Scheduler did not expose the temporary schedule');
+  }
+
+  async _createQuickSchedule(eid, runId, createdTs, endTs, apply) {
+    const start = new Date(createdTs);
+    const name = `WSC Quick Timer - ${this._slug(eid)} - ${runId}`;
+    const beforeIds = new Set(Object.keys(this._hass.states || {}).filter(k => k.startsWith('switch.schedule_')));
+    const slot = { start: this._localTime(start), actions: this._schedulerActions(apply, eid) };
+    // Scheduler accetta stop solo nello stesso giorno (00:00 è il limite del giorno dopo).
+    // Per un timer che attraversa mezzanotte, il controller conserva comunque l'expiry esatto
+    // e rimuove lo schedule; un timeslot start-only evita un intervallo non valido.
+    const roundedEnd = new Date(Math.ceil(endTs / 60000) * 60000);
+    if (this._localDate(start) === this._localDate(roundedEnd)) {
+      const startMinute = start.getHours() * 60 + start.getMinutes();
+      const endMinute = roundedEnd.getHours() * 60 + roundedEnd.getMinutes();
+      if (endMinute > startMinute) slot.stop = this._localTime(roundedEnd);
+    }
+    await this._hass.callService('scheduler', 'add', {
+      name,
+      weekdays: [['mon','tue','wed','thu','fri','sat','sun'][(start.getDay() + 6) % 7]],
+      start_date: this._localDate(start),
+      end_date: this._localDate(start),
+      timeslots: [slot],
+      repeat_type: 'repeat',
+    });
+    return this._waitForQuickSchedule(beforeIds, name);
+  }
+
+  async _removeQuickSchedules(scheduleIds) {
+    let firstError = null;
+    for (const entityId of scheduleIds || []) {
+      try { await this._hass.callService('scheduler', 'remove', { entity_id: entityId }); }
+      catch (e) { firstError ||= e; }
+    }
+    if (firstError) throw firstError;
   }
 
   // ── Avvio / annullo / pulizia ─────────────────────────────────────────────
@@ -633,16 +730,19 @@ class QuickTimerCard extends WeeklyScheduleBase {
     if (this._starting) return;                 // blocco anti doppio-click
     if (!this._entity) return;
     const eid = this._entity;
+    // Non sovrascrivere un record in cleanup pendente: perderemmo l'ID del vecchio controller.
+    if (this._timers?.[eid] && !this._activeTimer()) {
+      await this._cleanupFinishedTimers();
+      if (this._timers?.[eid]) {
+        await this._alert('Quick Timer cleanup is still pending. Retry in a few seconds.');
+        return;
+      }
+    }
     const durationS = this._readDurationSeconds(root);
     if (!durationS || durationS < 1) { await this._alert(this.t('qtimer.bad_duration')); return; }
 
     if (!this._isSupportedEntity(eid)) {
       await this._alert(`Quick Timer cannot safely restore ${eid}. Choose a light, fan, cover, valve, climate, lock, humidifier, water heater, switch or input boolean.`);
-      return;
-    }
-
-    if (!this._hass.states['script.wsc_quick_timer_cleanup']) {
-      await this._alert('Quick Timer server support is not installed. Install packages/quick_timer.yaml and restart Home Assistant.');
       return;
     }
 
@@ -672,19 +772,25 @@ class QuickTimerCard extends WeeklyScheduleBase {
     const autoId = `qt_timer_${this._slug(eid)}_${runId}`;
     const createdTs = Date.now();
     const endTs = createdTs + durationS * 1000;
-    const record = { runId, createdTs, endTs, autoId, restore, apply, label: this._actionsLabel(apply, eid), durationS };
+    const record = { runId, createdTs, endTs, autoId, scheduleIds: [], restore, apply, label: this._actionsLabel(apply, eid), durationS };
     let applyStarted = false;
     try {
-      await this._recreateAutomation(autoId, this._buildTimerAutomation(eid, autoId, runId, createdTs, endTs, restore));
+      // Lo schedule è volutamente NON aggiunto a profile.schedules/scheduleLinks: è indipendente.
+      // Considera l'apply potenzialmente iniziato già durante scheduler.add: un interval che
+      // include il minuto corrente può essere eseguito subito dal componente.
+      applyStarted = true;
+      const scheduleId = await this._createQuickSchedule(eid, runId, createdTs, endTs, apply);
+      record.scheduleIds = [scheduleId];
+      await this._recreateAutomation(autoId, this._buildTimerAutomation(eid, autoId, runId, createdTs, endTs, restore, record.scheduleIds));
       await this._resolveAutomationEntity(autoId);
       this._timers = this._timers || {};
       this._timers[eid] = record;
       this._expiredRendered = false;
       await this._saveTimers();
 
-      // Solo ora cambia l'entità reale. Se un servizio fallisce, il catch ripristina e pulisce.
-      applyStarted = true;
-      for (const a of apply) await this._callAction(a);
+      // Solo ora cambia l'entità reale. run_action usa esattamente le azioni dello schedule.
+      // Se il servizio fallisce dopo un'applicazione parziale, il catch ripristina e pulisce.
+      await this._hass.callService('scheduler', 'run_action', { entity_id: scheduleId });
       this._starting = false;
       this._updateChildHass();
       this.render();
@@ -703,7 +809,11 @@ class QuickTimerCard extends WeeklyScheduleBase {
       }
       let cleanupOk = false;
       if (rollbackOk) {
-        try { await this._deleteAutomation(autoId, runId); cleanupOk = true; }
+        try {
+          await this._removeQuickSchedules(record.scheduleIds);
+          await this._deleteAutomation(autoId);
+          cleanupOk = true;
+        }
         catch (cleanupError) { console.error('QT cleanup after failed start failed', cleanupError); }
       }
       if (cleanupOk) {
@@ -736,25 +846,9 @@ class QuickTimerCard extends WeeklyScheduleBase {
     return Object.values(this._hass.states || {}).find(s => s.entity_id.startsWith('automation.') && s.attributes?.id === autoId)?.entity_id || null;
   }
 
-  async _requestServerCleanup(autoId, runId = '') {
-    await this._hass.callService('script', 'turn_on', {
-      entity_id: 'script.wsc_quick_timer_cleanup',
-      variables: { automation_id: autoId, run_id: runId },
-    });
-  }
-
-  async _deleteAutomation(autoId, runId = '') {
-    try { await this._hass.callApi('DELETE', `config/automation/config/${autoId}`); return; }
-    catch (e) {
-      console.warn('QT direct automation delete failed; delegating to server cleanup', e);
-      await this._requestServerCleanup(autoId, runId);
-      const deadline = Date.now() + 15000;
-      while (Date.now() < deadline) {
-        if (!this._findAutomationEntity(autoId)) return;
-        await this._sleep(500);
-      }
-      throw new Error(`Quick Timer cleanup did not delete ${autoId}`);
-    }
+  async _deleteAutomation(autoId) {
+    try { await this._hass.callApi('DELETE', `config/automation/config/${autoId}`); }
+    catch (e) { if (this._findAutomationEntity(autoId)) throw e; }
   }
 
   async _cancelTimer(eid) {
@@ -773,12 +867,15 @@ class QuickTimerCard extends WeeklyScheduleBase {
         await this._alert('Restore failed. The timer was kept so Home Assistant can retry.');
         return;
       }
-      try { await this._deleteAutomation(t.autoId, t.runId); }
+      try {
+        await this._removeQuickSchedules(this._quickScheduleIds(t));
+        await this._deleteAutomation(t.autoId);
+      }
       catch (e) {
         console.error('QT cleanup after cancel failed', e);
-        // Il restore è già riuscito, ma lasciarla spenta la renderebbe un orfano senza retry.
-        try { await this._hass.callService('automation', 'turn_on', { entity_id: ent }); } catch {}
-        await this._alert('The entity was restored, but cleanup failed. The timer was kept enabled so Home Assistant can retry deleting it.');
+        // Restore riuscito: non riattivare il controller, altrimenti potrebbe ripristinare di
+        // nuovo. Conserva il record così il prossimo tick/load ritenta solo la pulizia.
+        await this._alert('The entity was restored, but cleanup is still pending. Quick Timer will retry it automatically.');
         return;
       }
       delete this._timers[eid];
@@ -805,11 +902,37 @@ class QuickTimerCard extends WeeklyScheduleBase {
           try { await this._deleteAutomation(t.autoId); } catch {}
           delete this._timers[eid]; changed = true; continue;
         }
-        // L'assenza dell'automazione è la conferma di cleanup. Non cancellare mai lato browser
-        // un'automazione nuova scaduta ancora presente: potrebbe essere rimasta per ritentare.
-        if (now > (t.createdTs || t.endTs - (t.durationS || 0) * 1000) + 10000 && !this._findAutomationEntity(t.autoId)) {
-          delete this._timers[eid];
-          changed = true;
+        const born = t.createdTs || t.endTs - (t.durationS || 0) * 1000;
+        const scheduleIds = this._quickScheduleIds(t);
+        const schedulePresent = this._hasQuickSchedule(t);
+        const autoPresent = !!this._findAutomationEntity(t.autoId);
+        if (now <= born + 10000) continue; // buffer propagazione entità appena create
+
+        // Migrazione v1.4.0: non aveva scheduleIds. Quando il vecchio controller/package ha
+        // finito e l'automazione non esiste più, elimina finalmente il record condiviso.
+        if (!scheduleIds.length) {
+          if (!autoPresent) { delete this._timers[eid]; changed = true; }
+          continue;
+        }
+
+        if (!schedulePresent) {
+          // Scadenza, takeover o annullo hanno già rimosso lo schedule. L'automazione è ormai
+          // innocua (e normalmente spenta): cancellala con la sessione frontend corrente.
+          if (autoPresent) {
+            try { await this._deleteAutomation(t.autoId); }
+            catch (e) { console.warn('QT orphan controller cleanup pending', t.autoId, e); continue; }
+          }
+          delete this._timers[eid]; changed = true; continue;
+        }
+
+        if (!autoPresent) {
+          // Controller eliminato a mano o creazione incompleta: fail-safe browser-side.
+          // Ripristina prima, poi rimuovi lo schedule; se fallisce, lascia tutto tracciato.
+          try {
+            for (const a of (t.restore || [])) await this._callAction(a);
+            await this._removeQuickSchedules(scheduleIds);
+            delete this._timers[eid]; changed = true;
+          } catch (e) { console.warn('QT missing-controller recovery failed', eid, e); }
         }
       }
       if (changed) {

@@ -133,23 +133,28 @@ lights red for 5 min, irrigation on for 10 min.
   <sub><b>Holding a value with a live countdown and one-tap restore</b></sub>
 </p>
 
-- **Server-side lifecycle** — the snapshot is baked into a unique transient
-  automation (`automation.qt_timer_*`). It restores without an open dashboard,
-  survives an HA restart, and is deleted after a successful restore.
+- **Server-side lifecycle, no extra setup** — **Start** creates an independent
+  temporary Scheduler entity (`switch.schedule_wsc_quick_timer_*`) plus a small
+  controller automation (`automation.qt_timer_*`) containing the snapshot. It
+  restores without an open dashboard and survives an HA restart. No package,
+  secret or long-lived token is required.
+- **Independent from profiles and groups** — temporary Quick Timer schedules are
+  never adopted by the Default profile, rendered in weekly views, duplicated with
+  a profile, or switched off by profile/group operations.
 - **Timer first, schedule later**: a timer started over an already-active schedule
   wins initially. If a matching schedule enters a new slot while it runs, the
-  schedule wins; the timer is deleted immediately **without** restoring its snapshot.
+  schedule wins; the temporary schedule is removed **without** restoring its snapshot.
 - **Cancel = restore now.** Active timers are stored in **shared** state, so the
   countdown/cancel show on every device. Cancellation restores first and deletes
-  the automation only after the restore succeeds.
+  the temporary schedule only after the restore succeeds.
 - **Manual changes do not cancel the timer.** If the entity is changed by hand
   while it runs, the original snapshot is still restored at the end. If a restore
   service fails, the automation stays present and retries every five seconds rather
   than deleting evidence of an incomplete restore.
-
-> Quick Timer requires the server-support package described in
-> [Quick Timer server setup](#quick-timer-server-setup). The card refuses to start
-> a timer when that package is missing; this prevents an undeletable automation.
+- **Cleanup** — after expiry/takeover, the controller removes the temporary schedule
+  and disables itself. An open Quick Timer card then deletes the controller through
+  the authenticated HA frontend API (normally within one second); if no dashboard is
+  open, the disabled controller is deleted on the next Quick Timer card load.
 
 Configure it from the **visual card editor** (entity, name, default duration, preset
 chips, language) — or in YAML. The advanced embedded-card override (`card:`) stays
@@ -168,38 +173,10 @@ name: Bedroom            # optional
 presets: [5, 10, 15, 30, 45, 60]   # optional minute chips
 ```
 
-> Included in the main bundle (since v1.2.2) — no extra resource needed. A
+> Included in the main bundle (since v1.2.2) — no extra resource or server-side
+> installation is needed. A
 > standalone `/local/quick-timer-card.js` resource is also available for
 > timer-only installs (see below).
-
-#### Quick Timer server setup
-
-The cleanup step cannot be performed by frontend JavaScript after every browser is
-closed. Install the included package once:
-
-1. Copy `packages/quick_timer.yaml` to
-   `/config/packages/wsc_quick_timer.yaml`.
-2. Enable packages in `configuration.yaml` if they are not already enabled:
-
-   ```yaml
-   homeassistant:
-     packages: !include_dir_named packages
-   ```
-
-3. Create an administrator long-lived access token in your Home Assistant profile
-   and add it to `/config/secrets.yaml`:
-
-   ```yaml
-   wsc_qt_authorization: "Bearer YOUR_LONG_LIVED_ACCESS_TOKEN"
-   ```
-
-4. Restart Home Assistant and verify that
-   `script.wsc_quick_timer_cleanup` exists.
-
-The package calls Home Assistant only through `127.0.0.1:8123`. If your HA HTTP
-port is different, edit that URL in the package. Keep `secrets.yaml` private: the
-token must be an administrator token because deleting automation configuration is
-an administrative operation.
 
 ### `weekly-serpentine-card` — decorative weekly overview
 
@@ -377,13 +354,14 @@ entities owned by the [Scheduler Component](https://github.com/nielsfaber/schedu
 | Conditions | this card | `automation.wsc_*` (generated) | One HA automation per conditional schedule, lifecycle-bound to it |
 | Auto-off / auto-on | this card | `automation.wsc_autooff_*` (generated) | One HA automation per schedule, fires the end-of-slot action when `current_slot` clears |
 | One-shot | this card | `automation.wsc_oneshot_*` (generated) | One HA automation per "use and discard" schedule, calls `scheduler.remove` after the last selected day runs |
-| Quick timers | this card + support package | `automation.qt_timer_*` + shared `input_text.wsc_qt_store_*` | Unique transient automation with snapshot, expiry and schedule-takeover logic; shared countdown metadata |
+| Quick timers | this card + Scheduler Component | independent `switch.schedule_wsc_quick_timer_*` + `automation.qt_timer_*` + shared `input_text.wsc_qt_store_*` | Temporary action schedule, snapshot/expiry/takeover controller and shared countdown metadata; no package or token |
 
 **Implication for users**: deleting a `switch.schedule_*` entity from HA
 removes the schedule globally — the card just reflects HA state.
 Conversely, schedules created from anywhere (UI, service call, another
 integration) appear in the card automatically as long as their target
-`entity_id` is in the card's `entities` list.
+`entity_id` is in the card's `entities` list. Internal Quick Timer schedules are
+the exception: they are intentionally hidden from weekly views and profiles.
 
 ---
 

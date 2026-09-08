@@ -1,5 +1,8 @@
 # v1.4.0 — Quick Timer server-side lifecycle
 
+> Superseded by v1.4.1. Do not install the package or create the token described
+> below when using v1.4.1 or newer; the new temporary-schedule lifecycle needs neither.
+
 ## Important setup
 
 Quick Timer now requires `packages/quick_timer.yaml`. Copy it to your Home Assistant

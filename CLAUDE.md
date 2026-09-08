@@ -10,14 +10,16 @@ Deploy: copiare `dist/weekly-schedule-card.js` + `dist/weekly-schedule-view-card
 Il bundle principale (`weekly-schedule-card.js`) include già la view card, la mini card, la quick-timer-card **e la weekly-serpentine-card** (via import in `src/weekly-schedule-card.js`) — HACS fornisce tutte e 5 le card con un solo file.
 **NON** copiare `base-card.js` in dist: viene inglobato nel bundle dal rollup.
 
-## Quick Timer v1.4.0
+## Quick Timer v1.4.1
 Il controllo nativo incorporato usa un `hass` proxy e modifica solo uno stato-bozza; i service call
-reali partono esclusivamente con **Avvia**. Ogni run crea un ID univoco `qt_timer_*`, incorpora
-snapshot/restore e usa trigger `time_pattern` (5 s), `homeassistant start` e transizioni
-`switch.schedule_*`. Scadenza normale = restore riuscito → `script.wsc_quick_timer_cleanup` → DELETE.
-Schedule entrato dopo il timer = cleanup senza restore. Annulla = disabilita, restore, cleanup.
-Il supporto server è `packages/quick_timer.yaml` e richiede `wsc_qt_authorization` in `secrets.yaml`.
-Non eliminare un'automazione scaduta lato browser finché esiste: può essere in retry del restore.
+reali partono esclusivamente con **Avvia**. Ogni run crea uno schedule indipendente
+`switch.schedule_wsc_quick_timer_*` (mai collegato a profili/gruppi) e un controller univoco
+`qt_timer_*` con snapshot/restore e trigger `time_pattern` (5 s), `homeassistant start` e transizioni
+degli schedule normali. Avvio reale via `scheduler.run_action`. Scadenza normale = restore riuscito →
+`scheduler.remove` → controller disabilitato; la card cancella il controller via API appena aperta.
+Schedule entrato dopo il timer = remove senza restore. Annulla = disabilita, restore, remove + DELETE.
+Nessun package, secret o token. Non cancellare un controller se lo schedule transitorio esiste ancora:
+può essere in retry del restore.
 
 ## Workflow obbligatorio
 1. Analizza modifiche necessarie → scrivi piano in `CHANGES.md`
@@ -332,89 +334,37 @@ Per evitare N scritture+eventi per una singola operazione utente:
   `_duplicateProfile`, `_cancelNewProfile`, `_cleanupOrphanAutomations`. Le `_wsSet` FUORI
   transazione restano scritture immediate (rename profilo, gruppi, `_ensureDefaultProfile`, ecc.).
 
-## Quick Timer Card (`custom:quick-timer-card`, v1.2.1)
-Card a entità singola (`src/quick-timer-card.js`, `extends WeeklyScheduleBase`) in **UN'unica
-`ha-card` senza divisori** (`.qt-card` → `.qt-when` scelta durata in alto, `.qt-native` card HA
-incorporata al centro, `.qt-foot` Avvia/countdown in fondo).
-- **"Il controllo arma il timer"** (v1.2.1, ridisegno): NIENTE più UI di selezione valore. Il
-  valore (on/off, temp, %, colore) lo imposta l'utente col **controllo nativo** (set reale
-  sull'entità); il pannello sceglie solo per **quanto** tenerlo. Avvia NON applica azioni: crea
-  solo l'automazione di ripristino. Rimossi `_targetHtml`/`_onoffHtml`/`_readTarget`/`_targetLabel`.
-- **Card nativa configurabile** (v1.2.1): `_buildNativeCardConfig()` — blocco YAML `card:` con
-  config completa di qualsiasi card HA (es. `type: thermostat`), default = tile auto per dominio
-  (retrocompat `tile:`). `entity` di default = `config.entity`. Chrome della card incorporata
-  neutralizzata via CSS vars ereditate (`--ha-card-box-shadow/border-width/border-radius/background`).
-- **Baseline di ripristino** (v1.2.1): per tornare allo stato PRIMA della modifica, `_trackBaseline()`
-  (in `set hass`) tiene `_settledRestore` = restore dell'ultimo stato **stabile**; durante una
-  raffica di modifiche NON aggiorna (firma = `JSON.stringify(_buildRestoreActions)`), allo scadere
-  del debounce `_BASELINE_SETTLE_MS` (30s) il nuovo stato diventa baseline; congelato a timer attivo.
-  ⚠️ se modifichi e aspetti >30s prima di Avviare, il baseline avanza (ripristino = no-op).
-- **NIENTE scene**: ripristino con azioni esplicite `_buildRestoreActions(eid)` (legge `hass.states`
-  per dominio) cucite in un'automazione **transitoria** `qt_timer_<slug>` (delay + guardia + restore).
-  `_buildTimerAutomation` include **`initial_state: true`** (v1.3.0, come `_syncOverrideFlag`): senza,
-  se l'automazione finisce disabilitata una volta (es. `_cancelTimer` chiama `automation.turn_off`
-  prima del DELETE, e se il DELETE fallisce — vedi lezione proxy sotto — resta orfana e off), ogni
-  ricreazione successiva la ricrea mantenendo lo stato disabilitato precedente (comportamento di
-  reload di HA) e il delay/restore non parte MAI più finché non la si riabilita a mano dalla UI —
-  bug reale riscontrato in HA (l'utente vedeva "Stato acquisito" bloccato all'infinito perché
-  `automation.trigger` su un'automazione disabilitata non esegue le azioni).
-- **`automation.trigger` blocca fino al termine dello script, delay incluso (v1.3.1, bug reale
-  in HA)**: diagnosticato in diretta — dopo il fix `initial_state`, l'utente segnalava ancora
-  countdown mancante; con un test (`_cancelTimer` osservato: l'automazione restava viva ~10 min
-  per un timer da 5 min) si è capito che `await this._hass.callService('automation','trigger',…)`
-  NON ritorna finché l'intera action dell'automazione non è FINITA — compreso il primo passo,
-  che è proprio il `delay` della durata scelta (a differenza di un trigger reale, che HA esegue
-  come task in background senza bloccare il chiamante). Risultato: la card restava su "Stato
-  acquisito" per l'intera durata, poi calcolava `endTs` da QUEL momento (già in ritardo) invece
-  che dall'avvio reale → un secondo countdown fittizio della stessa durata, senza che succedesse
-  più nulla di reale (il ripristino era già avvenuto durante l'attesa). Fix in `_startTimer`:
-  `Promise.race` tra la chiamata reale e un timeout breve (`TRIGGER_ACK_MS=2500`) — un fallimento
-  vero (entità inesistente, ecc.) arriva quasi subito quindi il race lo cattura comunque (nessuna
-  regressione sulla sicurezza "niente timer fantasma" introdotta in v1.2.9); se non risponde entro
-  2.5s si assume accettata, si mostra SUBITO il countdown corretto (calcolato da adesso), e la
-  promise originale resta osservata in background (`_handleLateTriggerFailure`) per ripulire
-  timer+automazione nel raro caso di un fallimento tardivo. Verificato con 5 scenari headless
-  (successo/fallimento veloce invariati, successo lento mostra countdown corretto senza aspettare
-  la durata intera, fallimento lento si ripulisce da solo, annulla-durante-attesa non resuscita
-  nulla quando la promise tardiva arriva dopo).
-- **Overlap "vince l'ultimo attivato"**: guardia template nell'automazione → salta il revert se uno
-  `switch.schedule_*` è entrato in slot DOPO l'avvio (`last_changed > now()-durata`).
-- **Auto-pulizia**: automazione eliminata ~30s dopo `endTs` (buffer) o subito all'Annulla; GC su
-  load (`_cleanupFinishedTimers`). A riposo nessun artefatto.
-- **Storage condiviso**: timer attivi in `_sharedSet('quick_timer_card', {timers})` (prefisso helper
-  `wsc_qt_store`) → countdown/annulla cross-device. `set hass` refetch su cambio `input_text.wsc_qt_store_*`.
-  **Versionato** (`_qtWriteCount`, v1.3.0): stesso fix v1.2.5 applicato allo storage principale,
-  mai portato qui — `_saveTimers()` incrementa il contatore PRIMA di scrivere; il refetch (sia al
-  primo load sia al cambio store) cattura la versione prima del fetch e scarta il risultato se nel
-  frattempo è partita un'altra `_saveTimers()` O se la lettura è `null` (mid-write, payload >1 chunk:
-  `_saveTimers` scrive i chunk PRIMA del meta → un refetch che arriva a metà legge un meta assente/
-  vecchio → `_sharedGet` torna `null`). Bug pre-fix: il refetch senza guardia trattava QUALSIASI
-  `null` come "store vuoto" e azzerava `_timers` a `{}` → il countdown appena avviato spariva
-  (mostrava di nuovo il pulsante "Avvia") per il tempo dei round-trip fino al chunk/meta successivo,
-  per poi auto-correggersi — ma nel frattempo l'utente vedeva "non parte" e un refresh a metà
-  scrittura (rara ma possibile con round-trip di rete reali) mostrava il timer "vuoto". Riprodotto
-  e verificato con un harness headless (mock `hass.callService`/`connection` con round-trip
-  realistici + payload a 2 chunk) prima e dopo il fix; verificato che il fix non rompe il sync
-  cross-device (scrittura da un altro "device" via `_sharedSet` diretto, letta correttamente dal
-  refetch `storeChanged`).
-- "Annulla" = **ripristina subito** (replay delle `restore` salvate nel record). Durata **o** Fine alle.
-- **Config via UI editor O YAML** (v1.2.3): `static getConfigElement()` → elemento
-  `quick-timer-card-editor` (`class QuickTimerCardEditor extends WeeklyScheduleBase`, in fondo a
-  `quick-timer-card.js`, registrato guardato; finisce anche nel bundle main perché importato).
-  Usa **`ha-form`** (schema `_schema()`, dati `_data()`, `_valueChanged` → `config-changed`).
-  L'editor gestisce `entity`/`name`/`default_minutes`/`presets` (text CSV → array int)/`language`
-  (select, '' = auto). Il blocco `card:`/`tile:` (config card nativa) resta **solo-YAML**:
-  l'editor lo **preserva** (spread `...this._config`) ma non lo espone. Estende il base solo per
-  `t()`/`_esc()`: override TOTALE di `setConfig`/`get|set hass`/`connected|disconnectedCallback`/
-  `render` (vuoto) → niente macchina-card. `ha-form` caricato best-effort via `_ensureHaForm()`
-  (tira l'editor della entities-card); reseed dati solo a cambio `entity`/primo render (no cursor-jump).
-- Override `setConfig`/`set hass`/`render`/`connected/disconnectedCallback` (NON usa schedule/profili).
-  Riusa `_detectDomain`,`_entityCaps`,`_buildRestoreActions`,`_recreateAutomation`,`_setStyles`,`t`,`_esc`.
-  LOCALES: blocco `qtimer.*` (en/it/fr) in base-card, incl. `qtimer.editor.*` (label del form).
-- **valve** (v1.2.3): `_buildRestoreActions`/`_heldLabel` hanno il ramo `valve` (come `cover`,
-  servizi `valve.*`); prima cadeva nel default → `valve.turn_on/off` (inesistenti) → restore rotto.
-- Limiti: ripristino esplicito best-effort su attributi esotici (effetti/transizioni); `delay` non
-  sopravvive a riavvio HA a metà timer; `loadCardHelpers` richiede Lovelace standard.
+## Quick Timer Card (`custom:quick-timer-card`, v1.4.1)
+Card a entità singola (`src/quick-timer-card.js`, `extends WeeklyScheduleBase`) in un'unica
+`ha-card`: scelta durata, controllo HA nativo incorporato e pulsante Avvia/countdown.
+- **Bozza prima di Avvia**: il controllo riceve un proxy `hass`; i service call sulla sola entità
+  configurata modificano `_draftState`, senza toccare HA. Avvia acquisisce lo stato reale,
+  costruisce `restore[]` e `apply[]`, poi applica la bozza.
+- **Lifecycle**: ogni run crea uno schedule `WSC Quick Timer - ...` tramite `scheduler.add`, lo
+  risolve per nome/entity ID, crea `automation.qt_timer_*`, salva il record condiviso e chiama
+  `scheduler.run_action`. Lo schedule non usa `repeat_type: single`, perché Scheduler lo eliminerebbe
+  subito dopo l'azione iniziale; resta invece fino al cleanup esplicito.
+- **Controller**: trigger ogni 5 s, startup HA e transizioni degli schedule normali. A scadenza
+  ripristina e chiama `scheduler.remove`; in caso di errore resta attivo e ritenta. Poi si disabilita
+  con `automation.turn_off` su `{{ this.entity_id }}`. La card cancella la configurazione via
+  `callApi('DELETE', config/automation/config/<id>)` appena vede sparire lo schedule.
+- **Precedenza**: uno schedule normale già attivo al momento di Avvia non blocca il timer. Se entra
+  in un nuovo `current_slot` dopo, il controller rimuove il Quick Timer senza restore. La baseline
+  degli slot è incorporata nell'automazione, quindi il rilevamento sopravvive al riavvio HA; il
+  watchdog scopre anche schedule creati successivamente.
+- **Indipendente da profili/gruppi**: riconoscimento tramite friendly-name/entity-id prefix;
+  escluso da bootstrap/adoption Default, `_getProfileSchedules`, attivazione profili esclusivi
+  interna/esterna, duplicazione, viste mini/serpentine e operazioni gruppo.
+- **Annulla**: disabilita il controller, ripristina subito, rimuove schedule e automazione. Se il
+  restore fallisce riabilita il controller; se fallisce solo il cleanup conserva il record e ritenta.
+- **Storage condiviso**: `_sharedSet('quick_timer_card', {timers})`, prefisso `wsc_qt_store`, con
+  `_qtWriteCount` anti-refetch stantio. Record v1.4.1: `runId`, `createdTs`, `endTs`, `autoId`,
+  `scheduleIds[]`, `restore[]`, `apply[]`, `label`, `durationS`.
+- **Nessun package/token**: `packages/quick_timer.yaml` è stato rimosso. Senza dashboard aperta il
+  controller disabilitato resta fino alla prossima apertura della card, che lo elimina.
+- **Config**: editor `ha-form` per `entity`/`name`/`default_minutes`/`presets`/`language`; `card:` e
+  `tile:` restano YAML-only e vengono preservati. Domini: light, fan, cover, valve, climate, lock,
+  humidifier, water_heater, switch, input_boolean.
 
 ## Popup domini
 ```

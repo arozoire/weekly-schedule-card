@@ -674,7 +674,8 @@ export default class WeeklyScheduleBase extends HTMLElement {
         ...profiles.flatMap(p => (p.scheduleLinks || []).map(l => l.autoChildId).filter(Boolean)),
       ]);
       for (const entityId of Object.keys(this._hass?.states || {}))
-        if (entityId.startsWith('switch.schedule_') && !claimed.has(entityId)) offIds.push(entityId);
+        if (entityId.startsWith('switch.schedule_') && !claimed.has(entityId)
+          && !this._isQuickTimerSchedule(this._hass.states[entityId])) offIds.push(entityId);
     }
     const onIds = [...new Set([...(profile.schedules || []), ...(profile.scheduleLinks || []).map(l => l.autoChildId).filter(Boolean)])];
     const excludedNames = JSON.stringify(offProfiles.map(p => this._externalProfileLabel(p)));
@@ -699,7 +700,8 @@ export default class WeeklyScheduleBase extends HTMLElement {
     await WeeklyScheduleBase._setInputText(this._hass, active, this._externalActiveValue());
 
     const profiles = this._storageData.profiles;
-    const scheduleEntities = Object.keys(this._hass.states || {}).filter(id => id.startsWith('switch.schedule_')).sort();
+    const scheduleEntities = Object.keys(this._hass.states || {})
+      .filter(id => id.startsWith('switch.schedule_') && !this._isQuickTimerSchedule(this._hass.states[id])).sort();
     const signature = JSON.stringify([profiles.map(p => [p.id, p.name, p.exclusive !== false, p.schedules || [], (p.scheduleLinks || []).map(l => l.autoChildId).filter(Boolean)]), scheduleEntities]);
     if (signature === this._externalProfileControlSignature) return;
     const choices = profiles.map(p => ({
@@ -754,7 +756,8 @@ export default class WeeklyScheduleBase extends HTMLElement {
     let dirty = false;
     if (!data.profiles || !data.profiles.length) {
       const existingSchedules = this._hass
-        ? Object.keys(this._hass.states).filter(k => k.startsWith('switch.schedule_'))
+        ? Object.keys(this._hass.states).filter(k => k.startsWith('switch.schedule_')
+          && !this._isInternalSchedule(this._hass.states[k]))
         : [];
       data.profiles = [{ id: 'default', name: 'Default', exclusive: true, groups: [], schedules: existingSchedules, scheduleLinks: [] }];
       if (existingSchedules.length) data.activeProfiles = ['default'];
@@ -763,6 +766,8 @@ export default class WeeklyScheduleBase extends HTMLElement {
     for (const p of data.profiles) {
       if (!p.groups) { p.groups = []; dirty = true; }
       if (!p.scheduleLinks) { p.scheduleLinks = []; dirty = true; }
+      const cleanSchedules = (p.schedules || []).filter(id => !this._isQuickTimerSchedule(this._hass?.states?.[id] || id));
+      if (cleanSchedules.length !== (p.schedules || []).length) { p.schedules = cleanSchedules; dirty = true; }
       for (const link of p.scheduleLinks)
         if (link.autoChild) { delete link.autoChild; dirty = true; }
     }
@@ -785,7 +790,7 @@ export default class WeeklyScheduleBase extends HTMLElement {
         if (!def.schedules) def.schedules = [];
         for (const k of Object.keys(this._hass.states)) {
           if (!k.startsWith('switch.schedule_')) continue;
-          if (this._hass.states[k].attributes?.tags?.includes('weekly_schedule_auto')) continue;
+          if (this._isInternalSchedule(this._hass.states[k])) continue;
           if (claimed.has(k)) continue;
           def.schedules.push(k); claimed.add(k); dirty = true;
         }
@@ -801,8 +806,27 @@ export default class WeeklyScheduleBase extends HTMLElement {
     return profiles.find(p => p.id === this._selectedProfileId) || profiles[0] || null;
   }
 
+  // Gli schedule creati dalla Quick Timer card sono infrastruttura transitoria: non devono
+  // essere adottati dal profilo Default, mostrati nelle viste settimanali o spenti quando si
+  // cambia profilo. Il prefisso del nome è passato a scheduler.add e determina anche entity_id.
+  static _isQuickTimerSchedule(s) {
+    if (!s) return false;
+    const entityId = typeof s === 'string' ? s : s.entity_id;
+    const tags = (typeof s === 'string' ? [] : s.attributes?.tags) || [];
+    const name = String(typeof s === 'string' ? '' : (s.attributes?.friendly_name || ''));
+    return tags.includes('weekly_schedule_quick_timer')
+      || entityId?.startsWith('switch.schedule_wsc_quick_timer_')
+      || name.startsWith('WSC Quick Timer -');
+  }
+
+  _isQuickTimerSchedule(s) { return WeeklyScheduleBase._isQuickTimerSchedule(s); }
+
+  _isInternalSchedule(s) {
+    return !!s?.attributes?.tags?.includes('weekly_schedule_auto') || this._isQuickTimerSchedule(s);
+  }
+
   _getProfileSchedules(entityId) {
-    const all = this._getSchedules(entityId).filter(s => !s.attributes.tags?.includes('weekly_schedule_auto'));
+    const all = this._getSchedules(entityId).filter(s => !this._isInternalSchedule(s));
     const profile = this._getSelectedProfile();
     if (!profile) return all;
     const ids = profile.schedules || [];
@@ -4230,7 +4254,8 @@ export default class WeeklyScheduleBase extends HTMLElement {
         ...profiles.flatMap(pr => (pr.scheduleLinks || []).map(l => l.autoChildId).filter(Boolean)),
       ]);
       for (const s of Object.values(this._hass.states))
-        if (s.entity_id.startsWith('switch.schedule_') && !profSched.has(s.entity_id) && s.state !== 'off')
+        if (s.entity_id.startsWith('switch.schedule_') && !profSched.has(s.entity_id)
+          && !this._isQuickTimerSchedule(s) && s.state !== 'off')
           try { await this._hass.callService('switch', 'turn_off', { entity_id: s.entity_id }); } catch {}
     }
     for (const eid of p.schedules || [])
@@ -4319,7 +4344,7 @@ export default class WeeklyScheduleBase extends HTMLElement {
     for (const schedId of src.schedules || []) {
       const s = this._hass.states[schedId];
       if (!s?.attributes.weekdays || !s.attributes.timeslots?.length) continue;
-      if (s.attributes.tags?.includes('weekly_schedule_auto')) continue; // skip auto-children
+      if (this._isInternalSchedule(s)) continue; // skip generated/internal schedules
       try {
         const beforeIds = new Set(Object.keys(this._hass.states).filter(k => k.startsWith('switch.schedule_')));
         const params = { weekdays: s.attributes.weekdays, timeslots: s.attributes.timeslots, repeat_type: 'repeat' };
@@ -4692,7 +4717,7 @@ export default class WeeklyScheduleBase extends HTMLElement {
       const newEntityIds=selected.map(chk=>chk.dataset.entity);
       const removed=oldEntityIds.filter(eid=>!newEntityIds.includes(eid));
       if(removed.length){
-        const activeScheds=removed.flatMap(eid=>this._getSchedules(eid).filter(s=>s.state==='on'));
+        const activeScheds=removed.flatMap(eid=>this._getSchedules(eid).filter(s=>s.state==='on'&&!this._isInternalSchedule(s)));
         if(activeScheds.length){
           const n=activeScheds.length;
           const yes=await this._confirm(`${n} ${this.t('group.removed_active')}`);
