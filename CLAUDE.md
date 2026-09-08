@@ -11,6 +11,10 @@ Il bundle principale (`weekly-schedule-card.js`) include già la view card, la m
 **NON** copiare `base-card.js` in dist: viene inglobato nel bundle dal rollup.
 
 ## Quick Timer v1.4.1
+Review follow-up: see `docs/quick-timer-v1.4.1-review.md`. Modern HA native features
+consume `states` / `hassApi` via Lit context; intercepting only `hass` is insufficient.
+The embedded host now supplies those contexts. Cancel cleanup uses a persisted phase.
+Startup atomicity, unconditional self-deletion, concurrency and priority remain blockers.
 Il controllo nativo incorporato usa un `hass` proxy e modifica solo uno stato-bozza; i service call
 reali partono esclusivamente con **Avvia**. Ogni run crea uno schedule indipendente
 `switch.schedule_wsc_quick_timer_*` (mai collegato a profili/gruppi) e un controller univoco

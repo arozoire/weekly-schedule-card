@@ -25,7 +25,9 @@ class QuickTimerCard extends WeeklyScheduleBase {
     this._draftState = null;
     this._draftDirty = false;
     this._draftHass = null;
+    this._draftActions = [];
     this._cancelling = false;
+    this._contextSubscriptions = new Map();
   }
 
   setConfig(config) {
@@ -38,6 +40,7 @@ class QuickTimerCard extends WeeklyScheduleBase {
     this._draftState = null;
     this._draftDirty = false;
     this._draftHass = null;
+    this._draftActions = [];
   }
 
   getCardSize() { return 4; }
@@ -124,6 +127,10 @@ class QuickTimerCard extends WeeklyScheduleBase {
   _tick() {
     const rec = this._timers?.[this._entity];
     if (!rec) { this._stopTick(); return; }
+    if (rec.phase === 'cleanup') {
+      this._cleanupFinishedTimers().finally(() => { this.render(); this._syncTick(); });
+      return;
+    }
     const now = Date.now();
     const born = rec.createdTs || rec.endTs - (rec.durationS || 0) * 1000;
     const quickIds = this._quickScheduleIds(rec);
@@ -160,11 +167,16 @@ class QuickTimerCard extends WeeklyScheduleBase {
     if (!this._entity || !this._hass || this._activeTimer()) return;
     const real = this._hass.states[this._entity];
     if (!real) return;
-    if (force || !this._draftState || !this._draftDirty) this._draftState = this._cloneState(real);
+    if (force || !this._draftState || !this._draftDirty) {
+      this._draftState = this._cloneState(real);
+      this._draftActions = [];
+    }
   }
 
   _draftHassObject() {
-    if (!this._hass || !this._draftState || this._activeTimer()) return this._hass;
+    if (!this._hass || this._activeTimer()) return this._hass;
+    // Never expose the live API merely because the entity/draft has not loaded yet.
+    this._syncDraftFromEntity();
     const real = this._hass;
     const draft = Object.create(real);
     draft.states = { ...real.states, [this._entity]: this._draftState };
@@ -172,8 +184,10 @@ class QuickTimerCard extends WeeklyScheduleBase {
       const raw = target?.entity_id ?? data?.entity_id;
       const ids = Array.isArray(raw) ? raw : (raw ? [raw] : []);
       if (ids.length === 1 && ids[0] === this._entity) {
+        if (!this._draftState || this._starting || this._cancelling)
+          return Promise.reject(new Error('Quick Timer is not ready for editing'));
         this._applyDraftService(domain, service, data);
-        return Promise.resolve();
+        return Promise.resolve({ context: {} });
       }
       return Promise.reject(new Error('Quick Timer draft blocked a service call for another entity'));
     };
@@ -187,14 +201,66 @@ class QuickTimerCard extends WeeklyScheduleBase {
           return draft.callService(msg.domain, msg.service, data, target);
         return Promise.reject(new Error('Quick Timer draft blocked a service call for another entity'));
       }
-      return real.callWS(msg);
+      if (msg?.type === 'get_states') return Promise.resolve(Object.values(draft.states));
+      // Read-only requests used by card rendering; unsupported writes must not leak.
+      if (/\/(get|list)$/.test(msg?.type || '') || ['get_config', 'get_services', 'render_template'].includes(msg?.type))
+        return real.callWS(msg);
+      return Promise.reject(new Error('Quick Timer draft blocked an unsupported WebSocket command'));
     };
+    // Custom/native controls can also use the connection or HTTP service endpoint.
+    draft.sendWS = msg => draft.callWS(msg);
+    const readApi = (method, path, ...args) => {
+      if (method.toUpperCase() === 'GET') return real.callApi(method, path, ...args);
+      const service = /^services\/([^/]+)\/([^/?]+)$/.exec(path);
+      if (method.toUpperCase() === 'POST' && service)
+        return draft.callService(service[1], service[2], args[0]);
+      return Promise.reject(new Error('Quick Timer draft blocked an HTTP write'));
+    };
+    draft.callApi = readApi;
+    draft.callApiRaw = (...args) => {
+      if (args[0]?.toUpperCase() === 'GET') return real.callApiRaw(...args);
+      return Promise.reject(new Error('Quick Timer draft blocked a raw HTTP write'));
+    };
+    draft.fetchWithAuth = () => Promise.reject(new Error('Quick Timer draft does not support raw fetch'));
+    if (real.connection) {
+      draft.connection = new Proxy(real.connection, {
+        get: (connection, key) => {
+          if (key === 'sendMessagePromise' || key === 'sendMessage') return msg => draft.callWS(msg);
+          const value = connection[key];
+          return typeof value === 'function' ? value.bind(connection) : value;
+        },
+      });
+    }
     this._draftHass = draft;
     return draft;
   }
 
   _updateChildHass() {
-    if (this._childCard && this._hass) this._childCard.hass = this._draftHassObject();
+    if (!this._hass) return;
+    const hass = this._draftHassObject();
+    if (this._childCard) this._childCard.hass = hass;
+    for (const [callback, subscription] of [...this._contextSubscriptions])
+      callback(this._draftContextValue(subscription.context, hass), subscription.unsubscribe);
+  }
+
+  _draftContextValue(context, hass) {
+    if (context === 'states') return hass.states;
+    if (context === 'connection') return hass.connection;
+    // hassApi and hassConnection are subsets of hass; the isolated object supplies both.
+    return hass;
+  }
+
+  _provideDraftContext(ev) {
+    // Modern HA features use Lit context instead of their `hass` property. Answer the
+    // requests inside the embedded card so they never subscribe to the live root API.
+    if (!['states', 'hassApi', 'hassConnection', 'connection'].includes(ev.context)) return;
+    ev.stopPropagation();
+    const callback = ev.callback;
+    if (typeof callback !== 'function') return;
+    const existing = this._contextSubscriptions.get(callback);
+    const unsubscribe = existing?.unsubscribe || (() => this._contextSubscriptions.delete(callback));
+    if (ev.subscribe) this._contextSubscriptions.set(callback, { context: ev.context, unsubscribe });
+    callback(this._draftContextValue(ev.context, this._draftHassObject()), ev.subscribe ? unsubscribe : undefined);
   }
 
   _applyDraftService(domain, service, rawData = {}) {
@@ -203,14 +269,14 @@ class QuickTimerCard extends WeeklyScheduleBase {
     const st = this._cloneState(this._draftState);
     const a = st.attributes;
     const dom = this._detectDomain(this._entity);
-    const turnOn = service === 'turn_on' || (domain === 'homeassistant' && service === 'toggle' && st.state === 'off');
-    const turnOff = service === 'turn_off' || (domain === 'homeassistant' && service === 'toggle' && st.state !== 'off');
+    const turnOn = service === 'turn_on' || (service === 'toggle' && st.state === 'off');
+    const turnOff = service === 'turn_off' || (service === 'toggle' && st.state !== 'off');
     if (turnOn) st.state = dom === 'lock' ? 'locked' : (dom === 'cover' || dom === 'valve' ? 'open' : 'on');
     if (turnOff) st.state = dom === 'lock' ? 'unlocked' : (dom === 'cover' || dom === 'valve' ? 'closed' : 'off');
     if (domain === 'lock' && service === 'lock') st.state = 'locked';
     if (domain === 'lock' && service === 'unlock') st.state = 'unlocked';
     if (domain === 'climate') {
-      if (service === 'turn_on') st.state = (a.hvac_modes || []).find(m => m !== 'off') || 'heat';
+      if (turnOn) st.state = (a.hvac_modes || []).find(m => m !== 'off') || 'heat';
       if (service === 'set_hvac_mode') st.state = data.hvac_mode;
       if (service === 'set_temperature') {
         if (data.hvac_mode) st.state = data.hvac_mode;
@@ -221,6 +287,7 @@ class QuickTimerCard extends WeeklyScheduleBase {
       if (service === 'set_preset_mode') a.preset_mode = data.preset_mode;
       if (service === 'set_fan_mode') a.fan_mode = data.fan_mode;
       if (service === 'set_swing_mode') a.swing_mode = data.swing_mode;
+      if (service === 'set_swing_horizontal_mode') a.swing_horizontal_mode = data.swing_horizontal_mode;
     } else if (domain === 'light' && service === 'turn_on') {
       st.state = 'on';
       if (data.brightness != null) a.brightness = data.brightness;
@@ -233,13 +300,13 @@ class QuickTimerCard extends WeeklyScheduleBase {
       else if (data.xy_color != null) a.color_mode = 'xy';
       else if (data.color_temp_kelvin != null) a.color_mode = 'color_temp';
     } else if (domain === 'fan') {
-      if (service === 'set_percentage' || data.percentage != null) { st.state = 'on'; a.percentage = data.percentage; }
+      if (service === 'set_percentage' || data.percentage != null) { st.state = Number(data.percentage) === 0 ? 'off' : 'on'; a.percentage = data.percentage; }
       if (service === 'set_preset_mode') { st.state = 'on'; a.preset_mode = data.preset_mode; }
       if (service === 'oscillate') a.oscillating = data.oscillating;
       if (service === 'set_direction') a.direction = data.direction;
     } else if (domain === 'cover' || domain === 'valve') {
-      if (service.startsWith('open_')) st.state = 'open';
-      if (service.startsWith('close_')) st.state = 'closed';
+      if (service === `open_${domain}`) { st.state = 'open'; if (a.current_position != null) a.current_position = 100; }
+      if (service === `close_${domain}`) { st.state = 'closed'; if (a.current_position != null) a.current_position = 0; }
       if (service.startsWith('set_')) {
         a.current_position = data.position;
         st.state = Number(data.position) === 0 ? 'closed' : 'open';
@@ -252,6 +319,16 @@ class QuickTimerCard extends WeeklyScheduleBase {
       if (service === 'set_temperature') a.temperature = data.temperature;
       if (service === 'set_operation_mode') st.state = data.operation_mode;
     }
+    // Preserve the user's commands instead of reconstructing an apply from every
+    // snapshot attribute. A mode-only draft must not send an old temperature or preset.
+    const actionService = service === 'toggle' ? (turnOn ? 'turn_on' : 'turn_off') : service;
+    const fullService = `${domain}.${actionService}`;
+    const isPower = value => /\.(turn_on|turn_off|set_hvac_mode)$/.test(value);
+    const previous = this._draftActions.find(action => action.service === fullService);
+    this._draftActions = this._draftActions.filter(action =>
+      action.service !== fullService && !(isPower(fullService) && isPower(action.service)));
+    this._draftActions.push({ service: fullService, target: { entity_id: this._entity },
+      data: { ...(previous?.data || {}), ...data } });
     st.last_changed = new Date().toISOString(); st.last_updated = st.last_changed;
     this._draftState = st;
     this._draftDirty = true;
@@ -285,7 +362,7 @@ class QuickTimerCard extends WeeklyScheduleBase {
       when.innerHTML = '';
       foot.innerHTML = this._activeHtml(active);
     } else {
-      when.innerHTML = `<div class="qt-title"><ha-icon icon="mdi:timer-outline"></ha-icon> ${this.t('qtimer.timer')}</div>${this._whenHtml()}`;
+      when.innerHTML = `<div class="qt-title"><ha-icon icon="mdi:timer-outline"></ha-icon> ${this.t('qtimer.timer')}</div>${this._whenHtml()}<div class="qt-hint">${this.t('qtimer.draft_hint')}</div>`;
       // Durante l'avvio il piede mostra lo status (gestito da _setFootStatus): non
       // ricreare il pulsante, così un render spurio non lo riporta (anti doppio-click).
       if (!this._starting) foot.innerHTML = `<button class="qt-start"><ha-icon icon="mdi:play"></ha-icon> ${this.t('qtimer.start')}</button>`;
@@ -307,6 +384,7 @@ class QuickTimerCard extends WeeklyScheduleBase {
         // more-info vive fuori dalla card incorporata e riceverebbe il vero hass. Fermarlo
         // durante la bozza evita modifiche reali; durante un timer resta invece disponibile.
         if (!host._qtMoreInfoGuard) {
+          host.addEventListener('context-request', ev => this._provideDraftContext(ev));
           host.addEventListener('hass-more-info', ev => this._guardDraftMoreInfo(ev), true);
           host._qtMoreInfoGuard = true;
         }
@@ -335,6 +413,9 @@ class QuickTimerCard extends WeeklyScheduleBase {
     } else if (dom === 'climate') {
       features.push({ type: 'target-temperature' });
       if (caps.hvacModes.length) features.push({ type: 'climate-hvac-modes', hvac_modes: caps.hvacModes });
+      const attrs = this._hass.states[this._entity]?.attributes || {};
+      for (const [attribute, type] of [['fan_modes', 'climate-fan-modes'], ['preset_modes', 'climate-preset-modes'], ['swing_modes', 'climate-swing-modes'], ['swing_horizontal_modes', 'climate-swing-horizontal-modes']])
+        if (attrs[attribute]?.length) features.push({ type, style: 'dropdown' });
     } else if (dom === 'cover') {
       features.push({ type: 'cover-open-close' });
       if (caps.coverPosition) features.push({ type: 'cover-position' });
@@ -490,10 +571,12 @@ class QuickTimerCard extends WeeklyScheduleBase {
         if (a.target_temp_low != null) temp.target_temp_low = a.target_temp_low;
         if (a.target_temp_high != null) temp.target_temp_high = a.target_temp_high;
       } else if (a.temperature != null) temp.temperature = a.temperature;
-      if (Object.keys(temp).length) params.push({ service: 'climate.set_temperature', target: tgt, data: temp });
+      // Presets can change the target temperature; explicit snapshot values must win.
       if (a.preset_mode) params.push({ service: 'climate.set_preset_mode', target: tgt, data: { preset_mode: a.preset_mode } });
+      if (Object.keys(temp).length) params.push({ service: 'climate.set_temperature', target: tgt, data: temp });
       if (a.fan_mode) params.push({ service: 'climate.set_fan_mode', target: tgt, data: { fan_mode: a.fan_mode } });
       if (a.swing_mode) params.push({ service: 'climate.set_swing_mode', target: tgt, data: { swing_mode: a.swing_mode } });
+      if (a.swing_horizontal_mode) params.push({ service: 'climate.set_swing_horizontal_mode', target: tgt, data: { swing_horizontal_mode: a.swing_horizontal_mode } });
       const mode = { service: 'climate.set_hvac_mode', target: tgt, data: { hvac_mode: st.state } };
       const out = st.state === 'off' ? [...params, mode] : [mode, ...params];
       return out;
@@ -519,6 +602,9 @@ class QuickTimerCard extends WeeklyScheduleBase {
   }
 
   _buildApplyActions(eid) {
+    if (this._draftActions.length) return this._draftActions.map(action => ({
+      ...action, target: { ...action.target }, data: { ...action.data },
+    }));
     return this._buildRestoreActions(eid, this._draftState || this._hass.states[eid]);
   }
 
@@ -565,7 +651,7 @@ class QuickTimerCard extends WeeklyScheduleBase {
     const baseline = Object.fromEntries(schedules.map(id => [id, this._hass.states[id]?.attributes?.current_slot ?? null]));
     // JSON usa null, Jinja usa none: costruisci un literal Jinja valido anche per schedule idle.
     const baselineTpl = `{${Object.entries(baseline).map(([id, slot]) => `${JSON.stringify(id)}:${slot == null ? 'none' : JSON.stringify(slot)}`).join(',')}}`;
-    const triggeredTakeover = `trigger.id in ['schedule_state','schedule_slot'] and trigger.from_state is not none and trigger.to_state is not none and trigger.to_state.state != 'off' and (trigger.to_state.attributes.current_slot | default(none)) is not none and (trigger.to_state.attributes.current_slot | default(none)) != (${baselineTpl}).get(trigger.entity_id)`;
+    const triggeredTakeover = `trigger.id in ['schedule_state','schedule_slot'] and trigger.from_state is not none and trigger.to_state is not none and trigger.to_state.state != 'off' and (trigger.to_state.attributes.current_slot | default(none)) is not none and trigger.from_state.state not in ['unknown','unavailable'] and ((trigger.to_state.attributes.current_slot | default(none)) != (trigger.from_state.attributes.current_slot | default(none)) or trigger.from_state.state == 'off')`;
     // Baseline persistente: dopo un riavvio HA non dipendiamo dalla from_state del trigger.
     // Uno schedule già attivo quando il timer parte conserva lo stesso current_slot e non vince;
     // appena entra in uno slot differente, il watchdog lo rileva anche dopo un restart. Lo stesso
@@ -603,7 +689,8 @@ class QuickTimerCard extends WeeklyScheduleBase {
     let ent = find();
     const deadline = Date.now() + timeoutMs;
     while (!ent && Date.now() < deadline) { await new Promise(r => setTimeout(r, 300)); ent = find(); }
-    return ent || `automation.${autoId}`;   // fallback deterministico (id == slug alias)
+    if (!ent) throw new Error(`Quick Timer controller ${autoId} did not become available`);
+    return ent;
   }
 
   async _callAction(a) {
@@ -727,7 +814,7 @@ class QuickTimerCard extends WeeklyScheduleBase {
   }
 
   async _startTimer(root) {
-    if (this._starting) return;                 // blocco anti doppio-click
+    if (this._starting || this._cancelling || this._activeTimer()) return; // no overlapping local runs
     if (!this._entity) return;
     const eid = this._entity;
     // Non sovrascrivere un record in cleanup pendente: perderemmo l'ID del vecchio controller.
@@ -739,7 +826,7 @@ class QuickTimerCard extends WeeklyScheduleBase {
       }
     }
     const durationS = this._readDurationSeconds(root);
-    if (!durationS || durationS < 1) { await this._alert(this.t('qtimer.bad_duration')); return; }
+    if (!Number.isFinite(durationS) || durationS < 1) { await this._alert(this.t('qtimer.bad_duration')); return; }
 
     if (!this._isSupportedEntity(eid)) {
       await this._alert(`Quick Timer cannot safely restore ${eid}. Choose a light, fan, cover, valve, climate, lock, humidifier, water heater, switch or input boolean.`);
@@ -827,8 +914,10 @@ class QuickTimerCard extends WeeklyScheduleBase {
         this._timers = this._timers || {};
         this._timers[eid] = record;
         try { await this._saveTimers(); } catch {}
-        const ent = await this._resolveAutomationEntity(autoId, 1000);
-        try { await this._hass.callService('automation', 'turn_on', { entity_id: ent }); } catch {}
+        try {
+          const ent = await this._resolveAutomationEntity(autoId, 1000);
+          await this._hass.callService('automation', 'turn_on', { entity_id: ent });
+        } catch (recoveryError) { console.error('QT recovery controller unavailable', recoveryError); }
         await this._alert('Quick Timer could not complete its rollback or cleanup. The timer was kept so Home Assistant can retry safely.');
       }
       this._setFootStatus(this.t('qtimer.start_failed'), 'error');
@@ -848,25 +937,31 @@ class QuickTimerCard extends WeeklyScheduleBase {
 
   async _deleteAutomation(autoId) {
     try { await this._hass.callApi('DELETE', `config/automation/config/${autoId}`); }
-    catch (e) { if (this._findAutomationEntity(autoId)) throw e; }
+    catch (e) {
+      // Missing state is not evidence that DELETE succeeded (permissions/network/reload).
+      if (e?.status !== 404 && e?.status_code !== 404) throw e;
+    }
   }
 
   async _cancelTimer(eid) {
-    if (this._cancelling) return;
+    if (this._cancelling || this._starting || this._cleaningTimers) return;
     const t = this._timers?.[eid];
     if (!t) { this.render(); return; }
     this._cancelling = true;
     try {
       const ent = await this._resolveAutomationEntity(t.autoId, 2000);
-      try { await this._hass.callService('automation', 'turn_off', { entity_id: ent }); } catch {}
+      await this._hass.callService('automation', 'turn_off', { entity_id: ent });
       try {
-        for (const a of (t.restore || [])) await this._callAction(a);
+        if (t.phase !== 'cleanup') for (const a of (t.restore || [])) await this._callAction(a);
       } catch (e) {
         console.error('QT restore-now failed', e);
         try { await this._hass.callService('automation', 'turn_on', { entity_id: ent }); } catch {}
         await this._alert('Restore failed. The timer was kept so Home Assistant can retry.');
         return;
       }
+      // Persist the completed restore so retries only clean resources, never restore twice.
+      t.phase = 'cleanup';
+      await this._saveTimers();
       try {
         await this._removeQuickSchedules(this._quickScheduleIds(t));
         await this._deleteAutomation(t.autoId);
@@ -884,18 +979,29 @@ class QuickTimerCard extends WeeklyScheduleBase {
       this._draftState = null; this._draftDirty = false; this._syncDraftFromEntity(true);
       this._updateChildHass();
       this.render();
+    } catch (e) {
+      console.error('QT cancel failed', e);
+      await this._alert('Cancellation could not complete. The timer record was kept; retry cancellation.');
     } finally {
       this._cancelling = false;
     }
   }
 
   async _cleanupFinishedTimers() {
-    if (!this._timers || this._cleaningTimers) return;
+    if (!this._timers || this._cleaningTimers || this._starting || this._cancelling) return;
     this._cleaningTimers = true;
     const now = Date.now();
     let changed = false;
     try {
       for (const [eid, t] of Object.entries(this._timers)) {
+        if (t.phase === 'cleanup') {
+          try {
+            await this._removeQuickSchedules(this._quickScheduleIds(t).filter(id => this._hass.states[id]));
+            await this._deleteAutomation(t.autoId);
+            delete this._timers[eid]; changed = true;
+          } catch (e) { console.warn('QT cancellation cleanup pending', eid, e); }
+          continue;
+        }
         // Migrazione best-effort dei timer creati da versioni precedenti, che non avevano
         // runId né cleanup server-side.
         if (!t.runId && now > t.endTs + 30000) {

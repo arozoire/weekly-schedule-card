@@ -120,6 +120,11 @@ right now, grouped by parent entity, with live attribute values.
 
 ### `quick-timer-card` — temporary timer
 
+> **v1.4.2:** fixes draft isolation for newer native HA controls and several timer
+> errors found in v1.4.1. This is an incremental fix: startup, concurrent-device,
+> schedule-priority and autonomous-cleanup limitations remain. See the
+> [review and remaining limitations](docs/quick-timer-v1.4.1-review.md).
+
 A single-entity card (bundled into the main bundle since **v1.2.2**; also shipped
 as its own `dist/quick-timer-card.js` for timer-only installs): a **standard HA
 entity card** (native `tile`, embedded via `loadCardHelpers`) backed by an in-card
@@ -136,11 +141,13 @@ lights red for 5 min, irrigation on for 10 min.
 - **Server-side lifecycle, no extra setup** — **Start** creates an independent
   temporary Scheduler entity (`switch.schedule_wsc_quick_timer_*`) plus a small
   controller automation (`automation.qt_timer_*`) containing the snapshot. It
-  restores without an open dashboard and survives an HA restart. No package,
+  restores without an open dashboard. Restart recovery has limitations described
+  in the review above. No package,
   secret or long-lived token is required.
 - **Independent from profiles and groups** — temporary Quick Timer schedules are
   never adopted by the Default profile, rendered in weekly views, duplicated with
-  a profile, or switched off by profile/group operations.
+  a profile, or switched off by profile/group operations. This isolates schedule
+  membership; existing condition/extra automations can still affect the entity.
 - **Timer first, schedule later**: a timer started over an already-active schedule
   wins initially. If a matching schedule enters a new slot while it runs, the
   schedule wins; the temporary schedule is removed **without** restoring its snapshot.
@@ -160,7 +167,10 @@ Configure it from the **visual card editor** (entity, name, default duration, pr
 chips, language) — or in YAML. The advanced embedded-card override (`card:`) stays
 YAML-only and must remain a single-entity card targeting the configured entity.
 Before **Start**, the embedded card's `more-info` action is suppressed so it cannot
-bypass the draft; its inline controls remain available:
+bypass the draft; its inline controls remain available. The default climate tile
+includes the supported fan, preset and swing mode selectors. Its controls use
+both the legacy `hass` proxy and a local HA context provider. Arbitrary custom
+cards that use global APIs or external dialogs are not a supported draft boundary.
 
 Supported domains are `light`, `fan`, `cover`, `valve`, `climate`, `lock`,
 `humidifier`, `water_heater`, `switch` and `input_boolean`. Other domains are

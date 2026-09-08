@@ -9,7 +9,7 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: 'Version tag (e.g. v1.4.1)'
+        description: 'Version tag (e.g. v1.4.2)'
         required: true
 
 jobs:
@@ -28,6 +28,8 @@ jobs:
 
       - run: npm run build
 
+      - run: node tests/quick-timer-card.test.mjs
+
       - name: Resolve release version
         id: version
         shell: bash
@@ -44,12 +46,17 @@ jobs:
             exit 1
           fi
           echo "tag=$version" >> "$GITHUB_OUTPUT"
+          notes="RELEASE_NOTE_${version}.md"
+          if [ -f "$notes" ]; then
+            echo "notes_path=$notes" >> "$GITHUB_OUTPUT"
+          fi
 
       - name: Create Release
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ steps.version.outputs.tag }}
           name: ${{ steps.version.outputs.tag }}
+          body_path: ${{ steps.version.outputs.notes_path }}
           generate_release_notes: true
           files: |
             dist/weekly-schedule-card.js
