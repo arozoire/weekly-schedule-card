@@ -10,6 +10,15 @@ Deploy: copiare `dist/weekly-schedule-card.js` + `dist/weekly-schedule-view-card
 Il bundle principale (`weekly-schedule-card.js`) include già la view card, la mini card, la quick-timer-card **e la weekly-serpentine-card** (via import in `src/weekly-schedule-card.js`) — HACS fornisce tutte e 5 le card con un solo file.
 **NON** copiare `base-card.js` in dist: viene inglobato nel bundle dal rollup.
 
+## Quick Timer v1.4.0
+Il controllo nativo incorporato usa un `hass` proxy e modifica solo uno stato-bozza; i service call
+reali partono esclusivamente con **Avvia**. Ogni run crea un ID univoco `qt_timer_*`, incorpora
+snapshot/restore e usa trigger `time_pattern` (5 s), `homeassistant start` e transizioni
+`switch.schedule_*`. Scadenza normale = restore riuscito → `script.wsc_quick_timer_cleanup` → DELETE.
+Schedule entrato dopo il timer = cleanup senza restore. Annulla = disabilita, restore, cleanup.
+Il supporto server è `packages/quick_timer.yaml` e richiede `wsc_qt_authorization` in `secrets.yaml`.
+Non eliminare un'automazione scaduta lato browser finché esiste: può essere in retry del restore.
+
 ## Workflow obbligatorio
 1. Analizza modifiche necessarie → scrivi piano in `CHANGES.md`
 2. Aspetta approvazione
@@ -454,7 +463,7 @@ type: custom:weekly-schedule-card
 title: "Weekly Schedule"        # opzionale
 language: "it"                  # opzionale, auto-detect
 default_view: "columns"         # opzionale
-time_step: 15                   # opzionale, snap minuti
+snap: 15                        # opzionale, snap minuti
 entities:                       # opzionale, configurabile da UI
   - entity: climate.ma_piece
     name: "Camera"

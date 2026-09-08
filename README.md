@@ -20,13 +20,13 @@ all on top of the [Scheduler Component](https://github.com/nielsfaber/scheduler-
 
 ## Highlights
 
-- **Two cards from one codebase** — full editor + read-only dashboard view
+- **Five cards from one codebase** — full editor, dashboard view and three focused cards
 - **Two editing layouts**: `columns` and `rows`
 - **Profiles** with one-click activation and automatic exclusivity rules
 - **Entity groups** with shared color and bulk management
 - **Auto-off / auto-on** via a generated HA automation (`wsc_autooff_*`)
-- **Conditions** that compile to a generated HA automation (since the
-  Scheduler Component does not support `conditions` natively)
+- **Conditions** that compile to a generated HA automation for card-managed
+  evaluation, hysteresis and manual override
 - **Manual override** — change a conditional schedule's entity by hand and it
   stops re-applying until the next slot (safety direction still fires)
 - **Notifications** when a schedule fires — server-side HA automation, works
@@ -47,7 +47,7 @@ all on top of the [Scheduler Component](https://github.com/nielsfaber/scheduler-
 
 This repository ships **five** Lovelace custom elements built from the same
 source: the two main cards below — `weekly-schedule-card` (editing) and
-`weekly-schedule-view-card` (read-only) — plus three bonuses, the
+`weekly-schedule-view-card` (dashboard-oriented) — plus three bonuses, the
 `weekly-schedule-mini-card` (active-now summary), the `quick-timer-card`
 (temporary timer) and the `weekly-serpentine-card` (decorative weekly
 overview). All five are inlined in the main bundle.
@@ -60,7 +60,7 @@ The full-featured card for creating and managing schedules.
   toggle with the header button
 - Click an empty cell → create-schedule popup
 - Click a block → edit-schedule popup
-- Drag to resize time slots, snap configurable via `time_step`
+- Drag to resize time slots, snap configurable via `snap`
 - Profile creation / rename / duplicate / delete / exclusive activation
 - Group entities (shared color, entity picker)
 - Inline conditions and notifications per schedule
@@ -83,9 +83,10 @@ The full-featured card for creating and managing schedules.
   <sub><b>Create / edit schedule popup</b></sub>
 </p>
 
-### `weekly-schedule-view-card` — visualization
+### `weekly-schedule-view-card` — dashboard-oriented view
 
-Read-only by default, optimized for dashboards and wall displays.
+Optimized for dashboards and wall displays. It hides profile/group management,
+but schedule blocks still open the shared create/edit popup.
 
 - 2 layouts: `focus` (default) and `compact`
 - Toggle layout with the header button (toggles `focus ↔ compact`)
@@ -120,10 +121,10 @@ right now, grouped by parent entity, with live attribute values.
 ### `quick-timer-card` — temporary timer
 
 A single-entity card (bundled into the main bundle since **v1.2.2**; also shipped
-as its own `dist/quick-timer-card.js` for timer-only installs): the **standard HA
-entity card** (native `tile`, embedded via `loadCardHelpers`) for direct control,
-plus a **Timer** panel. Pick a value and
-a **duration _or_ end time** → it applies the value, then restores the entity to its
+as its own `dist/quick-timer-card.js` for timer-only installs): a **standard HA
+entity card** (native `tile`, embedded via `loadCardHelpers`) backed by an in-card
+draft, plus a **Timer** panel. Pick a value and a **duration _or_ end time**, then
+press **Start**: only then does it apply the value. It restores the entity to its
 **previous state** when the timer ends. Examples: thermostat 21 °C for 45 min,
 lights red for 5 min, irrigation on for 10 min.
 
@@ -132,17 +133,33 @@ lights red for 5 min, irrigation on for 10 min.
   <sub><b>Holding a value with a live countdown and one-tap restore</b></sub>
 </p>
 
-- **No scenes left behind** — the restore is computed at start and baked into a
-  *transient* automation (`automation.qt_timer_*`) that is auto-removed ~30 s after
-  the timer ends (or immediately on cancel). Nothing lingers at rest.
-- **Overlap with schedules → most recent wins**: start a timer over an active
-  schedule and the timer wins; if a schedule slot begins while the timer runs, the
-  schedule wins and the timer skips its restore.
+- **Server-side lifecycle** — the snapshot is baked into a unique transient
+  automation (`automation.qt_timer_*`). It restores without an open dashboard,
+  survives an HA restart, and is deleted after a successful restore.
+- **Timer first, schedule later**: a timer started over an already-active schedule
+  wins initially. If a matching schedule enters a new slot while it runs, the
+  schedule wins; the timer is deleted immediately **without** restoring its snapshot.
 - **Cancel = restore now.** Active timers are stored in **shared** state, so the
-  countdown/cancel show on every device.
+  countdown/cancel show on every device. Cancellation restores first and deletes
+  the automation only after the restore succeeds.
+- **Manual changes do not cancel the timer.** If the entity is changed by hand
+  while it runs, the original snapshot is still restored at the end. If a restore
+  service fails, the automation stays present and retries every five seconds rather
+  than deleting evidence of an incomplete restore.
+
+> Quick Timer requires the server-support package described in
+> [Quick Timer server setup](#quick-timer-server-setup). The card refuses to start
+> a timer when that package is missing; this prevents an undeletable automation.
 
 Configure it from the **visual card editor** (entity, name, default duration, preset
-chips, language) — or in YAML. The advanced embedded-card override (`card:`) stays YAML-only:
+chips, language) — or in YAML. The advanced embedded-card override (`card:`) stays
+YAML-only and must remain a single-entity card targeting the configured entity.
+Before **Start**, the embedded card's `more-info` action is suppressed so it cannot
+bypass the draft; its inline controls remain available:
+
+Supported domains are `light`, `fan`, `cover`, `valve`, `climate`, `lock`,
+`humidifier`, `water_heater`, `switch` and `input_boolean`. Other domains are
+rejected at start because their state cannot be restored reliably.
 
 ```yaml
 type: custom:quick-timer-card
@@ -154,6 +171,35 @@ presets: [5, 10, 15, 30, 45, 60]   # optional minute chips
 > Included in the main bundle (since v1.2.2) — no extra resource needed. A
 > standalone `/local/quick-timer-card.js` resource is also available for
 > timer-only installs (see below).
+
+#### Quick Timer server setup
+
+The cleanup step cannot be performed by frontend JavaScript after every browser is
+closed. Install the included package once:
+
+1. Copy `packages/quick_timer.yaml` to
+   `/config/packages/wsc_quick_timer.yaml`.
+2. Enable packages in `configuration.yaml` if they are not already enabled:
+
+   ```yaml
+   homeassistant:
+     packages: !include_dir_named packages
+   ```
+
+3. Create an administrator long-lived access token in your Home Assistant profile
+   and add it to `/config/secrets.yaml`:
+
+   ```yaml
+   wsc_qt_authorization: "Bearer YOUR_LONG_LIVED_ACCESS_TOKEN"
+   ```
+
+4. Restart Home Assistant and verify that
+   `script.wsc_quick_timer_cleanup` exists.
+
+The package calls Home Assistant only through `127.0.0.1:8123`. If your HA HTTP
+port is different, edit that URL in the package. Keep `secrets.yaml` private: the
+token must be an administrator token because deleting automation configuration is
+an administrative operation.
 
 ### `weekly-serpentine-card` — decorative weekly overview
 
@@ -251,9 +297,9 @@ resources:
     type: module
 ```
 
-The main bundle inlines the view, mini and quick-timer cards, so this single
-resource is enough. If you prefer the lighter **standalone view bundle**
-(read-only, no editor code), register it instead/in addition:
+The main bundle inlines the view, mini, quick-timer and serpentine cards, so this
+single resource is enough. If you prefer the lighter **standalone view bundle**,
+register it instead/in addition:
 
 ```yaml
   - url: /local/weekly-schedule-view-card.js
@@ -261,7 +307,7 @@ resource is enough. If you prefer the lighter **standalone view bundle**
 ```
 
 The **`quick-timer-card`** is included in the main bundle. If you want only
-the quick-timer card (without the full schedule editor), it also ships as a
+the quick-timer card (without the full schedule card), it also ships as a
 **standalone bundle** — register it as a separate resource:
 
 ```yaml
@@ -293,7 +339,7 @@ editing-only fields.
 type: custom:weekly-schedule-card        # or weekly-schedule-view-card
 title: "Weekly Schedule"                 # optional
 language: it                             # optional, auto-detected from HA
-time_step: 15                            # optional, minutes snap
+snap: 15                                 # optional, minutes snap
 entities:                                # also configurable from the UI
   - entity: climate.bedroom
     name: "Bedroom"
@@ -301,12 +347,6 @@ entities:                                # also configurable from the UI
   - entity: switch.irrigation
     name: "Garden"
     color: "#4CAF50"
-temperature:
-  min: 5
-  max: 80
-  slider_max: 35
-notifications:
-  service: notify.mobile_app_phone
 ```
 
 ### Options
@@ -315,15 +355,11 @@ notifications:
 |------------------------|-----------------|---------------|-------|
 | `title`                | string          | _(none)_      | Header title |
 | `language`             | `en` `it` `fr` `es` `pt` `de` `nl` `pl` `sv` `no` `da` `cs` | auto | Falls back to HA locale, then browser |
-| `time_step`            | integer (min)   | `15`          | Snap interval for drag |
+| `snap`                 | integer (min)   | `15`          | Snap interval for drag |
 | `entities[]`           | list            | `[]`          | Can also be edited from the card UI |
 | `entities[].entity`    | entity_id       | _required_    | Climate / light / switch |
 | `entities[].name`      | string          | entity name   | Override label |
 | `entities[].color`     | hex             | from palette  | Block color |
-| `temperature.min`      | number          | `5`           | Slider lower bound (°C) |
-| `temperature.max`      | number          | `80`          | Manual input upper bound (°C) |
-| `temperature.slider_max` | number        | `35`          | Slider upper bound (°C) |
-| `notifications.service`| service id      | _(none)_      | Pre-fills notify service in the popup |
 
 ---
 
@@ -341,6 +377,7 @@ entities owned by the [Scheduler Component](https://github.com/nielsfaber/schedu
 | Conditions | this card | `automation.wsc_*` (generated) | One HA automation per conditional schedule, lifecycle-bound to it |
 | Auto-off / auto-on | this card | `automation.wsc_autooff_*` (generated) | One HA automation per schedule, fires the end-of-slot action when `current_slot` clears |
 | One-shot | this card | `automation.wsc_oneshot_*` (generated) | One HA automation per "use and discard" schedule, calls `scheduler.remove` after the last selected day runs |
+| Quick timers | this card + support package | `automation.qt_timer_*` + shared `input_text.wsc_qt_store_*` | Unique transient automation with snapshot, expiry and schedule-takeover logic; shared countdown metadata |
 
 **Implication for users**: deleting a `switch.schedule_*` entity from HA
 removes the schedule globally — the card just reflects HA state.
@@ -362,7 +399,7 @@ under the hood — you can call the same services yourself from
 ```yaml
 service: scheduler.add
 data:
-  entity_id: climate.bedroom
+  repeat_type: repeat
   weekdays: [mon, tue, wed, thu, fri]
   timeslots:
     - start: "08:00:00"
@@ -392,14 +429,14 @@ data:
   entity_id: switch.schedule_abc123
 ```
 
-### Fields the Scheduler Component does NOT accept
+### Features handled by this card outside Scheduler
 
-These belong inside `timeslots[]` but **will be rejected** if you try to
-include them — this card works around the limitation:
+The card keeps these features in linked Home Assistant automations so their UI,
+lifecycle and backward compatibility remain under the card's control:
 
 | Missing feature | Workaround built into this card |
 |-----------------|---------------------------------|
-| `conditions` per slot | Generates an HA automation (`automation.wsc_*`) that gates the schedule's actions |
+| Card conditions | Generates an HA automation (`automation.wsc_*`) that gates the schedule's actions |
 | `stop_action` per slot | Generates an HA automation (`automation.wsc_autooff_*`) that runs the end-of-slot action |
 
 See [Conditions & Notifications](#conditions--notifications) and
@@ -434,7 +471,7 @@ preview, and saves the final action set via `scheduler.edit`.
 ```yaml
 service: scheduler.add
 data:
-  entity_id: climate.bedroom
+  repeat_type: repeat
   weekdays: [mon, tue, wed, thu, fri]
   timeslots:
     - start: "07:00:00"
@@ -450,7 +487,7 @@ data:
 ```yaml
 service: scheduler.add
 data:
-  entity_id: light.living_room
+  repeat_type: repeat
   weekdays: [mon, tue, wed, thu, fri, sat, sun]
   timeslots:
     - start: "20:00:00"
@@ -466,7 +503,7 @@ data:
 ```yaml
 service: scheduler.add
 data:
-  entity_id: switch.irrigation
+  repeat_type: repeat
   weekdays: [mon, wed, fri]
   timeslots:
     - start: "06:00:00"
@@ -532,9 +569,9 @@ IT:
 
 **Profiles** are named bundles of schedules — think "Summer", "Winter",
 "Holiday". Activating a profile enables its schedules; deactivating disables
-them. Profiles that share at least one entity become **mutually exclusive**:
-activating one auto-deactivates the conflicting ones, so you cannot end up
-with two competing setpoints on the same climate.
+them. Profiles marked **Exclusive** deactivate the other exclusive profiles when
+activated. Profiles marked **Shared** coexist; entity overlap alone does not
+change this rule.
 
 Profiles are persisted in **shared `input_text` helpers** so every HA user (and
 device) sees the same profiles, groups and schedules. The JSON blob is compressed
@@ -615,8 +652,9 @@ the generated automation on the next card save.
 
 ### Conditions
 
-The Scheduler Component does **not** support `conditions` on timeslots, so
-this card emits a dedicated HA automation per conditional schedule. The
+For compatibility and full control of the card's condition UI, this card emits a
+dedicated HA automation per conditional schedule instead of storing those
+conditions in the Scheduler entity. The
 automation is created / updated / deleted in lockstep with the schedule.
 
 Mechanism (**event-driven** — no polling):

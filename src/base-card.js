@@ -396,14 +396,28 @@ export default class WeeklyScheduleBase extends HTMLElement {
     for (const eid of watched) {
       const s = curr.states[eid], ps = prev.states[eid];
       if (!ps || !s) return true;
-      if (ps.state !== s.state || ps.last_changed !== s.last_changed) return true;
+      // last_changed ignores attribute-only updates (temperature, fan mode, brightness, etc.).
+      if (ps.state !== s.state || ps.last_updated !== s.last_updated) return true;
     }
-    for (const s of Object.values(curr.states)) {
-      if (!s.entity_id.startsWith('switch.schedule_')) continue;
-      const ents = s.attributes?.entities || [];
-      if (!ents.some(e => watched.has(e))) continue;
-      const ps = prev.states[s.entity_id];
-      if (!ps || ps.state !== s.state || ps.last_changed !== s.last_changed) return true;
+    const scheduleIds = new Set([
+      ...Object.keys(prev.states).filter(id => id.startsWith('switch.schedule_')),
+      ...Object.keys(curr.states).filter(id => id.startsWith('switch.schedule_')),
+    ]);
+    for (const id of scheduleIds) {
+      const s = curr.states[id], ps = prev.states[id];
+      if (!s || !ps) return true; // schedule created or removed
+      // Considera sia prima sia dopo: se una modifica rimuove l'ultima entità osservata,
+      // guardare solo il nuovo stato farebbe perdere proprio quel refresh.
+      const ents = new Set();
+      for (const state of [ps, s]) {
+        for (const eid of (Array.isArray(state.attributes?.entities) ? state.attributes.entities : [])) ents.add(eid);
+        for (const a of (state.attributes?.actions || [])) {
+          const raw = a?.entity_id ?? a?.target?.entity_id ?? a?.service_data?.entity_id ?? a?.data?.entity_id;
+          for (const eid of (Array.isArray(raw) ? raw : [raw])) if (typeof eid === 'string') ents.add(eid);
+        }
+      }
+      if (![...ents].some(e => watched.has(e))) continue;
+      if (ps.state !== s.state || ps.last_updated !== s.last_updated) return true;
     }
     return false;
   }
