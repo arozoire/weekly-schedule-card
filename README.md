@@ -120,10 +120,10 @@ right now, grouped by parent entity, with live attribute values.
 
 ### `quick-timer-card` — temporary timer
 
-> **v1.4.1 review:** the published release has a draft-isolation bug with newer
-> native HA controls and unresolved lifecycle edge cases. This branch contains
-> targeted fixes; see the [review and remaining limitations](docs/quick-timer-v1.4.1-review.md)
-> before treating the timer as reliable for unattended use.
+> **v1.4.2:** fixes draft isolation for newer native HA controls and several timer
+> errors found in v1.4.1. This is an incremental fix: startup, concurrent-device,
+> schedule-priority and autonomous-cleanup limitations remain. See the
+> [review and remaining limitations](docs/quick-timer-v1.4.1-review.md).
 
 A single-entity card (bundled into the main bundle since **v1.2.2**; also shipped
 as its own `dist/quick-timer-card.js` for timer-only installs): a **standard HA

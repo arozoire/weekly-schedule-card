@@ -4,11 +4,12 @@ Reviewed published main commit `7066b9417b7c7dfb2d3286b0a09377604bb06986`
 (tree `b5801b05fb003beb303ee15797447a7804c05810`). The local starting tree was
 verified against GitHub, not inferred from the package version.
 
-The release only partially implements the requested behavior. These changes are
-an incremental repair for review, not a declaration that the lifecycle is ready
-for another release. No version bump is included.
+The release only partially implements the requested behavior. The targeted fixes
+below are included in v1.4.2. After reviewing the remaining limitations, the
+repository owner explicitly requested publishing this incremental update through
+HACS. This does not resolve the architectural issues listed below.
 
-## Confirmed defects repaired in this branch
+## Confirmed defects repaired in v1.4.2
 
 1. **Immediate device changes while editing (critical).** `_draftHassObject`
    intercepts `hass.callService`, but current native HA card features consume
@@ -41,7 +42,7 @@ for another release. No version bump is included.
    treated as success merely because the entity is absent from `hass.states`.
    Start rejects an already-running local timer and non-finite durations.
 
-## Remaining release blockers / architectural limitations
+## Remaining architectural limitations
 
 - **Full self-deletion is not implemented.** The temporary Scheduler entity is
   removed server-side, but its disabled controller is deleted by the frontend.
@@ -94,6 +95,6 @@ fixtures, not a browser connected to an actual Home Assistant instance. The
 reported user's device behavior has not been tested directly. Generated HA Jinja
 is inspected but not executed in an HA runtime here.
 
-Before publishing another version: resolve the startup/priority/concurrency
-blockers, decide how to satisfy autonomous resource cleanup, and validate native
+To complete the original requirements: resolve the startup/priority/concurrency
+issues, implement autonomous resource cleanup, and validate native
 controls plus expiry/cancel/takeover/restart on HA with the dashboard closed.
