@@ -1,5 +1,11 @@
 # Quick Timer v1.4.1 review
 
+**v1.4.3 follow-up:** the user reported that live controls still acted immediately
+after v1.4.2. The proxy/context approach below is historical and has been removed.
+The Quick Timer now renders its own HTML draft controls and never instantiates
+embedded HA cards. Browser interaction tests cover edit → Start → Cancel. The
+architectural limitations below remain separate, unresolved work.
+
 Reviewed published main commit `7066b9417b7c7dfb2d3286b0a09377604bb06986`
 (tree `b5801b05fb003beb303ee15797447a7804c05810`). The local starting tree was
 verified against GitHub, not inferred from the package version.

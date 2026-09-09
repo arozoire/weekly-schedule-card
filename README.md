@@ -120,18 +120,16 @@ right now, grouped by parent entity, with live attribute values.
 
 ### `quick-timer-card` — temporary timer
 
-> **v1.4.2:** fixes draft isolation for newer native HA controls and several timer
-> errors found in v1.4.1. This is an incremental fix: startup, concurrent-device,
-> schedule-priority and autonomous-cleanup limitations remain. See the
-> [review and remaining limitations](docs/quick-timer-v1.4.1-review.md).
+**v1.4.3 uses a local settings editor.** Choose duration and the temporary entity
+settings, then press **Start timer**. Editing only changes a draft in the card;
+no embedded HA card or HA API proxy is used. The current real entity state is
+saved when Start is pressed and restored when the timer ends or is cancelled.
+During a running timer the settings are read-only; **Cancel** restores immediately.
 
-A single-entity card (bundled into the main bundle since **v1.2.2**; also shipped
-as its own `dist/quick-timer-card.js` for timer-only installs): a **standard HA
-entity card** (native `tile`, embedded via `loadCardHelpers`) backed by an in-card
-draft, plus a **Timer** panel. Pick a value and a **duration _or_ end time**, then
-press **Start**: only then does it apply the value. It restores the entity to its
-**previous state** when the timer ends. Examples: thermostat 21 °C for 45 min,
-lights red for 5 min, irrigation on for 10 min.
+The card is included in the main bundle and also available as
+`dist/quick-timer-card.js` for timer-only installs. Existing startup, concurrent-device,
+schedule-priority and autonomous-cleanup limitations remain documented in the
+[review](docs/quick-timer-v1.4.1-review.md).
 
 <p align="center">
   <img src="docs/images/08-quick-timer.png" alt="Quick Timer card — holding a value with a live countdown" width="420"><br>
@@ -164,13 +162,14 @@ lights red for 5 min, irrigation on for 10 min.
   open, the disabled controller is deleted on the next Quick Timer card load.
 
 Configure it from the **visual card editor** (entity, name, default duration, preset
-chips, language) — or in YAML. The advanced embedded-card override (`card:`) stays
-YAML-only and must remain a single-entity card targeting the configured entity.
-Before **Start**, the embedded card's `more-info` action is suppressed so it cannot
-bypass the draft; its inline controls remain available. The default climate tile
-includes the supported fan, preset and swing mode selectors. Its controls use
-both the legacy `hass` proxy and a local HA context provider. Arbitrary custom
-cards that use global APIs or external dialogs are not a supported draft boundary.
+chips, language) — or in YAML. The local editor exposes supported settings for the
+entity, including climate mode, temperature, fan/preset/swing modes and light
+power, brightness and color. It uses the device's available modes and bounds.
+
+**Compatibility:** legacy `card:` / `tile:` options no longer instantiate embedded
+cards or their actions. Only their `name` is retained as a title fallback. Duration,
+entity, presets and language configuration remain supported. This prevents live
+entity controls from bypassing the draft.
 
 Supported domains are `light`, `fan`, `cover`, `valve`, `climate`, `lock`,
 `humidifier`, `water_heater`, `switch` and `input_boolean`. Other domains are
