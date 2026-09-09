@@ -56,19 +56,9 @@ const climateState = (overrides = {}) => ({
     },
   };
   assert.deepEqual(card._buildRestoreActions('light.office'), []);
-  const cfg = card._buildNativeCardConfig();
-  assert.equal(cfg.name, 'Office');
-  let blocked = 0;
-  card._timers = {};
-  card._guardDraftMoreInfo({
-    preventDefault() { blocked++; },
-    stopImmediatePropagation() { blocked++; },
-    stopPropagation() { blocked++; },
-  });
-  assert.equal(blocked, 3);
-  card._timers['light.office'] = { endTs: Date.now() + 60000, autoId: 'qt_test' };
-  card._guardDraftMoreInfo({ preventDefault() { blocked++; } });
-  assert.equal(blocked, 3);
+  card._syncDraftFromEntity();
+  assert.match(card._draftEditorHtml(), /Office/);
+  assert.match(card._draftEditorHtml(), /disabled/);
 }
 
 {
@@ -227,9 +217,8 @@ const climateState = (overrides = {}) => ({
     callService: async () => { realCalls++; },
   };
   card._draftState = card._cloneState(card._hass.states['climate.office']);
-  const draftHass = card._draftHassObject();
-  await draftHass.callService('climate', 'set_hvac_mode', { entity_id: 'climate.office', hvac_mode: 'fan_only' });
-  await draftHass.callService('climate', 'set_fan_mode', { entity_id: 'climate.office', fan_mode: '100%' });
+  card._applyDraftService('climate', 'set_hvac_mode', { hvac_mode: 'fan_only' });
+  card._applyDraftService('climate', 'set_fan_mode', { fan_mode: '100%' });
   assert.equal(realCalls, 0);
   assert.equal(card._draftState.state, 'fan_only');
   assert.equal(card._draftState.attributes.fan_mode, '100%');
@@ -397,68 +386,15 @@ const climateState = (overrides = {}) => ({
   assert.equal(card._hassChangedRelevant(scheduleBefore, scheduleAfter), true);
 }
 
-// Regression: HA native features consume Lit contexts, ignoring child.hass.
-// Protocol: frontend/src/data/context/index.ts + consume-context-entry.ts.
-{
-  const card = new QuickTimerCard();
-  card._entity = 'climate.office';
-  card._timers = {};
-  let liveCalls = 0;
-  card._hass = {
-    states: { 'climate.office': climateState() },
-    callService: async () => { liveCalls++; },
-    callWS: async () => { liveCalls++; },
-    callApi: async () => { liveCalls++; },
-    connection: { sendMessagePromise: async () => { liveCalls++; } },
-  };
-  let api, states, connection;
-  const disposers = [];
-  let intercepted = 0;
-  for (const [context, receive] of [
-    ['hassApi', value => { api = value; }],
-    ['states', value => { states = value; }],
-    ['connection', value => { connection = value; }],
-  ]) {
-    card._provideDraftContext({
-      context, subscribe: true, stopPropagation() { intercepted++; },
-      callback(value, dispose) { receive(value); disposers.push(dispose); },
-    });
-  }
-  assert.equal(intercepted, 3, 'all sensitive requests stop before HA root provider');
-  await api.callService('climate', 'set_hvac_mode', { hvac_mode: 'fan_only' }, { entity_id: 'climate.office' });
-  await connection.sendMessagePromise({ type: 'call_service', domain: 'climate', service: 'set_fan_mode', service_data: { entity_id: 'climate.office', fan_mode: '100%' } });
-  assert.equal(states['climate.office'].state, 'fan_only');
-  assert.equal(states['climate.office'].attributes.fan_mode, '100%');
-  assert.deepEqual(card._buildApplyActions('climate.office').map(a => a.service), ['climate.set_hvac_mode', 'climate.set_fan_mode'], 'do not apply unrelated old snapshot values');
-  assert.equal(card._hass.states['climate.office'].state, 'cool');
-  assert.equal(liveCalls, 0);
-  await assert.rejects(api.callWS({ type: 'automation/trigger' }));
-  await assert.rejects(api.callApi('POST', 'config/automation/config/unrelated', {}));
-  await assert.rejects(api.callService('switch', 'turn_on', { entity_id: 'switch.unrelated' }));
-  assert.equal(liveCalls, 0, 'unsupported writes cannot escape the draft');
-
-  // Switching to a live running timer must update already-subscribed contexts.
-  card._timers['climate.office'] = { autoId: 'running', endTs: Date.now() + 60000 };
-  card._updateChildHass();
-  await api.callService('climate', 'set_hvac_mode', { hvac_mode: 'cool' });
-  assert.equal(liveCalls, 1);
-  delete card._timers['climate.office'];
-  card._updateChildHass();
-  await api.callService('climate', 'set_hvac_mode', { entity_id: 'climate.office', hvac_mode: 'off' });
-  assert.equal(liveCalls, 1, 'finished timers return to draft API');
-  for (const dispose of disposers) dispose();
-  assert.equal(card._contextSubscriptions.size, 0);
-}
-
 {
   const card = new QuickTimerCard();
   card._entity = 'switch.office';
   card._timers = {};
   card._hass = { states: { 'switch.office': { entity_id: 'switch.office', state: 'off', attributes: {} } } };
-  const draft = card._draftHassObject();
-  await draft.callService('switch', 'toggle', { entity_id: 'switch.office' });
+  card._syncDraftFromEntity();
+  card._applyDraftService('switch', 'toggle');
   assert.equal(card._draftState.state, 'on');
-  await draft.callService('switch', 'toggle', { entity_id: 'switch.office' });
+  card._applyDraftService('switch', 'toggle');
   assert.equal(card._draftState.state, 'off');
   card._entity = 'cover.office';
   card._draftActions = [];
@@ -488,8 +424,9 @@ const climateState = (overrides = {}) => ({
   card._config = { entity: 'climate.office' };
   card._hass.states['climate.office'].attributes.fan_modes = ['low', 'high'];
   card._hass.states['climate.office'].attributes.preset_modes = ['none', 'eco'];
-  assert(card._buildNativeCardConfig().features.some(f => f.type === 'climate-fan-modes'));
-  assert(card._buildNativeCardConfig().features.some(f => f.type === 'climate-preset-modes'));
+  card._syncDraftFromEntity();
+  assert.match(card._draftEditorHtml(), /data-draft-field="fan_mode"/);
+  assert.match(card._draftEditorHtml(), /data-draft-field="preset_mode"/);
 }
 
 // A failed schedule removal after Cancel must retry cleanup, without a second restore.

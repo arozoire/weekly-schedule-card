@@ -10,20 +10,14 @@ Deploy: copiare `dist/weekly-schedule-card.js` + `dist/weekly-schedule-view-card
 Il bundle principale (`weekly-schedule-card.js`) include già la view card, la mini card, la quick-timer-card **e la weekly-serpentine-card** (via import in `src/weekly-schedule-card.js`) — HACS fornisce tutte e 5 le card con un solo file.
 **NON** copiare `base-card.js` in dist: viene inglobato nel bundle dal rollup.
 
-## Quick Timer v1.4.1
-Review follow-up: see `docs/quick-timer-v1.4.1-review.md`. Modern HA native features
-consume `states` / `hassApi` via Lit context; intercepting only `hass` is insufficient.
-The embedded host now supplies those contexts. Cancel cleanup uses a persisted phase.
-Startup atomicity, unconditional self-deletion, concurrency and priority remain blockers.
-Il controllo nativo incorporato usa un `hass` proxy e modifica solo uno stato-bozza; i service call
-reali partono esclusivamente con **Avvia**. Ogni run crea uno schedule indipendente
-`switch.schedule_wsc_quick_timer_*` (mai collegato a profili/gruppi) e un controller univoco
-`qt_timer_*` con snapshot/restore e trigger `time_pattern` (5 s), `homeassistant start` e transizioni
-degli schedule normali. Avvio reale via `scheduler.run_action`. Scadenza normale = restore riuscito →
-`scheduler.remove` → controller disabilitato; la card cancella il controller via API appena aperta.
-Schedule entrato dopo il timer = remove senza restore. Annulla = disabilita, restore, remove + DELETE.
-Nessun package, secret o token. Non cancellare un controller se lo schedule transitorio esiste ancora:
-può essere in retry del restore.
+## Quick Timer v1.4.3
+L'editor usa solo input/select HTML propri. Nessuna card HA incorporata e nessun hass
+proxy/context: `_changeDraftInput` → `_applyDraftService` scrive solo la bozza.
+`card:`/`tile:` legacy mantengono solo name. Durante il timer campi in sola lettura.
+Avvia acquisisce lo snapshot reale e applica i comandi scelti; Annulla ripristina.
+Lifecycle Scheduler/controller invariato: i limiti sono documentati in
+`docs/quick-timer-v1.4.1-review.md`. Test UI reali in Chromium su GitHub Actions:
+`tests/quick-timer-browser.test.cjs`, oltre ai test Node esistenti.
 
 ## Workflow obbligatorio
 1. Analizza modifiche necessarie → scrivi piano in `CHANGES.md`
