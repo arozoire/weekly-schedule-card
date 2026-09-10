@@ -120,7 +120,7 @@ right now, grouped by parent entity, with live attribute values.
 
 ### `quick-timer-card` — temporary timer
 
-**v1.4.3 uses a local settings editor.** Choose duration and the temporary entity
+**v1.5.0 adds the Linear local settings editor.** Choose duration and the temporary entity
 settings, then press **Start timer**. Editing only changes a draft in the card;
 no embedded HA card or HA API proxy is used. The current real entity state is
 saved when Start is pressed and restored when the timer ends or is cancelled.
@@ -160,6 +160,22 @@ schedule-priority and autonomous-cleanup limitations remain documented in the
   and disables itself. An open Quick Timer card then deletes the controller through
   the authenticated HA frontend API (normally within one second); if no dashboard is
   open, the disabled controller is deleted on the next Quick Timer card load.
+
+**Linear controls follow the entity's capabilities:**
+- Available modes become wrapping icon/text buttons; there is no fixed mode count.
+  Unknown manufacturer mode names remain available with their original labels.
+- Dimmable lights get a 0–100% brightness slider (zero means off). On/off-only
+  lights get only the power buttons. Color and white-temperature controls appear
+  only when supported.
+- Numeric settings have a slider plus a precise input, with the entity's bounds.
+  Climate fan modes use their actual named values; percentage fan entities snap
+  to their supported speed count. Temperature controls are hidden in Off/Fan-only
+  mode, and previously drafted temperature commands are discarded in those modes.
+- Presets, swing, direction and effects remain under **More options**.
+- The real current state is shown separately from the pending draft. Inputs stay
+  disabled while starting, cancelling, running, or when the entity is unavailable.
+- Duration has a slider, configurable preset buttons and custom minutes. **Until**
+  still selects the end time. Larger custom durations extend the slider range.
 
 Configure it from the **visual card editor** (entity, name, default duration, preset
 chips, language) — or in YAML. The local editor exposes supported settings for the

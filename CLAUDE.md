@@ -10,8 +10,10 @@ Deploy: copiare `dist/weekly-schedule-card.js` + `dist/weekly-schedule-view-card
 Il bundle principale (`weekly-schedule-card.js`) include già la view card, la mini card, la quick-timer-card **e la weekly-serpentine-card** (via import in `src/weekly-schedule-card.js`) — HACS fornisce tutte e 5 le card con un solo file.
 **NON** copiare `base-card.js` in dist: viene inglobato nel bundle dal rollup.
 
-## Quick Timer v1.4.3
-L'editor usa solo input/select HTML propri. Nessuna card HA incorporata e nessun hass
+## Quick Timer v1.5.0 — Linear UI
+L'editor usa solo pulsanti e input HTML propri. Le scelte vengono dalle liste HA,
+i numeri usano range + input preciso. Stato reale separato; opzioni secondarie in details.
+Le temperature nascoste da Off/Fan-only non lasciano comandi pendenti. Nessuna card HA incorporata e nessun hass
 proxy/context: `_changeDraftInput` → `_applyDraftService` scrive solo la bozza.
 `card:`/`tile:` legacy mantengono solo name. Durante il timer campi in sola lettura.
 Avvia acquisisce lo snapshot reale e applica i comandi scelti; Annulla ripristina.
@@ -334,10 +336,10 @@ Per evitare N scritture+eventi per una singola operazione utente:
 
 ## Quick Timer Card (`custom:quick-timer-card`, v1.4.1)
 Card a entità singola (`src/quick-timer-card.js`, `extends WeeklyScheduleBase`) in un'unica
-`ha-card`: scelta durata, controllo HA nativo incorporato e pulsante Avvia/countdown.
-- **Bozza prima di Avvia**: il controllo riceve un proxy `hass`; i service call sulla sola entità
-  configurata modificano `_draftState`, senza toccare HA. Avvia acquisisce lo stato reale,
-  costruisce `restore[]` e `apply[]`, poi applica la bozza.
+`ha-card`: editor Lineare locale, durata e pulsante Avvia/countdown.
+- **Bozza prima di Avvia**: pulsanti/range/input HTML modificano `_draftState` e
+  `_draftActions`; nessun controllo riceve un proxy o un hass capace di inviare comandi.
+  Avvia acquisisce lo stato reale, costruisce `restore[]` e `apply[]`, poi applica la bozza.
 - **Lifecycle**: ogni run crea uno schedule `WSC Quick Timer - ...` tramite `scheduler.add`, lo
   risolve per nome/entity ID, crea `automation.qt_timer_*`, salva il record condiviso e chiama
   `scheduler.run_action`. Lo schedule non usa `repeat_type: single`, perché Scheduler lo eliminerebbe

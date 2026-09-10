@@ -476,4 +476,34 @@ const climateState = (overrides = {}) => ({
   await card._startTimer({});
 }
 
+// Hidden controls must not leave pending actions or misleading draft values.
+{
+  const card = new QuickTimerCard();
+  card.setConfig({ entity: 'climate.office' });
+  card._timers = {};
+  card._hass = { states: { 'climate.office': climateState() } };
+  card._syncDraftFromEntity();
+  card._applyDraftService('climate', 'set_temperature', { temperature: 20 });
+  card._applyDraftService('climate', 'set_hvac_mode', { hvac_mode: 'fan_only' });
+  assert.equal(card._draftState.attributes.temperature, 24);
+  assert.equal(card._draftActions.some(a => a.service === 'climate.set_temperature'), false);
+  card._applyDraftService('climate', 'set_hvac_mode', { hvac_mode: 'cool' });
+  assert.equal(card._draftState.attributes.temperature, 24);
+  card._applyDraftService('climate', 'set_fan_mode', { fan_mode: 'high' });
+  card._applyDraftService('climate', 'set_hvac_mode', { hvac_mode: 'off' });
+  assert.deepEqual(card._draftActions.map(a => a.service), ['climate.set_hvac_mode']);
+}
+{
+  const card = new QuickTimerCard();
+  card.setConfig({ entity: 'light.office' });
+  card._timers = {};
+  card._hass = { states: { 'light.office': { state: 'on', attributes: { brightness: 128, supported_color_modes: ['brightness'] } } } };
+  card._syncDraftFromEntity();
+  card._applyDraftService('light', 'turn_on', { brightness_pct: 0 });
+  assert.equal(card._draftState.state, 'off');
+  card._applyDraftService('light', 'turn_on');
+  assert.equal(card._draftState.state, 'on');
+  assert.equal(card._buildApplyActions('light.office')[0].data.brightness_pct, 50);
+}
+
 console.log('Quick Timer tests passed');

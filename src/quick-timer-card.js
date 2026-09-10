@@ -1,5 +1,5 @@
 // src/quick-timer-card.js
-// Last modified: 2026-09-08 (temporary Scheduler one-shot lifecycle)
+// Last modified: 2026-09-10 (local Linear UI, entity capability controls)
 //
 // Card legata a UNA entità. Controlli HTML propri modificano solo la bozza: nessun servizio
 // viene inviato prima di Avvia. Avvia acquisisce lo stato reale, crea uno schedule Scheduler
@@ -24,14 +24,17 @@ class QuickTimerCard extends WeeklyScheduleBase {
     this._draftDirty = false;
     this._draftActions = [];
     this._cancelling = false;
+    this._moreOptionsOpen = false;
   }
 
   setConfig(config) {
     this._config = config;
     this._entity = config.entity || null;
     this._lang = null;
-    this._presets = Array.isArray(config.presets) && config.presets.length ? config.presets : [5, 10, 15, 30, 45, 60];
-    this._timerMinutes = config.default_minutes || this._presets[0] || 30;
+    const presets = Array.isArray(config.presets) ? config.presets.map(Number).filter(m => Number.isFinite(m) && m >= 1) : [];
+    this._presets = presets.length ? [...new Set(presets)] : [5, 10, 15, 30, 45, 60];
+    this._timerMinutes = Number(config.default_minutes) > 0 ? Number(config.default_minutes) : this._presets[0];
+    this._moreOptionsOpen = false;
     this._draftState = null;
     this._draftDirty = false;
     this._draftActions = [];
@@ -173,17 +176,78 @@ class QuickTimerCard extends WeeklyScheduleBase {
     if (!this._hass || this._editingDraft) return;
     const host = this.shadowRoot.querySelector('.qt-editor');
     if (!host) return;
+    const real = this._hass.states[this._entity];
+    const duration = this.shadowRoot.querySelector('.qt-duration-fields');
+    if (duration) duration.disabled = !!(this._starting || this._cancelling || this._activeTimer());
+    const start = this.shadowRoot.querySelector('.qt-start');
+    if (start) start.disabled = !!(this._starting || this._cancelling || this._timers === null || !real || ['unknown', 'unavailable'].includes(real.state));
+    const live = host.querySelector('.qt-live-value');
+    if (live) live.textContent = this._stateSummary(real);
+    const focused = this.shadowRoot.activeElement;
+    const attributes = real?.attributes || {};
+    const capabilities = JSON.stringify(['supported_features', 'supported_color_modes', 'hvac_modes',
+      'fan_modes', 'preset_modes', 'swing_modes', 'swing_horizontal_modes', 'operation_list',
+      'effect_list', 'available_modes', 'min_temp', 'max_temp', 'target_temp_step',
+      'min_color_temp_kelvin', 'max_color_temp_kelvin', 'percentage_step', 'min_humidity', 'max_humidity']
+      .map(key => attributes[key]));
     if (!force && !this._starting && !this._cancelling && !this._activeTimer()
-      && host.contains?.(this.shadowRoot.activeElement)) return;
+      && real && !['unknown', 'unavailable'].includes(real.state)
+      && host._qtCapabilities === capabilities && host.contains?.(focused)) return;
+    host._qtCapabilities = capabilities;
     this._syncDraftFromEntity();
     const html = this._draftEditorHtml();
     if (host._qtHtml === html) return;
     host._qtHtml = html;
     host.innerHTML = html;
-    host.querySelectorAll('[data-draft-field]').forEach(input => {
-      input.addEventListener('input', () => this._changeDraftInput(input, false));
-      input.addEventListener('change', () => this._changeDraftInput(input, true));
+    host.querySelectorAll('[data-draft-field], [data-draft-range]').forEach(input => {
+      if (input.tagName === 'BUTTON') {
+        input.addEventListener('click', () => this._changeDraftInput(input, true));
+      } else {
+        input.addEventListener('input', () => this._changeDraftInput(input, false));
+        input.addEventListener('change', () => this._changeDraftInput(input, true));
+      }
     });
+    const more = host.querySelector('.qt-more');
+    more?.addEventListener('toggle', () => { this._moreOptionsOpen = more.open; });
+    // Keep keyboard focus after a committed edit replaces the local controls.
+    if (focused && host.contains?.(focused) === false) {
+      const key = focused.dataset?.draftField || focused.dataset?.draftRange;
+      if (key) [...host.querySelectorAll('[data-draft-field], [data-draft-range]')].find(el =>
+        el.tagName === focused.tagName && el.type === focused.type
+        && (el.dataset.draftField || el.dataset.draftRange) === key
+        && (el.tagName !== 'BUTTON' || el.value === focused.value))?.focus({ preventScroll: true });
+    }
+  }
+
+  _choiceLabel(value) {
+    const known = ['on', 'off', 'open', 'close', 'stop', 'cool', 'heat', 'heat_cool',
+      'fan_only', 'dry', 'auto', 'low', 'medium', 'high', 'forward', 'reverse'];
+    if (known.includes(value)) return this.t(`qtimer.${value}`);
+    if (['locked', 'unlocked'].includes(value)) return this.t(`blk.${value}`);
+    return String(value);
+  }
+
+  _choiceIcon(key, value) {
+    const icons = { on: 'power', off: 'power', cool: 'snowflake', heat: 'fire',
+      heat_cool: 'sun-snowflake', fan_only: 'fan', dry: 'water-percent', auto: 'autorenew',
+      open: 'arrow-up', close: 'arrow-down', stop: 'stop', locked: 'lock', unlocked: 'lock-open' };
+    return `mdi:${(Object.hasOwn(icons, value) ? icons[value] : null) || (key === 'hvac_mode' ? 'thermostat' : 'tune')}`;
+  }
+
+  _stateSummary(st) {
+    if (!st) return this._entity || '';
+    const a = st.attributes || {};
+    const dom = this._detectDomain(this._entity);
+    const parts = [this._choiceLabel(st.state)];
+    if (!['off', 'unknown', 'unavailable'].includes(st.state)) {
+      if (['climate', 'water_heater'].includes(dom) && st.state !== 'fan_only' && a.temperature != null)
+        parts.push(`${a.temperature}${a.temperature_unit || this._hass.config?.unit_system?.temperature || '°C'}`);
+      if (dom === 'climate' && a.fan_mode != null) parts.push(this._choiceLabel(a.fan_mode));
+      if (dom === 'light' && a.brightness != null) parts.push(`${Math.round(a.brightness * 100 / 255)}%`);
+      if (dom === 'fan' && a.percentage != null) parts.push(`${a.percentage}%`);
+      if (['cover', 'valve'].includes(dom) && a.current_position != null) parts.push(`${a.current_position}%`);
+    }
+    return parts.join(' · ');
   }
 
   _draftEditorHtml() {
@@ -191,75 +255,95 @@ class QuickTimerCard extends WeeklyScheduleBase {
     const st = running ? this._hass.states[this._entity] : this._draftState;
     if (!st) return `<div class="qt-hint">${this._esc(this._entity)}</div>`;
     const a = st.attributes || {};
+    const live = this._hass.states[this._entity]?.attributes || {};
+    const sf = live.supported_features || 0;
     const dom = this._detectDomain(this._entity);
     const caps = this._entityCaps(this._entity);
     const title = this._config.name || this._config.card?.name || this._config.tile?.name || a.friendly_name || this._entity;
     const disabled = running || this._starting || this._cancelling || this._timers === null
-      || ['unknown', 'unavailable'].includes(st.state);
-    const fields = [];
+      || !this._hass.states[this._entity] || ['unknown', 'unavailable'].includes(this._hass.states[this._entity].state);
+    const fields = [], advanced = [];
     const select = (key, label, values, value) => {
-      if (!values?.length) return;
+      if (!Array.isArray(values) || !values.length || (dom === 'climate' && st.state === 'off' && key !== 'hvac_mode')) return;
       const options = [...new Set(values.map(String))];
-      const selected = value == null ? '' : String(value);
-      const empty = options.includes(selected) ? '' : '<option value="" selected>—</option>';
-      fields.push(`<label class="qt-field"><span>${this._esc(label)}</span><select data-draft-field="${key}">${empty}${options.map(v => `<option value="${this._escAttr(v)}" ${v === selected ? 'selected' : ''}>${this._esc(v === 'on' ? this.t('qtimer.on') : v === 'off' ? this.t('qtimer.off') : v)}</option>`).join('')}</select></label>`);
+      const primary = ['hvac_mode', 'power', 'position_action', 'lock', 'operation_mode'].includes(key);
+      const target = ['preset_mode', 'swing_mode', 'swing_horizontal_mode', 'effect', 'direction', 'oscillating'].includes(key) ? advanced : fields;
+      target.push(`<div class="qt-field"><span id="qt-label-${key}">${this._esc(label)}</span><div class="qt-choices ${primary ? 'qt-mode-buttons' : ''}" role="group" aria-labelledby="qt-label-${key}">${options.map(v => `<button type="button" data-draft-field="${key}" value="${this._escAttr(v)}" aria-pressed="${v === String(value)}">${primary ? `<ha-icon icon="${this._choiceIcon(key, v)}" aria-hidden="true"></ha-icon>` : ''}<span>${this._esc(this._choiceLabel(v))}</span></button>`).join('')}</div></div>`);
     };
     const number = (key, label, value, min, max, step = 1) => {
-      fields.push(`<label class="qt-field"><span>${this._esc(label)}</span><input data-draft-field="${key}" type="number" min="${Number(min)}" max="${Number(max)}" step="${Number(step)}" value="${value == null ? '' : this._escAttr(value)}"></label>`);
+      min = Number(min); max = Number(max); step = Number(step);
+      if (!Number.isFinite(min) || !Number.isFinite(max) || max <= min) return;
+      if (!Number.isFinite(step) || step <= 0) step = 1;
+      // Fan integrations can advertise fractional percentage steps (e.g. 33.333%).
+      // Use integer percentages and snap the draft to the supported speed count.
+      if (key === 'percentage') step = 1;
+      const v = value == null ? '' : Number(value);
+      const fill = v === '' ? 0 : Math.max(0, Math.min(100, (v - min) / (max - min) * 100));
+      fields.push(`<div class="qt-field qt-numeric"><div class="qt-field-head"><label id="qt-label-${key}" for="qt-number-${key}">${this._esc(label)}</label><input id="qt-number-${key}" data-draft-field="${key}" type="number" min="${min}" max="${max}" step="${step}" value="${v}" inputmode="decimal"></div><input class="qt-range" type="range" data-draft-range="${key}" aria-labelledby="qt-label-${key}" min="${min}" max="${max}" step="${step}" value="${v === '' ? min : v}" style="--qt-fill:${fill}%"><div class="qt-range-labels" aria-hidden="true"><span>${min}</span><span>${max}</span></div></div>`);
     };
     const tempUnit = a.temperature_unit || this._hass.config?.unit_system?.temperature || '°C';
     if (dom === 'climate') {
-      select('hvac_mode', this.t('popup.hvac_mode'), a.hvac_modes, st.state);
-      if (a.temperature != null || (a.supported_features & 1))
-        number('temperature', `${this.t('qtimer.temperature')} (${tempUnit})`, a.temperature, a.min_temp ?? 7, a.max_temp ?? 35, a.target_temp_step ?? 0.5);
-      if (a.target_temp_low != null || (a.supported_features & 2)) {
-        number('target_temp_low', `${this.t('qtimer.temperature')} min (${tempUnit})`, a.target_temp_low, a.min_temp ?? 7, a.max_temp ?? 35, a.target_temp_step ?? 0.5);
-        number('target_temp_high', `${this.t('qtimer.temperature')} max (${tempUnit})`, a.target_temp_high, a.min_temp ?? 7, a.max_temp ?? 35, a.target_temp_step ?? 0.5);
+      select('hvac_mode', this.t('popup.hvac_mode'), live.hvac_modes, st.state);
+      const temperatureVisible = !['off', 'fan_only'].includes(st.state);
+      if (temperatureVisible && (a.temperature != null || (sf & 1)))
+        number('temperature', `${this.t('qtimer.temperature')} (${tempUnit})`, a.temperature, live.min_temp ?? 7, live.max_temp ?? 35, live.target_temp_step ?? 0.5);
+      if (temperatureVisible && (a.target_temp_low != null || (sf & 2))) {
+        number('target_temp_low', `${this.t('qtimer.temperature')} min (${tempUnit})`, a.target_temp_low, live.min_temp ?? 7, live.max_temp ?? 35, live.target_temp_step ?? 0.5);
+        number('target_temp_high', `${this.t('qtimer.temperature')} max (${tempUnit})`, a.target_temp_high, live.min_temp ?? 7, live.max_temp ?? 35, live.target_temp_step ?? 0.5);
       }
-      select('preset_mode', this.t('popup.preset_mode'), a.preset_modes, a.preset_mode);
-      select('fan_mode', this.t('popup.fan_mode'), a.fan_modes, a.fan_mode);
-      select('swing_mode', this.t('popup.swing_mode'), a.swing_modes, a.swing_mode);
-      select('swing_horizontal_mode', `${this.t('popup.swing_mode')} ↔`, a.swing_horizontal_modes, a.swing_horizontal_mode);
+      select('preset_mode', this.t('popup.preset_mode'), live.preset_modes, a.preset_mode);
+      select('fan_mode', this.t('popup.fan_mode'), live.fan_modes, a.fan_mode);
+      select('swing_mode', this.t('popup.swing_mode'), live.swing_modes, a.swing_mode);
+      select('swing_horizontal_mode', `${this.t('popup.swing_mode')} ↔`, live.swing_horizontal_modes, a.swing_horizontal_mode);
     } else if (dom === 'cover' || dom === 'valve') {
       const last = this._draftActions.at(-1)?.service || '';
       const value = last.endsWith(`stop_${dom}`) ? 'stop' : st.state === 'closed' ? 'close' : 'open';
-      select('position_action', this.t('qtimer.during'), ['open', 'close', 'stop'], value);
-      if (caps.coverPosition) number('position', `${this.t('qtimer.position')} (%)`, a.current_position, 0, 100);
+      select('position_action', this.t('qtimer.during'), [['open', 1], ['close', 2], ['stop', 8]].filter(([, bit]) => sf & bit).map(([action]) => action), value);
+      if (sf & 4) number('position', `${this.t('qtimer.position')} (%)`, a.current_position, 0, 100);
     } else if (dom === 'lock') {
       select('lock', this.t('qtimer.during'), ['locked', 'unlocked'], st.state);
     } else if (dom === 'water_heater') {
-      select('operation_mode', this.t('popup.hvac_mode'), a.operation_list, st.state);
+      select('operation_mode', this.t('popup.hvac_mode'), live.operation_list, st.state);
       if (a.temperature != null || (a.supported_features & 1))
-        number('temperature', `${this.t('qtimer.temperature')} (${tempUnit})`, a.temperature, a.min_temp ?? 30, a.max_temp ?? 80, 1);
+        number('temperature', `${this.t('qtimer.temperature')} (${tempUnit})`, a.temperature, live.min_temp ?? 30, live.max_temp ?? 80, 1);
     } else {
       select('power', this.t('qtimer.during'), ['on', 'off'], st.state);
       if (dom === 'light') {
-        if (caps.lightBrightness) number('brightness_pct', `${this.t('qtimer.brightness')} (%)`, a.brightness == null ? 100 : Math.round(a.brightness * 100 / 255), 0, 100);
+        if ((live.supported_color_modes || []).some(mode => ['brightness', 'white', 'color_temp', 'hs', 'rgb', 'rgbw', 'rgbww', 'xy'].includes(mode))) number('brightness_pct', `${this.t('qtimer.brightness')} (%)`, a.brightness == null ? 100 : Math.round(a.brightness * 100 / 255), 0, 100);
         if (caps.lightRgb) {
           const hex = '#' + (a.rgb_color || [255, 255, 255]).map(v => Math.max(0, Math.min(255, Math.round(v))).toString(16).padStart(2, '0')).join('');
           fields.push(`<label class="qt-field"><span>${this.t('qtimer.color')}</span><input type="color" data-draft-field="rgb_color" value="${hex}"></label>`);
         }
-        if (caps.lightColorTemp) number('color_temp_kelvin', `${this.t('qtimer.temperature')} (K)`, a.color_temp_kelvin, a.min_color_temp_kelvin ?? 2000, a.max_color_temp_kelvin ?? 6500);
-        select('effect', this.t('qtimer.effect'), a.effect_list, a.effect);
+        if (caps.lightColorTemp) number('color_temp_kelvin', `${this.t('qtimer.temperature')} (K)`, a.color_temp_kelvin, live.min_color_temp_kelvin ?? 2000, live.max_color_temp_kelvin ?? 6500);
+        select('effect', this.t('qtimer.effect'), live.effect_list, a.effect);
       } else if (dom === 'fan') {
-        if (caps.fanSpeed) number('percentage', `${this.t('qtimer.speed')} (%)`, a.percentage, 0, 100, a.percentage_step || 1);
-        select('preset_mode', this.t('popup.preset_mode'), a.preset_modes, a.preset_mode);
-        if (a.oscillating != null) select('oscillating', this.t('popup.swing_mode'), ['on', 'off'], a.oscillating ? 'on' : 'off');
-        if (a.direction != null) select('direction', this.t('qtimer.direction'), ['forward', 'reverse'], a.direction);
+        if ('supported_features' in live ? (sf & 1) : caps.fanSpeed) number('percentage', `${this.t('qtimer.speed')} (%)`, a.percentage, 0, 100, a.percentage_step || 1);
+        select('preset_mode', this.t('popup.preset_mode'), live.preset_modes, a.preset_mode);
+        if ((sf & 4) || a.oscillating != null) select('oscillating', this.t('popup.swing_mode'), ['on', 'off'], a.oscillating ? 'on' : 'off');
+        if ((sf & 2) || a.direction != null) select('direction', this.t('qtimer.direction'), ['forward', 'reverse'], a.direction);
       } else if (dom === 'humidifier') {
         number('humidity', `${this.t('qtimer.humidity')} (%)`, a.humidity, caps.humMin, caps.humMax);
-        select('mode', this.t('popup.hvac_mode'), a.available_modes, a.mode);
+        select('mode', this.t('popup.hvac_mode'), live.available_modes, a.mode);
       }
     }
-    return `<div class="qt-entity-name">${this._esc(title)}</div><div class="qt-editor-label">${this.t(running ? 'qtimer.current_state' : 'qtimer.during')}</div><fieldset class="qt-draft-fields" ${disabled ? 'disabled' : ''}>${fields.join('')}</fieldset>`;
+    return `<div class="qt-heading"><div class="qt-title"><ha-icon icon="mdi:timer-outline" aria-hidden="true"></ha-icon><div><strong>${this.t('qtimer.timer')}</strong><div class="qt-entity-name">${this._esc(title)}</div></div></div></div><div class="qt-live"><span>${this.t('qtimer.live_state')}</span><span class="qt-live-value">${this._esc(this._stateSummary(this._hass.states[this._entity]))}</span></div><div class="qt-editor-label">${this.t(running ? 'qtimer.current_state' : 'qtimer.during')}</div><fieldset class="qt-draft-fields" ${disabled ? 'disabled' : ''}>${fields.join('')}${advanced.length ? `<details class="qt-more" ${this._moreOptionsOpen ? 'open' : ''}><summary>${this.t('qtimer.more_options')}</summary><div class="qt-extra-fields">${advanced.join('')}</div></details>` : ''}</fieldset>`;
   }
 
   _changeDraftInput(input, redraw) {
-    if (this._starting || this._cancelling || this._activeTimer() || this._timers === null) return;
+    if (this._starting || this._cancelling || this._activeTimer() || this._timers === null
+      || !this._hass.states[this._entity] || ['unknown', 'unavailable'].includes(this._hass.states[this._entity].state)) return;
     if (input.type === 'number') input.required = true;
     if (input.value === '' || !input.checkValidity()) return;
-    const key = input.dataset.draftField;
-    const value = input.type === 'number' ? Number(input.value) : input.value;
+    const key = input.dataset.draftField || input.dataset.draftRange;
+    let value = ['number', 'range'].includes(input.type) ? Number(input.value) : input.value;
+    if (key === 'percentage') {
+      const step = Number(this._hass.states[this._entity]?.attributes.percentage_step);
+      if (step > 1 && step <= 100) {
+        const count = Math.max(1, Math.round(100 / step));
+        // HA ordered-list speeds use integer division: 33, 66, 100 for three speeds.
+        value = Math.floor(Math.round(value * count / 100) * 100 / count);
+      }
+    }
     const dom = this._detectDomain(this._entity);
     let service, data = {};
     if (key === 'power') service = `turn_${value}`;
@@ -281,6 +365,14 @@ class QuickTimerCard extends WeeklyScheduleBase {
     try { this._applyDraftService(dom, service, data); }
     finally { this._editingDraft = false; }
     if (redraw) this._renderDraftEditor(true);
+    else {
+      const host = this.shadowRoot.querySelector('.qt-editor');
+      host?.querySelectorAll('[data-draft-field], [data-draft-range]').forEach(peer => {
+        if ((peer.dataset.draftField || peer.dataset.draftRange) !== key || peer.tagName === 'BUTTON') return;
+        if (peer !== input) peer.value = value;
+        if (peer.type === 'range') peer.style.setProperty('--qt-fill', `${Math.max(0, Math.min(100, (value - Number(peer.min)) / (Number(peer.max) - Number(peer.min)) * 100))}%`);
+      });
+    }
   }
 
   _applyDraftService(domain, service, rawData = {}) {
@@ -289,6 +381,10 @@ class QuickTimerCard extends WeeklyScheduleBase {
     const st = this._cloneState(this._draftState);
     const a = st.attributes;
     const dom = this._detectDomain(this._entity);
+    if (domain === 'light' && service === 'turn_on' && !Object.keys(data).length && a.brightness === 0) {
+      const previousBrightness = this._hass.states[this._entity]?.attributes.brightness;
+      data.brightness_pct = previousBrightness > 0 ? Math.max(1, Math.round(previousBrightness * 100 / 255)) : 100;
+    }
     const turnOn = service === 'turn_on' || (service === 'toggle' && st.state === 'off');
     const turnOff = service === 'turn_off' || (service === 'toggle' && st.state !== 'off');
     if (turnOn) st.state = dom === 'lock' ? 'locked' : (dom === 'cover' || dom === 'valve' ? 'open' : 'on');
@@ -353,6 +449,16 @@ class QuickTimerCard extends WeeklyScheduleBase {
     const previousData = { ...(previous?.data || {}) };
     if (domain === 'light' && ['rgb_color', 'color_temp_kelvin'].some(k => k in data))
       for (const k of ['rgb_color', 'rgbw_color', 'rgbww_color', 'hs_color', 'xy_color', 'color_temp_kelvin']) delete previousData[k];
+    // Hidden temperature controls must not leave a pending temperature command
+    // that can re-enable heating/cooling after selecting Off or Fan only.
+    if (domain === 'climate' && service === 'set_hvac_mode' && ['off', 'fan_only'].includes(data.hvac_mode)) {
+      this._draftActions = this._draftActions.filter(action => data.hvac_mode === 'off'
+        ? !action.service.startsWith('climate.') : action.service !== 'climate.set_temperature');
+      const live = this._hass.states[this._entity]?.attributes || {};
+      const reset = ['temperature', 'target_temp_low', 'target_temp_high'];
+      if (data.hvac_mode === 'off') reset.push('fan_mode', 'preset_mode', 'swing_mode', 'swing_horizontal_mode');
+      for (const key of reset) { if (key in live) a[key] = live[key]; else delete a[key]; }
+    }
     this._draftActions.push({ service: fullService, target: { entity_id: this._entity },
       data: { ...previousData, ...data } });
     st.last_changed = new Date().toISOString(); st.last_updated = st.last_changed;
@@ -370,8 +476,8 @@ class QuickTimerCard extends WeeklyScheduleBase {
     if (!card) {
       card = document.createElement('ha-card');
       card.className = 'qt-card';
-      // ordine: scelta timer in alto → card nativa al centro → Avvia/countdown in fondo
-      card.innerHTML = `<div class="qt-when"></div><div class="qt-editor"></div><div class="qt-foot"></div>`;
+      // Linear layout: entity/draft, duration, then explicit Start or countdown.
+      card.innerHTML = `<div class="qt-editor"></div><div class="qt-when"></div><div class="qt-foot"></div>`;
       this.shadowRoot.appendChild(card);
     }
     const when = card.querySelector('.qt-when');
@@ -388,10 +494,10 @@ class QuickTimerCard extends WeeklyScheduleBase {
       when.innerHTML = '';
       foot.innerHTML = this._activeHtml(active);
     } else {
-      when.innerHTML = `<div class="qt-title"><ha-icon icon="mdi:timer-outline"></ha-icon> ${this.t('qtimer.timer')}</div>${this._whenHtml()}<div class="qt-hint">${this.t('qtimer.draft_hint')}</div>`;
+      when.innerHTML = this._whenHtml();
       // Durante l'avvio il piede mostra lo status (gestito da _setFootStatus): non
       // ricreare il pulsante, così un render spurio non lo riporta (anti doppio-click).
-      if (!this._starting) foot.innerHTML = `<button class="qt-start" ${this._timers === null ? 'disabled' : ''}><ha-icon icon="mdi:play"></ha-icon> ${this.t('qtimer.start')}</button>`;
+      if (!this._starting) foot.innerHTML = `<button class="qt-start" type="button" ${this._timers === null || !this._hass.states[this._entity] || ['unknown', 'unavailable'].includes(this._hass.states[this._entity].state) ? 'disabled' : ''}><ha-icon icon="mdi:play" aria-hidden="true"></ha-icon> ${this.t('qtimer.start')}</button><div class="qt-hint">${this.t('qtimer.draft_hint')}</div>`;
     }
     this._bindPanel(card);
     this._syncTick();
@@ -404,22 +510,41 @@ class QuickTimerCard extends WeeklyScheduleBase {
           <div class="qt-countdown">${this._fmtRemaining(t.endTs - Date.now())}</div>
           <div class="qt-active-lbl">${this.t('qtimer.holding')}${t.label ? ` · ${this._esc(t.label)}` : ''}</div>
         </div>
-        <button class="qt-cancel">${this.t('qtimer.cancel')}</button>
-      </div>`;
+        <button class="qt-cancel" type="button">${this.t('qtimer.cancel')}</button>
+      </div><div class="qt-restore-hint">${this.t('qtimer.restore_hint')}</div>`;
   }
 
   _whenHtml() {
     const mode = this._timerMode;
-    const chips = this._presets.map(m =>
-      `<button class="qt-chip${this._timerMinutes === m && mode === 'duration' ? ' sel' : ''}" data-min="${m}">${m}</button>`).join('');
-    const customVal = this._presets.includes(this._timerMinutes) ? '' : this._timerMinutes;
-    return `<div class="qt-when-tabs">
-        <button class="qt-when-tab${mode === 'duration' ? ' sel' : ''}" data-mode="duration">${this.t('qtimer.duration')}</button>
-        <button class="qt-when-tab${mode === 'until' ? ' sel' : ''}" data-mode="until">${this.t('qtimer.until')}</button>
+    const max = Math.max(120, ...this._presets, this._timerMinutes || 1);
+    const value = this._timerMinutes || 1;
+    const marks = this._presets.map(m => `<option value="${m}" label="${m}"></option>`).join('');
+    const chips = this._presets.map(m => `<button type="button" class="qt-chip${this._timerMinutes === m && mode === 'duration' ? ' sel' : ''}" data-min="${m}" aria-pressed="${this._timerMinutes === m}">${m}</button>`).join('');
+    return `<fieldset class="qt-duration-fields" ${this._starting || this._cancelling ? 'disabled' : ''}><div class="qt-time-heading"><div class="qt-when-tabs" role="group" aria-label="${this.t('qtimer.duration')}">
+        <button type="button" class="qt-when-tab${mode === 'duration' ? ' sel' : ''}" data-mode="duration" aria-pressed="${mode === 'duration'}">${this.t('qtimer.duration')}</button>
+        <button type="button" class="qt-when-tab${mode === 'until' ? ' sel' : ''}" data-mode="until" aria-pressed="${mode === 'until'}">${this.t('qtimer.until')}</button>
       </div>
-      ${mode === 'duration'
-        ? `<div class="qt-chips">${chips}<input type="number" class="qt-custom" min="1" placeholder="${this.t('qtimer.custom')}" value="${customVal}"><span class="qt-min">${this.t('qtimer.minutes')}</span></div>`
-        : `<div class="qt-row"><span class="qt-lbl">${this.t('qtimer.until')}</span><input type="time" class="qt-until" value="${this._untilTime || this._defaultUntil()}"></div>`}`;
+      ${mode === 'duration' ? `<label class="qt-minute-entry"><input type="number" class="qt-custom" min="1" step="any" aria-label="${this.t('qtimer.duration')} (${this.t('qtimer.minutes')})" value="${this._timerMinutes || ''}"><span class="qt-min">${this.t('qtimer.minutes')}</span></label>`
+        : `<input type="time" class="qt-until" aria-label="${this.t('qtimer.until')}" value="${this._escAttr(this._untilTime || this._defaultUntil())}">`}</div>
+      ${mode === 'duration' ? `<input type="range" class="qt-range qt-duration-range" min="1" max="${max}" step="1" value="${value}" list="qt-duration-marks" aria-label="${this.t('qtimer.duration')} (${this.t('qtimer.minutes')})" style="--qt-fill:${(value - 1) / (max - 1) * 100}%"><datalist id="qt-duration-marks">${marks}</datalist><div class="qt-chips">${chips}</div>` : ''}
+      <div class="qt-end-label"></div></fieldset>`;
+  }
+
+  _updateDurationUi(root) {
+    const range = root.querySelector('.qt-duration-range');
+    if (range) {
+      range.max = Math.max(120, ...this._presets, this._timerMinutes || 1);
+      range.value = this._timerMinutes || 1;
+      range.style.setProperty('--qt-fill', `${(Number(range.value) - 1) / (Number(range.max) - 1) * 100}%`);
+    }
+    root.querySelectorAll('.qt-chip').forEach(chip => {
+      const selected = Number(chip.dataset.min) === this._timerMinutes;
+      chip.classList.toggle('sel', selected); chip.setAttribute('aria-pressed', String(selected));
+    });
+    const end = root.querySelector('.qt-end-label');
+    const seconds = this._readDurationSeconds(root);
+    if (end) end.textContent = seconds > 0
+      ? `${this.t('qtimer.until')} ${new Date(Date.now() + seconds * 1000).toLocaleTimeString(this._hass.language || 'en', { hour: '2-digit', minute: '2-digit' })}` : this.t('qtimer.bad_duration');
   }
 
   _defaultUntil() {
@@ -430,24 +555,30 @@ class QuickTimerCard extends WeeklyScheduleBase {
   // ── Binding ───────────────────────────────────────────────────────────────
 
   _bindPanel(root) {
-    root.querySelector('.qt-cancel')?.addEventListener('click', () => this._cancelTimer(this._entity));
+    root.querySelector('.qt-cancel')?.addEventListener('click', () => this._cancelTimer(this._entity), { once: true });
     root.querySelector('.qt-start')?.addEventListener('click', () => this._startTimer(root));
 
     root.querySelectorAll('.qt-chip').forEach(c => c.addEventListener('click', () => {
-      this._timerMinutes = parseInt(c.dataset.min, 10);
+      this._timerMinutes = Number(c.dataset.min);
       this.render();
     }));
     const custom = root.querySelector('.qt-custom');
     custom?.addEventListener('input', () => {
-      const v = parseInt(custom.value, 10);
+      const v = Number(custom.value);
       this._timerMinutes = Number.isFinite(v) && v > 0 ? v : 0;
-      root.querySelectorAll('.qt-chip').forEach(x => x.classList.remove('sel'));
+      this._updateDurationUi(root);
     });
-    root.querySelector('.qt-until')?.addEventListener('input', ev => { this._untilTime = ev.target.value; });
+    root.querySelector('.qt-duration-range')?.addEventListener('input', ev => {
+      this._timerMinutes = Number(ev.target.value);
+      if (custom) custom.value = this._timerMinutes;
+      this._updateDurationUi(root);
+    });
+    root.querySelector('.qt-until')?.addEventListener('input', ev => { this._untilTime = ev.target.value; this._updateDurationUi(root); });
     root.querySelectorAll('.qt-when-tab').forEach(tb => tb.addEventListener('click', () => {
       this._timerMode = tb.dataset.mode;
       this.render();
     }));
+    this._updateDurationUi(root);
   }
 
   // ── Lettura durata / etichetta ────────────────────────────────────────────
@@ -1030,29 +1161,70 @@ class QuickTimerCard extends WeeklyScheduleBase {
 
   _styles() {
     return `
-      .qt-card{display:flex;flex-direction:column}
-      .qt-when{padding:14px 16px 6px}
+      .qt-card{display:flex;flex-direction:column;--qt-soft:color-mix(in srgb,var(--primary-color) 11%,var(--card-background-color));--qt-panel:color-mix(in srgb,var(--primary-text-color) 5%,var(--card-background-color));padding:4px 0;border-radius:var(--ha-card-border-radius,16px)}
+      .qt-card *{box-sizing:border-box}
+      .qt-card button,.qt-card input{font:inherit}
+      .qt-card button{touch-action:manipulation;min-height:44px}
+      .qt-card button:disabled{cursor:default}
+      .qt-card ha-icon{pointer-events:none}
+
+      .qt-when{padding:12px 20px 6px}
       .qt-when:empty{padding:0}
-      .qt-editor{padding:10px 16px}
-      .qt-entity-name{font-size:1em;font-weight:600;color:var(--primary-text-color)}
-      .qt-editor-label{font-size:.8em;color:var(--secondary-text-color);margin:4px 0 10px}
-      .qt-draft-fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;border:0;padding:0;margin:0;min-width:0}
+      .qt-editor{padding:16px 20px 6px}
+      .qt-entity-name{font-size:12px;font-weight:400;color:var(--secondary-text-color);margin-top:3px;overflow-wrap:anywhere}
+      .qt-editor-label{font-size:12px;color:var(--secondary-text-color);margin:0 0 12px}
+      .qt-draft-fields{display:flex;flex-direction:column;gap:18px;border:0;padding:0;margin:0;min-width:0}
       .qt-field{display:flex;flex-direction:column;gap:5px;min-width:0;color:var(--primary-text-color);font-size:.85em}
       .qt-field input,.qt-field select{box-sizing:border-box;width:100%;min-width:0;min-height:40px;border:1px solid var(--divider-color);border-radius:8px;padding:8px;background:var(--card-background-color);color:var(--primary-text-color);font:inherit}
       .qt-field input[type=color]{padding:3px}
       .qt-draft-fields:disabled{opacity:.65}
       .qt-start:disabled{opacity:.5;cursor:default}
-      .qt-foot{padding:6px 16px 14px}
+      .qt-heading{margin-bottom:16px}
+      .qt-heading .qt-title{gap:12px;font-size:16px;font-weight:500;align-items:center}
+      .qt-heading .qt-title strong{font-weight:500}
+      .qt-heading .qt-title>ha-icon{box-sizing:content-box;--mdc-icon-size:24px;background:var(--qt-soft);border-radius:13px;padding:10px;flex-shrink:0}
+      .qt-live{display:flex;justify-content:space-between;flex-wrap:wrap;gap:5px 12px;border-block:1px solid var(--divider-color);padding:11px 0;margin-bottom:18px;font-size:12px;color:var(--secondary-text-color)}
+      .qt-live-value{color:var(--primary-text-color);overflow-wrap:anywhere}
+      .qt-field{gap:8px}
+      .qt-field-head{display:flex;align-items:center;justify-content:space-between;gap:10px}
+      .qt-field-head label{flex:1;min-width:0;overflow-wrap:anywhere}
+      .qt-field-head input[type=number]{width:88px;flex-shrink:0;min-height:44px;border:0;background:var(--qt-panel);text-align:right;color:var(--primary-color);font-size:18px;font-variant-numeric:tabular-nums}
+      .qt-field input[type=color]{max-width:100%;height:44px;cursor:pointer}
+      .qt-choices{display:grid;grid-template-columns:repeat(auto-fit,minmax(68px,1fr));gap:6px;padding:4px;background:var(--qt-panel);border-radius:12px}
+      .qt-choices button{display:flex;align-items:center;justify-content:center;gap:7px;min-width:0;padding:8px;border:1px solid transparent;border-radius:9px;background:transparent;color:var(--secondary-text-color);cursor:pointer;font-size:13px;overflow-wrap:anywhere;white-space:normal}
+      .qt-choices button span{min-width:0}
+      .qt-choices button[aria-pressed=true]{background:var(--card-background-color);color:var(--primary-color);border-color:var(--divider-color)}
+      .qt-mode-buttons{background:transparent;padding:0;grid-template-columns:repeat(auto-fit,minmax(64px,1fr));gap:7px}
+      .qt-mode-buttons button{flex-direction:column;min-height:68px;border-color:var(--divider-color);border-radius:12px;font-size:12px}
+      .qt-mode-buttons button[aria-pressed=true]{background:var(--qt-soft);border-color:var(--primary-color)}
+      .qt-mode-buttons ha-icon{--mdc-icon-size:22px}
+      .qt-range,.qt-field input.qt-range{appearance:none;-webkit-appearance:none;width:100%;min-width:0;height:44px;min-height:44px;background:transparent;border:0;padding:0;margin:0;cursor:pointer;--qt-fill:0%}
+      .qt-range::-webkit-slider-runnable-track{height:6px;border-radius:6px;background:linear-gradient(to right,var(--primary-color) var(--qt-fill),var(--qt-panel) var(--qt-fill))}
+      .qt-range::-moz-range-track{height:6px;border-radius:6px;background:linear-gradient(to right,var(--primary-color) var(--qt-fill),var(--qt-panel) var(--qt-fill))}
+      .qt-range::-webkit-slider-thumb{-webkit-appearance:none;width:22px;height:22px;border:4px solid var(--card-background-color);border-radius:50%;background:var(--primary-color);box-shadow:0 0 0 1px var(--primary-color);margin-top:-8px}
+      .qt-range::-moz-range-thumb{width:14px;height:14px;border:4px solid var(--card-background-color);border-radius:50%;background:var(--primary-color);box-shadow:0 0 0 1px var(--primary-color)}
+      .qt-range-labels{display:flex;justify-content:space-between;margin-top:-12px;font-size:11px;color:var(--secondary-text-color)}
+      .qt-extra-fields{display:flex;flex-direction:column;gap:16px;padding-top:12px}
+      .qt-more summary{min-height:44px;cursor:pointer;color:var(--secondary-text-color);font-size:12px;padding:12px 0}
+      .qt-duration-fields{min-width:0;margin:0;padding:12px 0 0;border:0;border-top:1px solid var(--divider-color)}
+      .qt-duration-fields:disabled{opacity:.6}
+      .qt-time-heading{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px}
+      .qt-minute-entry{display:flex;align-items:center;gap:4px}
+      .qt-end-label{font-size:12px;text-align:center;color:var(--secondary-text-color);margin-top:10px;min-height:17px}
+      .qt-restore-hint{font-size:12px;color:var(--secondary-text-color);margin-top:12px}
+      @media(max-width:360px){.qt-editor{padding-inline:14px}.qt-when,.qt-foot{padding-inline:14px}.qt-mode-buttons{grid-template-columns:repeat(auto-fit,minmax(60px,1fr))}}
+
+      .qt-foot{padding:12px 20px 16px}
       .qt-title{display:flex;align-items:center;gap:6px;font-weight:600;font-size:.95em;color:var(--primary-text-color)}
       .qt-title ha-icon{--mdc-icon-size:20px;color:var(--primary-color)}
-      .qt-hint{font-size:.85em;color:var(--secondary-text-color);margin-top:6px}
+      .qt-hint{font-size:12px;color:var(--secondary-text-color);margin-top:10px;text-align:center}
       .qt-lbl{font-size:.75em;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--secondary-text-color)}
       .qt-row{display:flex;align-items:center;gap:8px;margin-top:6px}
       .qt-when-tab,.qt-chip{cursor:pointer;border:1px solid var(--divider-color);background:var(--card-background-color);color:var(--primary-text-color);border-radius:8px;padding:6px 12px;font-size:.85em;font-weight:600}
       .qt-when-tab.sel,.qt-chip.sel{background:var(--primary-color);color:var(--text-primary-color,#fff);border-color:var(--primary-color)}
-      .qt-when-tabs{display:flex;gap:6px;margin:10px 0 8px}
-      .qt-chips{display:flex;flex-wrap:wrap;align-items:center;gap:6px}
-      .qt-custom{width:64px;padding:6px;border:1px solid var(--divider-color);border-radius:8px;background:var(--card-background-color);color:var(--primary-text-color)}
+      .qt-when-tabs{display:flex;gap:4px;flex-wrap:wrap}
+      .qt-chips{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin-top:3px}
+      .qt-custom{width:70px;min-height:44px;padding:6px;border:0;border-radius:8px;background:transparent;color:var(--primary-text-color);text-align:right;font-variant-numeric:tabular-nums}
       .qt-min{font-size:.85em;color:var(--secondary-text-color)}
       .qt-until{padding:6px;border:1px solid var(--divider-color);border-radius:8px;background:var(--card-background-color);color:var(--primary-text-color)}
       .qt-start{display:flex;align-items:center;justify-content:center;gap:6px;width:100%;padding:10px;border:none;border-radius:10px;background:var(--primary-color);color:var(--text-primary-color,#fff);font-size:.9em;font-weight:600;cursor:pointer}
@@ -1067,7 +1239,7 @@ class QuickTimerCard extends WeeklyScheduleBase {
       .qt-status-progress ha-icon{animation:qt-spin 1.1s linear infinite}
       @keyframes qt-spin{to{transform:rotate(360deg)}}
       @media (prefers-reduced-motion:reduce){.qt-status-progress ha-icon{animation:none}}
-      .qt-active{display:flex;align-items:center;gap:12px}
+      .qt-active{display:flex;flex-wrap:wrap;align-items:center;gap:12px}
       .qt-active-ic{--mdc-icon-size:32px;color:var(--primary-color)}
       .qt-active-info{flex:1}
       .qt-countdown{font-size:1.6em;font-weight:700;font-variant-numeric:tabular-nums;color:var(--primary-text-color)}
