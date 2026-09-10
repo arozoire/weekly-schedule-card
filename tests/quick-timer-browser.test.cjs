@@ -5,8 +5,9 @@ const { chromium } = require(process.env.WSC_PLAYWRIGHT_MODULE || 'playwright');
 
 (async () => {
   const browser = await chromium.launch({ headless: true });
+  let page;
   try {
-    const page = await browser.newPage({ viewport: { width: 420, height: 900 } });
+    page = await browser.newPage({ viewport: { width: 420, height: 900 } });
     const errors = [];
     page.on('pageerror', error => errors.push(error.message));
     await page.setContent(`<style>body{font-family:sans-serif;margin:16px;background:#111;color:#eee;--primary-color:#03a9f4;--primary-text-color:#eee;--secondary-text-color:#bbb;--card-background-color:#222;--divider-color:#555}ha-card{display:block;border-radius:12px;background:#222}</style>`);
@@ -77,8 +78,16 @@ const { chromium } = require(process.env.WSC_PLAYWRIGHT_MODULE || 'playwright');
       window.mount('climate.office', { card: { type: 'custom:untrusted-card', tap_action: { action: 'toggle' } } });
     });
     const field = name => page.locator(`[data-draft-field="${name}"]`);
-    await field('hvac_mode').selectOption('fan_only');
-    await field('fan_mode').selectOption('100%');
+    const choice = (name, value) => field(name).and(page.locator(`button[value="${value}"]`));
+    assert.equal(await page.locator('.qt-editor select').count(), 0);
+    assert.equal(await field('hvac_mode').count(), 3);
+    assert.equal(await field('fan_mode').count(), 2);
+    // Editing a target and then switching to Fan only must discard that target command.
+    await field('temperature').fill('22');
+    await choice('hvac_mode', 'fan_only').click();
+    assert.equal(await field('temperature').count(), 0);
+    assert.equal(await page.evaluate(() => card._draftActions.some(a => a.service === 'climate.set_temperature')), false);
+    await choice('fan_mode', '100%').click();
     await page.locator('[data-min="60"]').click();
     assert.deepEqual(await page.evaluate(() => ({ writes: writes.length, embeds, state: fakeHass.states['climate.office'].state })), { writes: 0, embeds: 0, state: 'cool' });
 
@@ -87,7 +96,7 @@ const { chromium } = require(process.env.WSC_PLAYWRIGHT_MODULE || 'playwright');
       fakeHass.states['climate.office'] = { ...fakeHass.states['climate.office'], attributes: { ...fakeHass.states['climate.office'].attributes, temperature: 25 } };
       card.hass = { ...fakeHass };
     });
-    assert.equal(await field('hvac_mode').inputValue(), 'fan_only');
+    assert.equal(await choice('hvac_mode', 'fan_only').getAttribute('aria-pressed'), 'true');
     await page.locator('.qt-start').click();
     await page.locator('.qt-cancel').waitFor();
     const started = await page.evaluate(() => ({ state: fakeHass.states['climate.office'], record: card._timers['climate.office'], actions: deviceActions }));
@@ -96,16 +105,16 @@ const { chromium } = require(process.env.WSC_PLAYWRIGHT_MODULE || 'playwright');
     assert.equal(started.record.durationS, 3600);
     assert.equal(started.record.restore.find(a => a.service === 'climate.set_temperature').data.temperature, 25);
     assert.deepEqual(started.actions.map(a => a.service), ['set_hvac_mode', 'set_fan_mode']);
-    assert.equal(await field('hvac_mode').isDisabled(), true);
+    assert.equal(await choice('hvac_mode', 'fan_only').isDisabled(), true);
     await page.locator('.qt-cancel').click();
     await page.locator('.qt-start').waitFor();
     assert.deepEqual(await page.evaluate(() => ({ mode: fakeHass.states['climate.office'].state, temperature: fakeHass.states['climate.office'].attributes.temperature, timer: card._timers['climate.office'] || null })), { mode: 'cool', temperature: 25, timer: null });
     assert.equal(await page.evaluate(() => Object.keys(fakeHass.states).some(k => k.startsWith('automation.qt_timer_') || k.startsWith('switch.schedule_'))), false);
-    assert.equal(await field('hvac_mode').isEnabled(), true);
+    assert.equal(await choice('hvac_mode', 'fan_only').isEnabled(), true);
 
     // Power editing must be local even with legacy tile action configuration.
     await page.evaluate(() => { writes.length = 0; deviceActions.length = 0; mount('switch.office', { tile: { icon_tap_action: { action: 'toggle' } } }); });
-    await field('power').selectOption('on');
+    await choice('power', 'on').click();
     assert.equal(await page.evaluate(() => writes.length), 0);
     assert.equal(await page.evaluate(() => fakeHass.states['switch.office'].state), 'off');
     await page.locator('.qt-start').click();
@@ -135,8 +144,88 @@ const { chromium } = require(process.env.WSC_PLAYWRIGHT_MODULE || 'playwright');
     assert.equal(await page.locator('.qt-until').inputValue(), '23:17');
     assert.equal(await page.evaluate(() => writes.length), 0);
 
+    // Capabilities, fractional speed steps, long option lists and responsive layout.
+    await page.evaluate(() => {
+      writes.length = 0;
+      fakeHass.states['light.simple'] = { state: 'off', attributes: { supported_color_modes: ['onoff'] } };
+      fakeHass.states['fan.three'] = { state: 'off', attributes: { supported_features: 5, percentage: 0, percentage_step: 100 / 3, oscillating: false } };
+      fakeHass.states['cover.simple'] = { state: 'closed', attributes: { supported_features: 3, current_position: 0 } };
+      mount('light.simple');
+    });
+    assert.equal(await field('power').count(), 2);
+    assert.equal(await page.locator('.qt-editor input[type="range"]').count(), 0);
+    await page.evaluate(() => mount('cover.simple'));
+    assert.deepEqual(await field('position_action').evaluateAll(nodes => nodes.map(n => n.value)), ['open', 'close']);
+    assert.equal(await field('position').count(), 0);
+    await page.evaluate(() => mount('fan.three'));
+    await page.locator('[data-draft-range="percentage"]').fill('3');
+    assert.equal(await field('percentage').inputValue(), '100');
+    await page.locator('[data-draft-range="percentage"]').fill('2');
+    assert.equal(await page.evaluate(() => card._draftState.attributes.percentage), 66);
+    await page.locator('[data-draft-range="percentage"]').fill('0');
+    await page.locator('[data-draft-range="percentage"]').focus();
+    await page.keyboard.press('ArrowRight');
+    assert.equal(await field('percentage').inputValue(), '33');
+    await page.keyboard.press('ArrowRight');
+    assert.equal(await field('percentage').inputValue(), '66');
+    await page.locator('.qt-more summary').click();
+    await choice('oscillating', 'on').click();
+    assert.equal(await page.locator('.qt-more').getAttribute('open'), '');
+    assert.equal(await page.evaluate(() => writes.length), 0);
+
+    // Light at zero means Off; sliders and numeric inputs stay paired, including keyboard focus.
+    await page.evaluate(() => mount('light.office'));
+    await page.locator('[data-draft-range="brightness_pct"]').fill('0');
+    assert.equal(await choice('power', 'off').getAttribute('aria-pressed'), 'true');
+    await page.locator('[data-draft-range="brightness_pct"]').focus();
+    await page.keyboard.press('ArrowRight');
+    assert.equal(await field('brightness_pct').inputValue(), '1');
+    assert.equal(await page.evaluate(() => card.shadowRoot.activeElement.dataset.draftRange), 'brightness_pct');
+    await page.keyboard.press('ArrowRight');
+    assert.equal(await field('brightness_pct').inputValue(), '2');
+    await page.locator('.qt-custom').fill('180');
+    assert.equal(await page.locator('.qt-duration-range').inputValue(), '180');
+    await page.locator('.qt-duration-range').fill('90');
+    assert.equal(await page.locator('.qt-custom').inputValue(), '90');
+    assert.equal(await page.evaluate(() => writes.length), 0);
+
+    await page.evaluate(() => {
+      fakeHass.states['climate.office'].attributes.hvac_modes = ['off', 'cool', 'heat', 'heat_cool', 'auto', 'dry', 'fan_only'];
+      fakeHass.states['climate.office'].attributes.fan_modes = ['auto', 'low', 'medium', 'high', 'Very long manufacturer-specific fan mode'];
+      mount('climate.office');
+    });
+    assert.equal(await field('hvac_mode').count(), 7);
+    assert.equal(await field('fan_mode').count(), 5);
+    for (const width of [320, 420]) {
+      await page.setViewportSize({ width, height: 1000 });
+      const overflow = await page.evaluate(() => {
+        const bounds = card.getBoundingClientRect();
+        return [...card.shadowRoot.querySelectorAll('button,input,.qt-field')].filter(el => {
+          const rect = el.getBoundingClientRect();
+          return rect.width && (rect.right > bounds.right + 1 || rect.left < bounds.left - 1);
+        }).map(el => el.outerHTML);
+      });
+      assert.deepEqual(overflow, []);
+    }
+    // A dirty draft must never keep writable controls when the device becomes unavailable.
+    await choice('hvac_mode', 'heat').click();
+    await page.evaluate(() => {
+      fakeHass.states['climate.office'] = { ...fakeHass.states['climate.office'], state: 'unavailable' };
+      card.hass = { ...fakeHass };
+    });
+    assert.equal(await page.locator('.qt-start').isDisabled(), true);
+    assert.equal(await choice('hvac_mode', 'heat').isDisabled(), true);
+    assert.equal(await page.evaluate(() => writes.length), 0);
+    await page.evaluate(() => {
+      fakeHass.states['climate.office'] = { ...fakeHass.states['climate.office'], state: 'cool' };
+      mount('climate.office');
+    });
+
     if (process.env.WSC_TEST_SCREENSHOT) await page.screenshot({ path: process.env.WSC_TEST_SCREENSHOT });
     assert.deepEqual(errors, []);
     console.log('Browser tests passed: edit -> zero writes; Start -> apply; Cancel -> restore and cleanup.');
+  } catch (error) {
+    if (page && process.env.WSC_TEST_SCREENSHOT) await page.screenshot({ path: process.env.WSC_TEST_SCREENSHOT.replace('.png', '-failure.png'), fullPage: true }).catch(() => {});
+    throw error;
   } finally { await browser.close(); }
 })().catch(error => { console.error(error); process.exitCode = 1; });
