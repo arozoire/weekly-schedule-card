@@ -5,8 +5,9 @@ const { chromium } = require(process.env.WSC_PLAYWRIGHT_MODULE || 'playwright');
 
 (async () => {
   const browser = await chromium.launch({ headless: true });
+  let page;
   try {
-    const page = await browser.newPage({ viewport: { width: 420, height: 900 } });
+    page = await browser.newPage({ viewport: { width: 420, height: 900 } });
     const errors = [];
     page.on('pageerror', error => errors.push(error.message));
     await page.setContent(`<style>body{font-family:sans-serif;margin:16px;background:#111;color:#eee;--primary-color:#03a9f4;--primary-text-color:#eee;--secondary-text-color:#bbb;--card-background-color:#222;--divider-color:#555}ha-card{display:block;border-radius:12px;background:#222}</style>`);
@@ -157,10 +158,16 @@ const { chromium } = require(process.env.WSC_PLAYWRIGHT_MODULE || 'playwright');
     assert.deepEqual(await field('position_action').evaluateAll(nodes => nodes.map(n => n.value)), ['open', 'close']);
     assert.equal(await field('position').count(), 0);
     await page.evaluate(() => mount('fan.three'));
-    await page.locator('[data-draft-range="percentage"]').fill('100');
+    await page.locator('[data-draft-range="percentage"]').fill('3');
     assert.equal(await field('percentage').inputValue(), '100');
-    await page.locator('[data-draft-range="percentage"]').fill('66');
+    await page.locator('[data-draft-range="percentage"]').fill('2');
     assert.equal(await page.evaluate(() => card._draftState.attributes.percentage), 66);
+    await page.locator('[data-draft-range="percentage"]').fill('0');
+    await page.locator('[data-draft-range="percentage"]').focus();
+    await page.keyboard.press('ArrowRight');
+    assert.equal(await field('percentage').inputValue(), '33');
+    await page.keyboard.press('ArrowRight');
+    assert.equal(await field('percentage').inputValue(), '66');
     await page.locator('.qt-more summary').click();
     await choice('oscillating', 'on').click();
     assert.equal(await page.locator('.qt-more').getAttribute('open'), '');
@@ -217,5 +224,8 @@ const { chromium } = require(process.env.WSC_PLAYWRIGHT_MODULE || 'playwright');
     if (process.env.WSC_TEST_SCREENSHOT) await page.screenshot({ path: process.env.WSC_TEST_SCREENSHOT });
     assert.deepEqual(errors, []);
     console.log('Browser tests passed: edit -> zero writes; Start -> apply; Cancel -> restore and cleanup.');
+  } catch (error) {
+    if (page && process.env.WSC_TEST_SCREENSHOT) await page.screenshot({ path: process.env.WSC_TEST_SCREENSHOT.replace('.png', '-failure.png'), fullPage: true }).catch(() => {});
+    throw error;
   } finally { await browser.close(); }
 })().catch(error => { console.error(error); process.exitCode = 1; });

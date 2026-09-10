@@ -33,7 +33,8 @@ class QuickTimerCard extends WeeklyScheduleBase {
     this._lang = null;
     const presets = Array.isArray(config.presets) ? config.presets.map(Number).filter(m => Number.isFinite(m) && m >= 1) : [];
     this._presets = presets.length ? [...new Set(presets)] : [5, 10, 15, 30, 45, 60];
-    this._timerMinutes = Number(config.default_minutes) > 0 ? Number(config.default_minutes) : this._presets[0];
+    const initialMinutes = Number(config.default_minutes);
+    this._timerMinutes = Number.isFinite(initialMinutes) && initialMinutes >= 1 ? initialMinutes : this._presets[0];
     this._moreOptionsOpen = false;
     this._draftState = null;
     this._draftDirty = false;
@@ -276,10 +277,12 @@ class QuickTimerCard extends WeeklyScheduleBase {
       if (!Number.isFinite(step) || step <= 0) step = 1;
       // Fan integrations can advertise fractional percentage steps (e.g. 33.333%).
       // Use integer percentages and snap the draft to the supported speed count.
+      const speedCount = key === 'percentage' && live.percentage_step > 1 && live.percentage_step <= 100
+        ? Math.max(1, Math.round(100 / live.percentage_step)) : null;
       if (key === 'percentage') step = 1;
       const v = value == null ? '' : Number(value);
       const fill = v === '' ? 0 : Math.max(0, Math.min(100, (v - min) / (max - min) * 100));
-      fields.push(`<div class="qt-field qt-numeric"><div class="qt-field-head"><label id="qt-label-${key}" for="qt-number-${key}">${this._esc(label)}</label><input id="qt-number-${key}" data-draft-field="${key}" type="number" min="${min}" max="${max}" step="${step}" value="${v}" inputmode="decimal"></div><input class="qt-range" type="range" data-draft-range="${key}" aria-labelledby="qt-label-${key}" min="${min}" max="${max}" step="${step}" value="${v === '' ? min : v}" style="--qt-fill:${fill}%"><div class="qt-range-labels" aria-hidden="true"><span>${min}</span><span>${max}</span></div></div>`);
+      fields.push(`<div class="qt-field qt-numeric"><div class="qt-field-head"><label id="qt-label-${key}" for="qt-number-${key}">${this._esc(label)}</label><input id="qt-number-${key}" data-draft-field="${key}" type="number" min="${min}" max="${max}" step="${step}" value="${v}" inputmode="decimal"></div><input class="qt-range" type="range" data-draft-range="${key}" ${speedCount ? `data-speed-count="${speedCount}" aria-valuetext="${v || 0}%"` : ''} aria-labelledby="qt-label-${key}" min="${min}" max="${speedCount || max}" step="${step}" value="${speedCount ? Math.round(Number(v) * speedCount / 100) : v === '' ? min : v}" style="--qt-fill:${fill}%"><div class="qt-range-labels" aria-hidden="true"><span>${min}</span><span>${max}</span></div></div>`);
     };
     const tempUnit = a.temperature_unit || this._hass.config?.unit_system?.temperature || '°C';
     if (dom === 'climate') {
@@ -341,7 +344,8 @@ class QuickTimerCard extends WeeklyScheduleBase {
       if (step > 1 && step <= 100) {
         const count = Math.max(1, Math.round(100 / step));
         // HA ordered-list speeds use integer division: 33, 66, 100 for three speeds.
-        value = Math.floor(Math.round(value * count / 100) * 100 / count);
+        const index = input.dataset.speedCount ? value : (value > 0 ? Math.max(1, Math.round(value * count / 100)) : 0);
+        value = Math.floor(index * 100 / count);
       }
     }
     const dom = this._detectDomain(this._entity);
@@ -364,14 +368,23 @@ class QuickTimerCard extends WeeklyScheduleBase {
     this._editingDraft = true;
     try { this._applyDraftService(dom, service, data); }
     finally { this._editingDraft = false; }
-    if (redraw) this._renderDraftEditor(true);
+    // Numeric/color blur fires before the next button's click. Replacing the DOM
+    // here would swallow that click, so patch values in place; only mode/option
+    // buttons rebuild the editor after their click has completed.
+    if (redraw && input.tagName === 'BUTTON') this._renderDraftEditor(true);
     else {
       const host = this.shadowRoot.querySelector('.qt-editor');
       host?.querySelectorAll('[data-draft-field], [data-draft-range]').forEach(peer => {
         if ((peer.dataset.draftField || peer.dataset.draftRange) !== key || peer.tagName === 'BUTTON') return;
-        if (peer !== input) peer.value = value;
-        if (peer.type === 'range') peer.style.setProperty('--qt-fill', `${Math.max(0, Math.min(100, (value - Number(peer.min)) / (Number(peer.max) - Number(peer.min)) * 100))}%`);
+        const peerValue = peer.dataset.speedCount ? Math.round(value * Number(peer.dataset.speedCount) / 100) : value;
+        if (peer !== input || redraw) peer.value = peerValue;
+        if (peer.type === 'range') {
+          peer.style.setProperty('--qt-fill', `${Math.max(0, Math.min(100, (peerValue - Number(peer.min)) / (Number(peer.max) - Number(peer.min)) * 100))}%`);
+          if (peer.dataset.speedCount) peer.setAttribute('aria-valuetext', `${value}%`);
+        }
       });
+      host?.querySelectorAll('button[data-draft-field="power"]').forEach(button =>
+        button.setAttribute('aria-pressed', String(button.value === this._draftState.state)));
     }
   }
 
