@@ -33,9 +33,9 @@ async def main():
         hass.config.set_time_zone('UTC')
     for key in ['config','fallback','override','overnight','oneShot']:
         PLATFORM_SCHEMA(copy.deepcopy(F[key]))
-    await entity_registry.async_load(hass)
-    await device_registry.async_load(hass)
     await area_registry.async_load(hass)
+    await device_registry.async_load(hass)
+    await entity_registry.async_load(hass)
     calls = []
     fail = {'service': None}
     @callback
