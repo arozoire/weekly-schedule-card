@@ -34,6 +34,9 @@ async def main():
     for key in ['config','fallback','override','overnight','oneShot']:
         PLATFORM_SCHEMA(copy.deepcopy(F[key]))
     await area_registry.async_load(hass)
+    # HA 2026.9 split device-registry construction from loading.
+    if hasattr(device_registry, 'async_setup'):
+        device_registry.async_setup(hass)
     await device_registry.async_load(hass)
     await entity_registry.async_load(hass)
     calls = []
