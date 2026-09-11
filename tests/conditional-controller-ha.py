@@ -25,7 +25,12 @@ logging.basicConfig(level=logging.ERROR)
 
 async def main():
     hass = HomeAssistant(tempfile.mkdtemp(prefix='wsc-ha-'))
-    hass.config.set_time_zone('UTC')
+    # HA 2026.9 made timezone setup asynchronous; retain compatibility with the
+    # synchronous API used by older supported test versions.
+    if hasattr(hass.config, 'async_set_time_zone'):
+        await hass.config.async_set_time_zone('UTC')
+    else:
+        hass.config.set_time_zone('UTC')
     for key in ['config','fallback','override','overnight','oneShot']:
         PLATFORM_SCHEMA(copy.deepcopy(F[key]))
     await entity_registry.async_load(hass)
