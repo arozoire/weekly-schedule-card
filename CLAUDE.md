@@ -10,6 +10,13 @@ Deploy: copiare `dist/weekly-schedule-card.js` + `dist/weekly-schedule-view-card
 Il bundle principale (`weekly-schedule-card.js`) include già la view card, la mini card, la quick-timer-card **e la weekly-serpentine-card** (via import in `src/weekly-schedule-card.js`) — HACS fornisce tutte e 5 le card con un solo file.
 **NON** copiare `base-card.js` in dist: viene inglobato nel bundle dal rollup.
 
+## Conditional controller (unreleased branch)
+See `docs/conditional-controller-review.md` for the accepted semantics and review gates.
+Conditional Scheduler entries now carry a harmless marker; `wsc_cond_*` owns commands.
+False during slot -> configured end action, else immutable snapshot. End with no action
+-> NO target command. Persistent helpers, deferred migration, and domain restore tests.
+The historical conditions section below describes the old controller and is superseded.
+
 ## Quick Timer v1.5.0 — Linear UI
 L'editor usa solo pulsanti e input HTML propri. Le scelte vengono dalle liste HA,
 i numeri usano range + input preciso. Stato reale separato; opzioni secondarie in details.

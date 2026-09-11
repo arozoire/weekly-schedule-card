@@ -1,4 +1,4 @@
-name: Quick Timer browser tests
+name: Card and controller tests
 on:
   pull_request:
     branches: [main]
@@ -16,6 +16,7 @@ jobs:
       - run: npm ci
       - run: npm run build
       - run: node tests/quick-timer-card.test.mjs
+      - run: node tests/conditional-card.test.mjs
       - run: npm install --no-save --package-lock=false playwright@1.63.0
       - run: npx playwright install --with-deps chromium --only-shell
       - run: npm run test:browser
@@ -27,3 +28,18 @@ jobs:
           name: quick-timer-ui
           path: quick-timer-linear*.png
           if-no-files-found: ignore
+
+  conditional-runtime:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.14'
+      - run: pip install homeassistant==2026.9.1
+      - run: node tests/conditional-fixtures.mjs /tmp/wsc-conditional-fixtures.json
+      - run: python tests/conditional-controller-ha.py /tmp/wsc-conditional-fixtures.json
