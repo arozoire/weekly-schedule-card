@@ -655,26 +655,56 @@ the generated automation on the next card save.
 
 ### Conditions
 
-For compatibility and full control of the card's condition UI, this card emits a
-dedicated HA automation per conditional schedule instead of storing those
-conditions in the Scheduler entity. The
-automation is created / updated / deleted in lockstep with the schedule.
+Schedules **without conditions** keep the existing Scheduler behavior.
 
-Mechanism (**event-driven** — no polling):
+For schedules **with conditions**, a dedicated HA automation (`wsc_cond_*`)
+checks the conditions **before any target command**. Scheduler only marks the
+active time slot; its stored action is a harmless `logbook.log` marker containing
+the original action metadata. The card still displays and edits the original
+entity/settings, including in groups, profiles and the mini card.
 
-- **Trigger**: slot start/end (the schedule's `current_slot` attribute) **plus**
-  every state *and* attribute change of the condition entities — so the
-  automation only runs when something actually changes, never on a timer.
-- **Condition**: `current_slot != null` on the parent schedule switch +
-  user-defined conditions (operator + value)
-- **Action**: the schedule's **active** actions when the conditions pass, the
-  **stop** actions (turn off / set back) when they fail
+| Event | End action configured | No end action configured |
+| --- | --- | --- |
+| Condition true, inside the slot | Apply scheduled settings | Apply scheduled settings |
+| Condition false, inside the slot | Apply the configured end action | Restore the state captured at slot start; at initial false, leave the unchanged entity alone |
+| Slot ends | Apply end action, unless another schedule took over | **Send no target command. Leave the entity as it is.** |
 
-The schedule switch itself stays enabled — only the downstream actions are
-gated. The popup UI adapts to the selected condition entity (numeric slider
-for sensors, dropdown for selects, etc.), and the entity field has a custom
-**autocomplete** (filters by entity id and friendly name) that works on
-desktop **and** mobile / the HA companion app.
+Conditions are re-evaluated on source state/attribute changes. A recovery check
+runs once per minute for missed transitions, startup and failed service calls;
+it does not continuously reapply an already successful state. Conditions that
+are incomplete or invalid are rejected on save.
+
+When no end action is configured, the controller captures a snapshot **once per
+slot occurrence, in Home Assistant**, before its first target command. False/true
+transitions reuse that same snapshot; it is never replaced with the temporary
+state. Its reference is invalidated at slot end without restoring the target.
+
+Runtime data uses automatically created, hidden `input_text.wsc_cond_*` helpers:
+one run record, plus eight snapshot chunks when needed. They are separate from
+profile and Quick Timer storage. Helpers survive ordinary HA restarts and belong
+to the schedule; they are cleaned up with the linked automation when the schedule
+is deleted and the card synchronizes. **No package, token or manual YAML setup**
+is required. Initial provisioning/migration requires an HA administrator, as do
+other generated automations. A failed/oversized snapshot blocks activation for
+that occurrence instead of guessing an original state.
+
+A later normal schedule taking over the same target suspends the old conditional
+controller for the remainder of that slot. A Quick Timer started during the slot
+pauses conditional control until the timer is removed, then conditions are
+re-evaluated if still inside the slot. Neither fallback nor end actions overwrite
+a running Quick Timer. Turning the schedule/profile off also
+releases control without changing the entity.
+
+Existing conditional schedules are migrated automatically when an administrator
+opens the card. An active legacy slot is deferred until it ends; leave the card
+open through the transition or reopen it afterwards. Its historical baseline
+cannot be reconstructed. Migration preserves schedule IDs and profile/group links.
+Editing an active legacy schedule to require a snapshot is rejected until idle.
+Migration/setup failures keep the affected schedule stopped or its controller
+suspended and surface an error; retry after resolving the failure.
+
+See [conditional controller review notes](docs/conditional-controller-review.md)
+for tests, lifecycle details and remaining integration limits.
 
 #### Hysteresis (deadband)
 
@@ -682,8 +712,9 @@ Numeric conditions support a **deadband** to avoid rapid on/off flapping around
 the threshold. Leave the **± tolerance** field empty for the default (**5 % of
 the value**), type a number for an absolute band, or `0` for a hard threshold.
 The generated template is *stateful*: the effective threshold shifts depending
-on whether the active action is already applied (e.g. a `< 60` condition with a
-band of 3 turns on below 57 and back off above 63).
+on whether this controller considers its active branch applied (not the restored
+entity state). For example, a `< 60` condition with a
+band of 3 turns on below 57 and back off above 63.
 
 <p align="center">
   <img src="docs/images/10-conditions.png" alt="Conditions section — entity, operator, value, ± deadband and manual override" width="480"><br>
@@ -699,15 +730,17 @@ schedule stops re-applying its value until the **next slot**, then resumes
 automatically.
 
 - The **safety direction still fires**: if the condition turns *false* (e.g.
-  humidity rises back above threshold) the stop action runs anyway.
+  humidity rises back above threshold), the configured end action or the
+  original snapshot is applied during the slot.
 - It only re-applies after a *genuine* condition change, not after your manual
   action — so it never clobbers what you set by hand.
 - State is held by a tiny trigger-less marker automation
   (`automation.wsc_ovrflag_*`); the **Linked objects** panel shows whether an
   override is active and offers a **Cancel override** button (resumes
   immediately if conditions are met).
-- A Home Assistant **restart clears the override** (the Scheduler re-applies
-  the active slot on boot).
+- A Home Assistant **restart clears the manual override flag**. The conditional
+  controller resumes using its saved snapshot; Scheduler never directly applies
+  the conditional target action.
 
 Plain schedules (no conditions) get this behavior **for free** — the Scheduler
 Component already keeps manual mid-slot changes until the next timeslot.
@@ -728,7 +761,8 @@ limitation.
 
 When a schedule needs an explicit end-of-slot action (turn off, set back to a
 fallback temperature, close a cover, …), this card generates a **dedicated HA
-automation** (`automation.wsc_autooff_*`):
+automation** (`automation.wsc_autooff_*`) for unconditional schedules. Conditional
+schedules execute their configured end action through their controller instead:
 
 - **Trigger**: the schedule's `current_slot` attribute clears (slot ended)
 - **Guard**: a short delay + a template check that skips the action if another

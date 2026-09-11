@@ -2,6 +2,7 @@
 // Last modified: 2026-06-20 Rome (v1.2.0 quick-timer card)
 
 import { compressToBase64, decompressFromBase64 } from './lz-string.js';
+import { CONTROLLER_VERSION, conditionalMarker, effectiveSchedule, controllerHelpers, buildController } from './conditional-controller.js';
 
 export const PALETTE=['#F44336','#E91E63','#9C27B0','#673AB7','#3F51B5','#2196F3','#03A9F4','#00BCD4','#009688','#4CAF50','#8BC34A','#CDDC39','#FFEB3B','#FFC107','#FF9800','#FF5722','#795548','#9E9E9E','#607D8B','#000000','#FFFFFF','#FF80AB','#69F0AE','#40C4FF'];
 
@@ -16,7 +17,7 @@ const LOCALES = {
     group:{ title:'Groups',back:'← Back',edit:'Edit',create:'Create Group',tab_color:'Tab color',select_entities:'Select entities',no_groups:'No groups yet.',create_new:'Create new group',delete_confirm:'Delete this group?',name:'Group name',enter_name:'Enter a group name.',select_entity:'Please select at least one entity.',create_placeholder:'e.g. Home Climate',removed_active:'active schedule(s) found on removed entit(ies). Deactivate?' },
     errors:{ no_days:'Please select at least one day.',delete_confirm:'Delete this schedule?',delete_profile_confirm:'Delete this profile and all its schedules?',save_failed:'Failed',overlap:'Overlap with existing schedule in this profile' },
     warnings:{ temp_unusual:'⚠️ Unusual value — check device compatibility',temp_very_high:'🔴 Warning: very high temperature',out_of_slider_range:'Outside typical range for this entity' },
-    cond:{ add:'Add condition',entity:'Entity',operator:'Operator',value:'Value',and_all:'All (AND)',or_any:'Any (OR)',recheck:'Re-check interval',hysteresis:'Deadband ± (empty = 5% of value)' },
+    cond:{ behavior_hint:'During the slot: a false condition applies the end action, or restores the initial state if none is set. At slot end, None sends no command.',add:'Add condition',entity:'Entity',operator:'Operator',value:'Value',and_all:'All (AND)',or_any:'Any (OR)',recheck:'Re-check interval',hysteresis:'Deadband ± (empty = 5% of value)' },
     notify:{ restore_auto:'Restore auto text',trigger_label:'When to notify',trigger_none:'Never',trigger_start:'On start',trigger_end:'On end',trigger_both:'Start + end',msg_start_label:'Start message',msg_end_label:'End message',default_start:'Schedule started',default_end:'Schedule ended',on:'on',off:'off',from_to:'From {start} to {end}',was_active:'Was active {start}–{end}',end_off:'auto turn off',end_on:'auto turn on',end_temp:'set {value}°C',end_none:'no action',conditions_label:'Conditions',recheck:'Recheck every {n} min',at_end:'At end: {action}',completed:'schedule completed',set_to:'set to',brightness:'brightness' },
     blk:{ on:'On',off:'Off',open:'Open',close:'Closed',stop:'Stop',locked:'Locked',unlocked:'Unlocked' },
     entstatus:{ unavailable:'unavailable',missing:'removed',banner_title:'Some entities are unavailable or removed:',overlap_title:'Overlapping schedules on the same entity:' },
@@ -37,7 +38,7 @@ const LOCALES = {
     group:{ title:'Gruppi',back:'← Indietro',edit:'Modifica',create:'Crea Gruppo',tab_color:'Colore tab',select_entities:'Seleziona entità',no_groups:'Nessun gruppo.',create_new:'Crea nuovo gruppo',delete_confirm:'Eliminare questo gruppo?',name:'Nome gruppo',enter_name:'Inserisci un nome gruppo.',select_entity:"Seleziona almeno un'entità.",create_placeholder:'es. Clima Casa',removed_active:'schedule attivi su entità rimosse. Disattivarli?' },
     errors:{ no_days:'Seleziona almeno un giorno.',delete_confirm:'Eliminare questo schedule?',delete_profile_confirm:'Eliminare questo profilo e tutti i suoi schedule?',save_failed:'Errore',overlap:'Sovrapposizione con schedule esistente in questo profilo' },
     warnings:{ temp_unusual:'⚠️ Valore insolito — verifica compatibilità con il tuo dispositivo',temp_very_high:'🔴 Attenzione: temperatura molto alta',out_of_slider_range:'Fuori dal range tipico per questa entità' },
-    cond:{ add:'Aggiungi condizione',entity:'Entità',operator:'Operatore',value:'Valore',and_all:'Tutte (AND)',or_any:'Una qualsiasi (OR)',recheck:'Intervallo rivalutazione',hysteresis:'Banda morta ± (vuoto = 5% del valore)' },
+    cond:{ behavior_hint:'Durante la fascia: condizione falsa applica l’azione finale, oppure ripristina lo stato iniziale se assente. A fine fascia, Nessuna non invia comandi.',add:'Aggiungi condizione',entity:'Entità',operator:'Operatore',value:'Valore',and_all:'Tutte (AND)',or_any:'Una qualsiasi (OR)',recheck:'Intervallo rivalutazione',hysteresis:'Banda morta ± (vuoto = 5% del valore)' },
     notify:{ restore_auto:'Ripristina testo automatico',trigger_label:'Quando notificare',trigger_none:'Mai',trigger_start:"All'inizio",trigger_end:'Alla fine',trigger_both:'Inizio + fine',msg_start_label:'Messaggio inizio',msg_end_label:'Messaggio fine',default_start:'Schedule attivato',default_end:'Schedule terminato',on:'acceso',off:'spento',from_to:'Dalle {start} alle {end}',was_active:'Era attivo {start}–{end}',end_off:'spegnimento automatico',end_on:'accensione automatica',end_temp:'imposta {value}°C',end_none:'nessuna azione',conditions_label:'Condizioni',recheck:'Controllo ogni {n} min',at_end:'Alla fine: {action}',completed:'schedule completato',set_to:'impostato a',brightness:'luminosità' },
     blk:{ on:'On',off:'Off',open:'Aperto',close:'Chiuso',stop:'Stop',locked:'Bloccato',unlocked:'Sbloccato' },
     entstatus:{ unavailable:'non disponibile',missing:'rimossa',banner_title:'Alcune entità non sono disponibili o sono state rimosse:',overlap_title:'Schedule sovrapposti sulla stessa entità:' },
@@ -58,7 +59,7 @@ const LOCALES = {
     group:{ title:'Groupes',back:'← Retour',edit:'Modifier',create:'Créer Groupe',tab_color:'Couleur onglet',select_entities:'Sélectionner entités',no_groups:'Aucun groupe.',create_new:'Créer nouveau groupe',delete_confirm:'Supprimer ce groupe ?',name:'Nom du groupe',enter_name:'Entrez un nom de groupe.',select_entity:'Sélectionnez au moins une entité.',create_placeholder:'ex. Climat Maison',removed_active:'planning(s) actif(s) sur entité(s) retirée(s). Désactiver ?' },
     errors:{ no_days:'Sélectionnez au moins un jour.',delete_confirm:'Supprimer ce schedule ?',delete_profile_confirm:'Supprimer ce profil et tous ses schedules ?',save_failed:'Échec',overlap:'Chevauchement avec un planning existant dans ce profil' },
     warnings:{ temp_unusual:"⚠️ Valeur inhabituelle — vérifiez la compatibilité avec votre appareil",temp_very_high:"🔴 Attention : température très élevée",out_of_slider_range:'Hors de la plage typique pour cette entité' },
-    cond:{ add:'Ajouter condition',entity:'Entité',operator:'Opérateur',value:'Valeur',and_all:'Toutes (AND)',or_any:"N'importe laquelle (OR)",recheck:'Intervalle de réévaluation',hysteresis:'Bande morte ± (vide = 5% de la valeur)' },
+    cond:{ behavior_hint:'Pendant le créneau : une condition fausse applique l’action de fin, ou restaure l’état initial si aucune n’est définie. En fin de créneau, Aucune n’envoie pas de commande.',add:'Ajouter condition',entity:'Entité',operator:'Opérateur',value:'Valeur',and_all:'Toutes (AND)',or_any:"N'importe laquelle (OR)",recheck:'Intervalle de réévaluation',hysteresis:'Bande morte ± (vide = 5% de la valeur)' },
     notify:{ restore_auto:'Restaurer texte auto',trigger_label:'Quand notifier',trigger_none:'Jamais',trigger_start:'Au début',trigger_end:'À la fin',trigger_both:'Début + fin',msg_start_label:'Message début',msg_end_label:'Message fin',default_start:'Schedule démarré',default_end:'Schedule terminé',on:'allumé',off:'éteint',from_to:'De {start} à {end}',was_active:'Était actif {start}–{end}',end_off:'extinction automatique',end_on:'allumage automatique',end_temp:'régler {value}°C',end_none:'aucune action',conditions_label:'Conditions',recheck:'Revérification chaque {n} min',at_end:'À la fin: {action}',completed:'planification terminée',set_to:'réglé à',brightness:'luminosité' },
     blk:{ on:'On',off:'Off',open:'Ouvert',close:'Fermé',stop:'Stop',locked:'Verrouillé',unlocked:'Déverrouillé' },
     entstatus:{ unavailable:'indisponible',missing:'supprimée',banner_title:'Certaines entités sont indisponibles ou supprimées :',overlap_title:'Plannings qui se chevauchent sur la même entité :' },
@@ -317,6 +318,10 @@ export default class WeeklyScheduleBase extends HTMLElement {
       const storeRe = /^input_text\.wsc_store_/;
       const storeKeys = new Set([...Object.keys(prev.states), ...Object.keys(hass.states)].filter(k => storeRe.test(k)));
       for (const k of storeKeys) { if (prev.states[k]?.state !== hass.states[k]?.state) { storeChanged = true; break; } }
+      if (addedOrRemoved && currKeys.length < prevSet.size) {
+        this._orphanCleanupDone = false;
+        this._cleanupOrphanAutomations().catch(e => console.warn('WSC cleanup failed', e));
+      }
       if (addedOrRemoved || storeChanged) {
         this._loadingStorage = true;
         const ver = this._wsWriteCount; // se scriviamo localmente durante il fetch, scartiamo il risultato
@@ -337,6 +342,7 @@ export default class WeeklyScheduleBase extends HTMLElement {
         if (hass.states?.[WeeklyScheduleBase._profileActiveEntity])
           await this._reconcileExternalActive(hass.states[WeeklyScheduleBase._profileActiveEntity].state);
         this._loadingStorage = false;
+        this._migrateConditionalSchedules().catch(e => console.error('WSC condition migration failed', e));
         this._cleanupOrphanAutomations().catch(() => {});
         this._cleanupExpiredOneShots().catch(() => {});
         this._hideStoreHelpers().catch(() => {});
@@ -350,6 +356,9 @@ export default class WeeklyScheduleBase extends HTMLElement {
       });
     } else if (!this._popupState && !this._profilesMode && !this._groupsMode && !this._dialogOpen) {
       this._scheduleRender(prev);
+      if (prev && Object.keys(hass.states).some(id => id.startsWith('switch.schedule_') &&
+          prev.states[id]?.attributes?.current_slot != null && hass.states[id]?.attributes?.current_slot == null))
+        this._migrateConditionalSchedules().catch(e => console.error('WSC condition migration failed', e));
     }
   }
 
@@ -1150,6 +1159,7 @@ export default class WeeklyScheduleBase extends HTMLElement {
       for (const link of links) {
         if (!link.id) { surviving.push(link); continue; }
         if (states[link.id]) { surviving.push(link); continue; }
+        await this._removeConditionHelpers(link.id);
         // Orphan — collect automation IDs + auto-off child to delete
         if (link.condAutoId) deletions.push(link.condAutoId);
         if (link.extrasAutoId) deletions.push(link.extrasAutoId);
@@ -1205,6 +1215,9 @@ export default class WeeklyScheduleBase extends HTMLElement {
         for (const link of links) {
           const exp = (link.oneShot && link.oneShotExpiry) ? Date.parse(link.oneShotExpiry) : NaN;
           if (!isNaN(exp) && exp < now) {
+            // New controllers complete/retry server-side before removing their schedule.
+            if (link.condVersion === CONTROLLER_VERSION && this._hass.states[link.id]) { surviving.push(link); continue; }
+            await this._removeConditionHelpers(link.id);
             if (link.id && this._hass.states[link.id]) {
               try { await this._hass.callService('scheduler', 'remove', { entity_id: link.id }); } catch {}
             }
@@ -1270,7 +1283,7 @@ export default class WeeklyScheduleBase extends HTMLElement {
         await this._saveAutoOffAutoId(scheduleEntityId, null);
       }
     };
-    const endActions = this._buildStopActions(ps); // null if no end action
+    const endActions = ps.conditions?.length ? null : this._buildStopActions(ps); // conditional controller owns completion
     if (!endActions || !endActions.length) { await cleanup(); return; }
     const eid = ps.entityConf.entity;
     const targetId = existingId || `wsc_autooff_${scheduleEntityId.replace('switch.', '')}`;
@@ -1307,7 +1320,7 @@ export default class WeeklyScheduleBase extends HTMLElement {
         await this._saveOneShotAutoId(scheduleEntityId, null);
       }
     };
-    if (!ps.oneShot || !expiry) { await cleanup(); return; }
+    if (!ps.oneShot || !expiry || ps.conditions?.length) { await cleanup(); return; }
     const targetId = existingId || `wsc_oneshot_${scheduleEntityId.replace('switch.', '')}`;
     const expiryTs = `as_timestamp(strptime('${expiry}', '%Y-%m-%dT%H:%M:%S'))`;
     const automationConfig = {
@@ -1905,154 +1918,135 @@ export default class WeeklyScheduleBase extends HTMLElement {
     await this._hass.callApi('POST', `config/automation/config/${targetId}`, config);
   }
 
+  _validateConditions(conditions) {
+    for (const c of conditions || []) {
+      if (!c.entity || !/^[a-z0-9_]+\.[a-z0-9_]+$/.test(c.entity) ||
+          !['==', '!=', '>', '<', '>=', '<='].includes(c.operator) ||
+          c.value === '' || c.value == null ||
+          (['>', '<', '>=', '<='].includes(c.operator) && !Number.isFinite(Number(c.value))) ||
+          (c.attribute && !/^[a-zA-Z0-9_]+$/.test(c.attribute)))
+        throw new Error('Complete every condition with a valid entity, operator and value.');
+    }
+  }
+
+  async _removeConditionHelpers(scheduleId) {
+    const links = this._linksFor(scheduleId);
+    const ids = new Set(links.flatMap(l => l.condHelpers || []));
+    if (!ids.size) return;
+    const states = await this._hass.connection.sendMessagePromise({ type: 'get_states' });
+    const present = new Set(states.map(s => s.entity_id));
+    for (const id of ids) {
+      if (present.has(id)) await WeeklyScheduleBase._deleteInputText(this._hass, id);
+      for (const l of links) l.condHelpers = (l.condHelpers || []).filter(h => h !== id);
+    }
+    for (const l of links) { delete l.condHelpers; delete l.condVersion; }
+  }
+
   async _syncConditionAutomation(scheduleEntityId, conditions, condCombinator, condInterval=15, ps=null) {
+    this._validateConditions(conditions);
     const existingId = this._getCondAutoId(scheduleEntityId);
-    const numericOps = ['>', '<', '>=', '<='];
-    const allConds = conditions || [];
-    const validConds = allConds.filter(c => {
-      if (!c.entity || !c.operator) return false;
-      if (c.value === '' || c.value == null) return false;
-      // Numeric operators require a parseable number
-      if (numericOps.includes(c.operator) && isNaN(parseFloat(c.value))) return false;
-      return true;
-    });
-    // No conditions provided at all → cleanup (user removed them)
-    if (allConds.length === 0) {
-      if (existingId) {
-        try { await this._hass.callApi('DELETE', `config/automation/config/${existingId}`); } catch (e) { console.error('WSC condAuto delete failed', e); }
-      }
+    if (!conditions?.length) {
+      if (existingId) await this._hass.callApi('DELETE', `config/automation/config/${existingId}`);
+      await this._removeConditionHelpers(scheduleEntityId);
       await this._clearCondData(scheduleEntityId);
       return;
     }
-    // Some conditions exist but ALL are invalid → keep them in storage so user can re-edit, but don't create automation
-    if (!validConds.length) {
-      console.warn('[WSC] All conditions are invalid (missing value or non-numeric). Storage preserved, no automation created.');
-      await this._saveCondData(scheduleEntityId, existingId, allConds, condCombinator, condInterval);
-      return;
-    }
-    // Persist conditions to storage FIRST — survives even if HA automation fails
-    await this._saveCondData(scheduleEntityId, null, validConds, condCombinator, condInterval);
-    // Deterministic automation ID (REST endpoint requires a non-empty object_id)
+    if (!ps) throw new Error('Conditional controller requires the original schedule settings.');
+    const inactive = this._buildStopActions(ps);
+    const hs = controllerHelpers(scheduleEntityId, !inactive);
     const targetId = existingId || `wsc_cond_${scheduleEntityId.replace('switch.', '')}`;
-    const activeExpr = this._hysteresisActiveExpr(ps); // null se dominio non gestito → soglia secca
-    const haConds = validConds.map(c => this._buildHACondition(c, activeExpr));
-    const condBlock = haConds.length === 1 ? haConds[0] : { condition: condCombinator === 'or' ? 'or' : 'and', conditions: haConds };
-    // Build active/inactive actions on the TARGET entity (not on schedule switch)
-    const activeActions = ps ? this._buildScheduleActions(ps) : null;
-    const inactiveActions = ps ? this._buildStopActions(ps) : null;
-    const notMet = { condition: 'not', conditions: [condBlock] };
-    // Manual-override mode: only when enabled AND there is a target action to gate.
-    const overrideOn = !!(ps && ps.overrideEnabled && activeActions);
-    const flagEnt = this._overrideFlagEntityId(scheduleEntityId);
-    // Triggers EVENT-DRIVEN (niente time_pattern → mai polling 24/7). Inizio/fine slot (id 'slot')
-    // + cambi di stato E attributo delle entità-condizione (id 'eval'): gira solo quando serve.
-    const triggers = [
-      { platform: 'state', entity_id: scheduleEntityId, to: 'on', id: 'slot' },
-      { platform: 'state', entity_id: scheduleEntityId, attribute: 'current_slot', id: 'slot' },
-    ];
-    const trigState = new Set(), trigAttr = new Set();
-    for (const c of validConds) {
-      if (!c.entity) continue;
-      trigState.add(c.entity);
-      if (c.attribute) trigAttr.add(`${c.entity}|${c.attribute}`);
-    }
-    for (const ent of trigState) triggers.push({ platform: 'state', entity_id: ent, id: 'eval' });
-    for (const ka of trigAttr) { const [ent, attr] = ka.split('|'); triggers.push({ platform: 'state', entity_id: ent, attribute: attr, id: 'eval' }); }
-
-    let action, mode, topInSlot = true;
-    if (overrideOn) {
-      // Watch the TARGET entity for manual changes.
-      triggers.push({ platform: 'state', entity_id: ps.entityConf.entity, id: 'manual' });
-      const inSlotTpl = { condition: 'template', value_template: `{{ state_attr('${scheduleEntityId}', 'current_slot') != None }}` };
-      const noOverrideTpl = { condition: 'template', value_template: `{{ states('${flagEnt}') != 'off' }}` };
-      // Rilevamento override VALUE-BASED (UI + interruttore fisico): un override è un cambio a
-      // contesto ROOT (parent_id none) che porta l'entità a un valore DIVERSO da quello attivo.
-      // L'apply dello Scheduler porta al valore attivo → escluso (niente falso positivo). Il gate
-      // "condizione soddisfatta" usa la versione PLAIN (no isteresi) per non accoppiare gli stati.
-      const matchExpr = this._activeValueMatchExpr(ps);
-      const plainConds = validConds.map(c => this._buildHACondition(c, null));
-      const condMetPlain = plainConds.length === 1 ? plainConds[0] : { condition: condCombinator === 'or' ? 'or' : 'and', conditions: plainConds };
-      const detectTpl = matchExpr
-        ? `{{ trigger.platform == 'state' and trigger.to_state is not none and trigger.to_state.context.parent_id is none and not (${matchExpr}) }}`
-        : `{{ trigger.platform == 'state' and trigger.to_state is not none and trigger.to_state.context.parent_id is none and trigger.to_state.context.user_id is not none }}`;
-      // ATTIVA gated on flag (gateActive), SAFETY (not-met → inactive) always.
-      const applyByCond = (gateActive) => {
-        const branches = [];
-        if (inactiveActions) branches.push({ conditions: [notMet], sequence: inactiveActions });
-        branches.push({ conditions: gateActive ? [condBlock, noOverrideTpl] : [condBlock], sequence: activeActions });
-        return { choose: branches };
-      };
-      action = [{
-        choose: [
-          // 1) manual change of target entity (UI o fisico) verso un valore ≠ attivo, con condizione
-          //    soddisfatta e in-slot → attiva il flag override (sospende il re-apply dell'ATTIVA).
-          {
-            conditions: [
-              { condition: 'trigger', id: 'manual' },
-              inSlotTpl,
-              condMetPlain,
-              { condition: 'template', value_template: detectTpl },
-              noOverrideTpl,
-            ],
-            sequence: [{ service: 'automation.turn_off', target: { entity_id: flagEnt } }],
-          },
-          // 1b) target changed but machine-caused (our own apply / scheduler) → ignore,
-          //     so it does NOT fall through to the eval re-apply below.
-          {
-            conditions: [{ condition: 'trigger', id: 'manual' }],
-            sequence: [],
-          },
-          // 2) slot transition → reset override flag + (re)apply for the (new) slot
-          {
-            conditions: [{ condition: 'trigger', id: 'slot' }],
-            sequence: [
-              { service: 'automation.turn_on', target: { entity_id: flagEnt } },
-              { if: [inSlotTpl], then: [applyByCond(false)] },
-            ],
-          },
-        ],
-        // 3) eval (periodic / condition change): SAFETY always, ATTIVA only if no override
-        default: [{ if: [inSlotTpl], then: [applyByCond(true)] }],
-      }];
-      mode = 'queued';
-      topInSlot = false; // reset branch must also run when current_slot becomes None (slot end)
-    } else {
-      // Original behaviour (no override). active+inactive → choose/default; active-only → met→active.
-      let actionBlock;
-      if (activeActions && inactiveActions) {
-        actionBlock = { choose: [{ conditions: [notMet], sequence: inactiveActions }], default: activeActions };
-      } else if (activeActions) {
-        actionBlock = { choose: [{ conditions: [condBlock], sequence: activeActions }] };
-      } else {
-        // Fallback (no ps): old behaviour — toggle schedule switch
-        actionBlock = {
-          choose: [{ conditions: [notMet], sequence: [{ service: 'switch.turn_off', target: { entity_id: scheduleEntityId } }] }],
-          default: [{ service: 'switch.turn_on', target: { entity_id: scheduleEntityId } }],
-        };
+    await this._saveCondData(scheduleEntityId, targetId, conditions, condCombinator, condInterval);
+    const links = this._linksFor(scheduleEntityId);
+    // Track before provisioning so a failed save remains recoverable and cleanup knows the IDs.
+    const existing = new Set(links.flatMap(l => l.condHelpers || []));
+    const required = [hs.meta, ...hs.chunks];
+    for (const l of links) l.condHelpers = [...new Set([...existing, ...required])];
+    await this._wsSetNow(this._storageData);
+    const serverStates = await this._hass.connection.sendMessagePromise({ type: 'get_states' });
+    const present = new Set(serverStates.map(s => s.entity_id));
+    for (const id of required) {
+      if (!present.has(id)) {
+        const created = await WeeklyScheduleBase._createInputText(this._hass, id.replace('input_text.', ''));
+        if (created?.id && created.id !== id.replace('input_text.', ''))
+          throw new Error(`Unexpected helper ID: ${created.id}`);
+        await WeeklyScheduleBase._setInputText(this._hass, id, id === hs.meta ? '#{}' : '#');
+        await WeeklyScheduleBase._hideInputText(this._hass, id);
       }
-      action = [actionBlock];
-      mode = 'single';
     }
+    const previousRun = serverStates.find(s => s.entity_id === hs.meta)?.state;
+    let run = {};
+    try { run = JSON.parse(previousRun?.slice(1) || '{}'); } catch {}
+    await WeeklyScheduleBase._setInputText(this._hass, hs.meta, '#' + JSON.stringify({ ...run, suspended: true }));
+    // Stateful hysteresis belongs to the controller, not to the restored target value.
+    const activeExpr = `((states('${hs.meta}')[1:] if states('${hs.meta}').startswith('#') else '{}') | from_json).get('active', false)`;
+    const ha = conditions.map(c => this._buildHACondition(c, activeExpr));
+    const cond = ha.length === 1 ? ha : [{ condition: condCombinator === 'or' ? 'or' : 'and', conditions: ha }];
+    const config = buildController({ id: scheduleEntityId, eid: ps.entityConf.entity, helpers: hs,
+      start: this._minutesToTime(ps.startMin), stop: this._minutesToTime(ps.endMin === 1440 ? 0 : ps.endMin),
+      conditions: cond, active: this._buildScheduleActions(ps), inactive,
+      override: !!ps.overrideEnabled, flag: this._overrideFlagEntityId(scheduleEntityId), manualMatch: this._activeValueMatchExpr(ps),
+      manualConditions: ha.length === 1 ? conditions.map(c => this._buildHACondition(c, null)) : [{ condition: condCombinator === 'or' ? 'or' : 'and', conditions: conditions.map(c => this._buildHACondition(c, null)) }],
+      oneShotExpiry: ps.oneShot ? (this._getOneShot(scheduleEntityId).oneShotExpiry || this._computeOneShotExpiry(ps.days, ps.endMin)) : null });
+    for (const entity of new Set(conditions.map(c => c.entity)))
+      config.trigger.push({ platform: 'state', entity_id: entity, id: 'eval' });
+    await this._recreateAutomation(targetId, config);
+    for (const l of links) l.condVersion = CONTROLLER_VERSION;
+    await this._wsSetNow(this._storageData);
+  }
 
-    const condList = [
-      { condition: 'not', conditions: [{ condition: 'state', entity_id: scheduleEntityId, state: 'off' }] },
-    ];
-    if (topInSlot) condList.push({ condition: 'template', value_template: `{{ state_attr('${scheduleEntityId}', 'current_slot') != None }}` });
+  async _finishConditionSetup(scheduleId) {
+    const meta = controllerHelpers(scheduleId).meta;
+    const states = await this._hass.connection.sendMessagePromise({ type: 'get_states' });
+    const raw = states.find(s => s.entity_id === meta)?.state;
+    const run = JSON.parse(raw?.slice(1) || '{}');
+    delete run.suspended;
+    await WeeklyScheduleBase._setInputText(this._hass, meta, '#' + JSON.stringify(run));
+  }
 
-    const automationConfig = {
-      alias: `WSC Conditions - ${scheduleEntityId}`,
-      description: 'Auto-generated by Weekly Schedule Card',
-      trigger: triggers,
-      condition: condList,
-      action,
-      mode,
-    };
+  async _runConditionController(scheduleId) {
+    const id = this._getCondAutoId(scheduleId);
+    const states = await this._hass.connection.sendMessagePromise({ type: 'get_states' });
+    const auto = states.find(s => s.entity_id.startsWith('automation.') && s.attributes?.id === id);
+    if (!auto) throw new Error('Conditional controller is not available yet; save again.');
+    await this._hass.callService('automation', 'trigger', { entity_id: auto.entity_id, skip_condition: false });
+  }
+
+  // Legacy active slots keep their controller until idle: their pre-slot state is unknowable.
+  async _migrateConditionalSchedules() {
+    if (!WeeklyScheduleBase._isAdmin(this._hass) || this._popupState || this._txDepth || WeeklyScheduleBase._conditionMigration) return;
+    WeeklyScheduleBase._conditionMigration = true;
     try {
-      await this._recreateAutomation(targetId, automationConfig);
-      await this._saveCondData(scheduleEntityId, targetId, validConds, condCombinator, condInterval);
-    } catch (e) {
-      console.error('WSC condAuto save failed', e);
-    }
+      const links = (this._storageData?.profiles || []).flatMap(p => p.scheduleLinks || []);
+      const seen = new Set();
+      for (const l of links) {
+        if (!l.conditions?.length || (l.condVersion === CONTROLLER_VERSION && !l.condMigrationPending) || seen.has(l.id)) continue;
+        seen.add(l.id);
+        const s = this._hass.states[l.id];
+        if (!s || s.state === 'unavailable' || s.state === 'unknown' || s.attributes.current_slot != null) continue;
+        const ps = this._openEditPopup(l.id, false);
+        if (!ps) continue;
+        // Freeze the schedule before replacing either side of its execution path.
+        const enabled = l.condMigrationPending ? l.condResume : s.state !== 'off';
+        l.condMigrationPending = true; l.condResume = enabled;
+        await this._wsSetNow(this._storageData);
+        await this._hass.callService('switch', 'turn_off', { entity_id: l.id });
+        await this._hass.callService('scheduler', 'edit', { entity_id: l.id, timeslots: [{
+          start: this._minutesToTime(ps.startMin), stop: this._minutesToTime(ps.endMin === 1440 ? 0 : ps.endMin),
+          actions: conditionalMarker(ps.entityConf.entity, this._buildScheduleActions(ps).map(a => ({
+            entity_id: ps.entityConf.entity, service: a.service, service_data: a.data || {},
+          }))),
+        }] });
+        await this._syncConditionAutomation(l.id, ps.conditions, ps.condCombinator, ps.condInterval, ps);
+        await this._syncAutoOffAutomation(l.id, ps);
+        await this._syncOneShotAutomation(l.id, ps, this._getOneShot(l.id).oneShotExpiry);
+        await this._syncOverrideFlag(l.id, ps);
+        await this._syncExtrasAutomation(l.id, ps);
+        await this._finishConditionSetup(l.id);
+        if (enabled) await this._hass.callService('switch', 'turn_on', { entity_id: l.id });
+        delete l.condMigrationPending; delete l.condResume;
+        await this._wsSetNow(this._storageData);
+      }
+    } finally { WeeklyScheduleBase._conditionMigration = false; }
   }
 
   // Trigger-less marker automation that holds the manual-override flag.
@@ -2586,6 +2580,8 @@ export default class WeeklyScheduleBase extends HTMLElement {
     return this._renderCache;
   }
 
+  static effectiveSchedule(s) { return effectiveSchedule(s); }
+
   _buildRenderCache() {
     // schedulesByEntity: stessa semantica di _getSchedules (.includes su entry stringa).
     // Le entità si raccolgono da attributes.entities UNITE a quelle trovate nelle actions
@@ -2595,7 +2591,8 @@ export default class WeeklyScheduleBase extends HTMLElement {
     const schedulesByEntity = new Map();
     const states = this._hass?.states;
     if (states) {
-      for (const s of Object.values(states)) {
+      for (const raw of Object.values(states)) {
+        const s = effectiveSchedule(raw);
         if (!s.entity_id.startsWith('switch.schedule_')) continue;
         const seenEid = new Set(); // come .filter: ogni schedule al più una volta per entità
         const addEid = e => {
@@ -2720,6 +2717,7 @@ export default class WeeklyScheduleBase extends HTMLElement {
   }
 
   _blockColor(schedule, entityConf) {
+    schedule = effectiveSchedule(schedule);
     if (this._detectDomain(entityConf?.entity) === 'climate')
       return this._tempToColor(schedule.attributes.actions?.[0]?.data?.temperature ?? null);
     return entityConf?.color || '#9E9E9E';
@@ -2729,6 +2727,7 @@ export default class WeeklyScheduleBase extends HTMLElement {
   // climate→temp/mode, light→on/off o %, fan→% , cover/valve→%/apri/chiudi/ferma, switch→on/off.
   // entityConf opzionale: se assente deriva l'entità target dallo schedule (entities/actions).
   _blockLabel(s, entityConf) {
+    s = effectiveSchedule(s);
     const eid = entityConf?.entity
       || (Array.isArray(s.attributes?.entities) ? s.attributes.entities[0] : null)
       || s.attributes?.actions?.[0]?.entity_id
@@ -2980,8 +2979,9 @@ export default class WeeklyScheduleBase extends HTMLElement {
     this._renderPopup();
   }
 
-  _openEditPopup(entityId) {
-    const s = this._hass.states[entityId];
+  _openEditPopup(entityId, render = true) {
+    const previousPopup = this._popupState;
+    const s = effectiveSchedule(this._hass.states[entityId]);
     if (!s) return;
     const { weekdays, timeslots, actions } = s.attributes;
     // Entity ids this schedule controls. attributes.entities can be EMPTY for
@@ -3106,7 +3106,10 @@ export default class WeeklyScheduleBase extends HTMLElement {
     this._popupState._defaultNotifyMsgEnd = this._buildDefaultNotifyMessage(this._popupState, 'end');
     if (!this._popupState.notifyMessage) this._popupState.notifyMessage = this._popupState._defaultNotifyMsg;
     if (!this._popupState.notifyMessageEnd) this._popupState.notifyMessageEnd = this._popupState._defaultNotifyMsgEnd;
-    this._renderPopup();
+    const result = this._popupState;
+    if (render) this._renderPopup();
+    else this._popupState = previousPopup;
+    return result;
   }
 
   _closePopup() {
@@ -3371,6 +3374,7 @@ export default class WeeklyScheduleBase extends HTMLElement {
             <button class="cond-del" data-ci="${i}">✕</button>
           </div>`;
         }).join('')}
+        ${ps.conditions.length > 0 ? `<div class="cond-empty">${this._esc(this.t('cond.behavior_hint'))}</div>` : ''}
         ${ps.conditions.length === 0 ? `<div class="cond-empty">ℹ️ ${this.t('cond.empty_hint') || (this._lang==='it'?'Nessuna condizione attiva — lo schedule girerà sempre nei suoi orari':this._lang==='fr'?'Aucune condition active — le planning fonctionnera toujours dans ses créneaux':'No active conditions — schedule will always run in its slots')}</div>` : ''}
         <button class="cond-add">${this.t('cond.add')}</button>
         <label class="cond-override-row" style="${ps.conditions.length===0?'opacity:.45':''}">
@@ -4109,6 +4113,14 @@ export default class WeeklyScheduleBase extends HTMLElement {
   async _saveSchedule() {
     const ps = this._popupState;
     if (!ps?.days.length) { await this._alert(this.t('errors.no_days')); return; }
+    try { this._validateConditions(ps.conditions); }
+    catch (e) { await this._alert(e.message); return; }
+    if (ps.mode === 'edit' && ps.conditions?.length && !ps.stopAction &&
+        this._hass.states[ps.entityId]?.attributes?.current_slot != null &&
+        !this._linksFor(ps.entityId).some(l => l.condVersion === CONTROLLER_VERSION)) {
+      await this._alert('This active schedule has no saved baseline. Save after its current slot ends.');
+      return;
+    }
     const overlap = this._checkOverlap(ps);
     if (overlap) { await this._alert(overlap); return; }
 
@@ -4118,7 +4130,8 @@ export default class WeeklyScheduleBase extends HTMLElement {
     // Build actions using shared helper (climate: one action per service — preset/fan/swing each need their own)
     const built = this._buildScheduleActions(ps);
     // Scheduler component expects {entity_id, service, service_data} (no `target` wrapping)
-    const actions = built.map(a => ({ entity_id: eid, service: a.service, service_data: a.data || {} }));
+    const originalActions = built.map(a => ({ entity_id: eid, service: a.service, service_data: a.data || {} }));
+    const actions = ps.conditions?.length ? conditionalMarker(eid, originalActions) : originalActions;
     const timeslots = [{ start: this._minutesToTime(ps.startMin), stop: this._minutesToTime(ps.endMin === 1440 ? 0 : ps.endMin), actions }];
     // One-shot: scadenza = ultima prossima occorrenza tra i giorni scelti (null se disattivato).
     const oneShotExpiry = ps.oneShot ? this._computeOneShotExpiry(ps.days, ps.endMin) : null;
@@ -4148,6 +4161,7 @@ export default class WeeklyScheduleBase extends HTMLElement {
         await this._hass.callService('scheduler', 'add', p);
         const newId = await this._waitForNewSchedule(beforeIds);
         if (newId) {
+          if (ps.conditions?.length) await this._hass.callService('switch', 'turn_off', { entity_id: newId });
           await this._addScheduleToProfile(newId);
           saveNotify(newId);
           await this._syncAutoOffAutomation(newId, ps);
@@ -4157,14 +4171,26 @@ export default class WeeklyScheduleBase extends HTMLElement {
           await this._persistExtras(newId, ps);
           await this._syncExtrasAutomation(newId, ps);
           await this._syncNotifyAutomation(newId, ps);
+          if (ps.conditions?.length) await this._finishConditionSetup(newId);
           const prof = this._getSelectedProfile();
           if (prof && !this._isProfileActive(prof)) {
             try { await this._hass.callService('switch', 'turn_off', { entity_id: newId }); } catch {}
+          } else if (ps.conditions?.length) {
+            await this._hass.callService('switch', 'turn_on', { entity_id: newId });
+            await this._runConditionController(newId);
           }
         }
       } else {
+        const wasConditional = !!this._getCondAutoId(ps.entityId);
         const p = { entity_id: ps.entityId, weekdays, timeslots };
         if (ps.name) p.name = ps.name;
+        if (wasConditional) {
+          const oldId = this._getCondAutoId(ps.entityId);
+          const old = Object.values(this._hass.states).find(s => s.entity_id.startsWith('automation.') && s.attributes?.id === oldId);
+          if (old) await this._hass.callService('automation', 'turn_off', { entity_id: old.entity_id, stop_actions: true });
+        }
+        if (ps.conditions?.length || wasConditional)
+          await this._hass.callService('switch', 'turn_off', { entity_id: ps.entityId });
         await this._hass.callService('scheduler', 'edit', p);
         saveNotify(ps.entityId);
         await this._syncAutoOffAutomation(ps.entityId, ps);
@@ -4174,6 +4200,10 @@ export default class WeeklyScheduleBase extends HTMLElement {
         await this._persistExtras(ps.entityId, ps);
         await this._syncExtrasAutomation(ps.entityId, ps);
         await this._syncNotifyAutomation(ps.entityId, ps);
+        if (ps.conditions?.length) await this._finishConditionSetup(ps.entityId);
+        if (!ps.isOff && (ps.conditions?.length || wasConditional))
+          await this._hass.callService('switch', 'turn_on', { entity_id: ps.entityId });
+        if (ps.conditions?.length && !ps.isOff) await this._runConditionController(ps.entityId);
       }
     } catch (e) { ok = false; await this._alert(`${this.t('errors.save_failed')}: ${e.message || e}`); return; }
     await this._wsSet(this._storageData).catch(() => {});
@@ -4195,6 +4225,7 @@ export default class WeeklyScheduleBase extends HTMLElement {
     const overrideFlagId = this._getOverrideFlagId(eid);
     const oneShotAutoId = this._getOneShotAutoId(eid);
     const data = this._storageData;
+    await this._removeConditionHelpers(eid);
     for (const p of data.profiles || []) {
       p.schedules = (p.schedules || []).filter(x => x !== eid);
       p.scheduleLinks = (p.scheduleLinks || []).filter(l => l.id !== eid);
@@ -4297,6 +4328,7 @@ export default class WeeklyScheduleBase extends HTMLElement {
           try { await this._hass.callApi('DELETE', `config/automation/config/${link.notifyAutoId}`); } catch (e) { console.error('WSC notifyAuto delete failed', e); }
         if (link.autoOffAutoId)
           try { await this._hass.callApi('DELETE', `config/automation/config/${link.autoOffAutoId}`); } catch (e) { console.error('WSC autoOff delete failed', e); }
+        await this._removeConditionHelpers(link.id);
         if (link.overrideFlagAutoId)
           try { await this._hass.callApi('DELETE', `config/automation/config/${link.overrideFlagAutoId}`); } catch (e) { console.error('WSC overrideFlag delete failed', e); }
         if (link.oneShotAutoId)
@@ -4347,11 +4379,29 @@ export default class WeeklyScheduleBase extends HTMLElement {
       if (this._isInternalSchedule(s)) continue; // skip generated/internal schedules
       try {
         const beforeIds = new Set(Object.keys(this._hass.states).filter(k => k.startsWith('switch.schedule_')));
-        const params = { weekdays: s.attributes.weekdays, timeslots: s.attributes.timeslots, repeat_type: 'repeat' };
+        const conditional = this._getStoredConditions(schedId).conditions.length > 0;
+        const ps = conditional ? this._openEditPopup(schedId, false) : null;
+        const slots = ps ? [{ start: this._minutesToTime(ps.startMin), stop: this._minutesToTime(ps.endMin === 1440 ? 0 : ps.endMin),
+          actions: conditionalMarker(ps.entityConf.entity, this._buildScheduleActions(ps).map(a => ({ entity_id: ps.entityConf.entity, service: a.service, service_data: a.data || {} }))) }] : s.attributes.timeslots;
+        const params = { weekdays: s.attributes.weekdays, timeslots: slots, repeat_type: 'repeat' };
         if (s.attributes.friendly_name) params.name = s.attributes.friendly_name;
         await this._hass.callService('scheduler', 'add', params);
         const newSchedId = await this._waitForNewSchedule(beforeIds);
-        if (newSchedId) await this._addScheduleToProfile(newSchedId);
+        if (newSchedId) {
+          if (ps) await this._hass.callService('switch', 'turn_off', { entity_id: newSchedId });
+          await this._addScheduleToProfile(newSchedId);
+          if (ps) {
+            const original = this._linksFor(schedId)[0] || {};
+            const copy = JSON.parse(JSON.stringify(original));
+            for (const key of Object.keys(copy)) if (key.endsWith('Id') || key.startsWith('cond')) delete copy[key];
+            newProfile.scheduleLinks.push({ ...copy, id: newSchedId });
+            await this._wsSet(this._storageData);
+            await this._syncConditionAutomation(newSchedId, ps.conditions, ps.condCombinator, ps.condInterval, ps);
+            await this._syncOverrideFlag(newSchedId, ps);
+            await this._syncNotifyAutomation(newSchedId, ps);
+            await this._finishConditionSetup(newSchedId);
+          }
+        }
       } catch (e) { console.error('Duplicate schedule failed', schedId, e); }
     }
     this._selectedProfileId = prevSelectedId;
