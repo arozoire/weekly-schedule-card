@@ -23,6 +23,13 @@ F = json.loads(Path(sys.argv[1]).read_text())
 SID, EID, HS = F['id'], F['eid'], F['hs']
 logging.basicConfig(level=logging.ERROR)
 
+def timed_event(event_type, data, when):
+    """Build an Event across HA's datetime-to-timestamp constructor change."""
+    try:
+        return Event(event_type, data, time_fired_timestamp=when.timestamp())
+    except TypeError:
+        return Event(event_type, data, time_fired=when)
+
 async def main():
     hass = HomeAssistant(tempfile.mkdtemp(prefix='wsc-ha-'))
     # HA 2026.9 made timezone setup asynchronous; retain compatibility with the
@@ -164,7 +171,7 @@ async def main():
     old=hass.states.get(SID)
     other='switch.schedule_new'; hass.states.async_set(other,'triggered',{'current_slot':0,'entities':[EID]})
     new=hass.states.get(other)
-    event=Event('state_changed',{'entity_id':other,'old_state':None,'new_state':new},time_fired=datetime(2026,9,11,9,tzinfo=timezone.utc))
+    event=timed_event('state_changed',{'entity_id':other,'old_state':None,'new_state':new},datetime(2026,9,11,9,tzinfo=timezone.utc))
     await run('fallback',at='2026-09-11T09:00:01',trigger={'id':'other','event':event})
     assert meta()['status']=='yielded'
     calls.clear(); hass.states.async_set('sensor.test','0'); await run('fallback',at='2026-09-11T10:00:00')
@@ -176,12 +183,12 @@ async def main():
     reset(); hass.states.async_set('sensor.test','20'); await run()
     other='switch.schedule_wsc_quick_timer_test'
     hass.states.async_set(other,'on',{'friendly_name':'WSC Quick Timer - test','actions':[{'entity_id':EID}], 'current_slot':None})
-    event=Event('state_changed',{'entity_id':other,'old_state':None,'new_state':hass.states.get(other)},time_fired=datetime(2026,9,11,9,tzinfo=timezone.utc))
+    event=timed_event('state_changed',{'entity_id':other,'old_state':None,'new_state':hass.states.get(other)},datetime(2026,9,11,9,tzinfo=timezone.utc))
     await run(at='2026-09-11T09:00:01',trigger={'id':'other','event':event})
     assert meta()['status']=='timer'
     calls.clear(); hass.states.async_set('sensor.test','0'); await run(at='2026-09-11T10:00:00'); assert target_calls()==[]
     old=hass.states.get(other); hass.states.async_remove(other)
-    event=Event('state_changed',{'entity_id':other,'old_state':old,'new_state':None},time_fired=datetime(2026,9,11,10,1,tzinfo=timezone.utc))
+    event=timed_event('state_changed',{'entity_id':other,'old_state':old,'new_state':None},datetime(2026,9,11,10,1,tzinfo=timezone.utc))
     await run(at='2026-09-11T10:01:00',trigger={'id':'other','event':event})
     assert meta()['status']=='live' and hass.states.get(EID).state=='cool'
     print('PASS Quick Timer pause and resume, including start-only timers')
