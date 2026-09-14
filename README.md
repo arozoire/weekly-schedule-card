@@ -43,6 +43,26 @@ all on top of the [Scheduler Component](https://github.com/nielsfaber/scheduler-
 
 ---
 
+## Profile storage and reset
+
+Profiles are shared through automatically managed Home Assistant helpers. If a
+saved store is temporarily unreadable during startup or an update, the card retries
+without replacing it with Default. Data already overwritten requires inspection of
+the helpers and a previous backup; see [profile recovery](docs/profile-storage-recovery.md).
+
+Administrators can open **Groups → Reset Weekly Schedule Card…** in the editing
+card. The preview lists the schedules, generated controllers and runtime helpers
+to delete across all profiles and users, including Quick Timers. Download the
+export, acknowledge a saved HA backup, and type **CANCELLA TUTTO** before confirming.
+Close other dashboards first. This is irreversible deletion, not profile recovery.
+
+The reset stops generated controllers before deleting the listed objects, without
+requesting device restores or end actions. An interrupted deletion retains its
+inventory for an explicit retry. Unassigned Scheduler entries, dashboard settings
+and unrelated HA objects are preserved. Empty storage helpers remain so old
+per-user data cannot reappear. If existing storage cannot be read reliably, reset
+is blocked pending recovery. No manual YAML, token or helper creation is needed.
+
 ## The cards
 
 This repository ships **five** Lovelace custom elements built from the same
