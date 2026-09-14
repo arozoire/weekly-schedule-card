@@ -50,6 +50,15 @@ class QuickTimerCard extends WeeklyScheduleBase {
     const prev = this._prevHass;
     this._prevHass = hass;
     this._hass = hass;
+    if (WeeklyScheduleBase._isResetPaused(hass)) {
+      this._resetWasPending = true;
+      this._stopTick();
+      if (!this._resetting && !this._dialogOpen) this._showResetPending();
+      return;
+    }
+    // Timer-store events may have arrived while paused. Reload on resume instead
+    // of keeping a stale timer because the final event only changed profiles.
+    if (this._resetWasPending) { this._resetWasPending = false; this._timers = null; }
     this._syncDraftFromEntity();
     this._renderDraftEditor();
 
@@ -123,6 +132,7 @@ class QuickTimerCard extends WeeklyScheduleBase {
     if (this._qtTick) { clearInterval(this._qtTick); this._qtTick = null; }
   }
   _tick() {
+    if (WeeklyScheduleBase._isResetPaused(this._hass)) { this._stopTick(); return; }
     const rec = this._timers?.[this._entity];
     if (!rec) { this._stopTick(); return; }
     if (rec.phase === 'cleanup') {
@@ -922,6 +932,7 @@ class QuickTimerCard extends WeeklyScheduleBase {
   }
 
   async _startTimer(root) {
+    if (WeeklyScheduleBase._isResetPaused(this._hass)) return;
     if (this._starting || this._cancelling || this._activeTimer()) return; // no overlapping local runs
     if (!this._entity || this._timers === null) return;
     const inputs = root.querySelectorAll?.('[data-draft-field]') || [];
@@ -1058,6 +1069,7 @@ class QuickTimerCard extends WeeklyScheduleBase {
   }
 
   async _cancelTimer(eid) {
+    if (WeeklyScheduleBase._isResetPaused(this._hass)) return;
     if (this._cancelling || this._starting || this._cleaningTimers) return;
     const t = this._timers?.[eid];
     if (!t) { this.render(); return; }
@@ -1103,6 +1115,7 @@ class QuickTimerCard extends WeeklyScheduleBase {
   }
 
   async _cleanupFinishedTimers() {
+    if (WeeklyScheduleBase._isResetPaused(this._hass)) return;
     if (!this._timers || this._cleaningTimers || this._starting || this._cancelling) return;
     this._cleaningTimers = true;
     const now = Date.now();

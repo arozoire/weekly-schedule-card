@@ -434,11 +434,14 @@ class WeeklyScheduleMiniCard extends HTMLElement {
     const prev = this._prevHass;
     this._prevHass = hass;
     this._hass = hass;
-    if (!this._storageData && !this._loadingStorage) {
+    if (WeeklyScheduleBase._isResetPaused(hass)) { this.shadowRoot.textContent = 'Weekly Schedule Card — reset'; return; }
+    const storeKeys = new Set([...Object.keys(prev?.states || {}), ...Object.keys(hass.states)].filter(k => /^input_text\.wsc_store_/.test(k)));
+    const storeChanged = prev && [...storeKeys].some(k => prev.states[k]?.state !== hass.states[k]?.state);
+    if ((!this._storageData || storeChanged) && !this._loadingStorage) {
       this._loadingStorage = true;
       WeeklyScheduleBase._sharedGet(hass, 'weekly_schedule_card')
-        .then(d => { this._storageData = d || { profiles: [] }; this._loadingStorage = false; this._render(); })
-        .catch(() => { this._storageData = { profiles: [] }; this._loadingStorage = false; this._render(); });
+        .then(d => { if (d) this._storageData = d; this._loadingStorage = false; this._render(); })
+        .catch(() => { this._loadingStorage = false; this._render(); });
       this._render(); // primo paint immediato; la .then ri-renderizza con lo storage
       return;
     }
@@ -557,6 +560,7 @@ class WeeklyScheduleMiniCard extends HTMLElement {
 
   _render() {
     if(!this._hass)return;
+    if (WeeklyScheduleBase._isResetPaused(this._hass)) { this.shadowRoot.textContent = 'Weekly Schedule Card — reset'; return; }
     const states=this._hass.states;
     const cfgEntities=this._config?.entities
       ?this._config.entities.map(e=>typeof e==='string'?e:e.entity)

@@ -3,11 +3,14 @@
 
 import { compressToBase64, decompressFromBase64 } from './lz-string.js';
 import { CONTROLLER_VERSION, conditionalMarker, effectiveSchedule, controllerHelpers, buildController } from './conditional-controller.js';
+import { prepareReset, executeReset, RESET_PHRASE } from './reset-card.js';
 
 export const PALETTE=['#F44336','#E91E63','#9C27B0','#673AB7','#3F51B5','#2196F3','#03A9F4','#00BCD4','#009688','#4CAF50','#8BC34A','#CDDC39','#FFEB3B','#FFC107','#FF9800','#FF5722','#795548','#9E9E9E','#607D8B','#000000','#FFFFFF','#FF80AB','#69F0AE','#40C4FF'];
 
 const LOCALES = {
   en: {
+    storage:{ unavailable:'Profile data is unavailable. Retrying automatically; existing data will not be replaced.' },
+    reset:{ button:'Reset Weekly Schedule Card…',title:'Reset all card data',unreadable:'Storage cannot be read reliably. Export and recover the data before resetting.',changed:'The data changed. Reopen the reset preview.',paused:'Card reset is pending. Resume to finish deleting the listed objects.',resume:'Review / resume reset',failed:'Reset interrupted. The inventory was kept for retry.',scope:'This affects all profiles and groups, their listed schedules, generated controllers and Quick Timers, across users. Close other dashboards first. Devices keep their current state; no restore or end action is requested.',export:'Download export',ack:'I saved the export and have a Home Assistant backup. The export alone is not a full restore backup.',type:'Type CANCELLA TUTTO to confirm:',confirm:'Delete listed objects',done:'Reset complete. The card is empty. Dashboard configuration and unlisted Home Assistant objects were preserved.',counts:'{profiles} profiles · {schedules} schedules · {automations} automations · {helpers} runtime helpers',ignored:'Unassigned schedules preserved: {count}',error:'Reset unavailable' },
     card:{ title:'Weekly Schedule',new_profile:'New profile',groups:'Groups',no_entities:'No entities configured',no_entities_sub:'Add entities via YAML config, or create a Group to get started.',manage_groups:'Manage Groups',layout_rows_view:'Rows view',layout_cols_view:'Columns view',no_schedule_now:'No schedule active now',empty_schedule:'No schedule' },
     layout:{ focus:'Focus',compact:'Compact' },
     qtimer:{ more_options:'More options',live_state:'Current state',restore_hint:'On expiry or cancellation, the original settings are restored. A schedule taking over cancels this timer without restore.',cool:'Cool',heat:'Heat',heat_cool:'Heat/cool',fan_only:'Fan only',dry:'Dry',auto:'Auto',low:'Low',medium:'Medium',high:'High',forward:'Forward',reverse:'Reverse',during:'Settings during the timer',current_state:'Current state (read only)',effect:'Effect',direction:'Direction',humidity:'Humidity',bad_range:'Minimum temperature must not exceed maximum temperature.',draft_hint:'Choose the settings below, then press Start timer. Changes are only applied at Start.',timer:'Timer',no_entity:'Set an entity in the card config.',on:'On',off:'Off',temperature:'Temperature',brightness:'Brightness',color:'Color',speed:'Speed',open:'Open',close:'Close',stop:'Stop',position:'Position',duration:'Duration',until:'Until',custom:'custom',minutes:'min',start:'Start timer',cancel:'Cancel (restore now)',holding:'Holding',bad_duration:'Set a valid duration / end time.',start_failed:'Could not start the timer (see console).',acquiring:'Acquiring state…',acquired:'State acquired: {state}',acquire_failed:'State not acquired',starting:'Starting timer…',cover_open:'Open',cover_close:'Close',cover_stop:'Stop',cover_position:'Position',editor:{entity:'Entity',name:'Name',default_minutes:'Default duration (min)',presets:'Presets (min)',presets_help:'Comma-separated minutes, e.g. 5, 10, 15, 30, 45, 60',language:'Language',lang_auto:'Auto',no_form:'Config form unavailable — edit in YAML.'} },
@@ -29,6 +32,8 @@ const LOCALES = {
     serp:{ title_default:'Weekly Schedule',many_entities:'Readability drops past 3 entities — grouping fewer keeps it clean.',no_entities:'Add entities in the card config to see them here.',now:'Now' }
   },
   it: {
+    storage:{ unavailable:'Dati dei profili non disponibili. Nuovo tentativo automatico; i dati esistenti non saranno sostituiti.' },
+    reset:{ button:'Azzera Weekly Schedule Card…',title:'Azzera tutti i dati della card',unreadable:'Il salvataggio non è leggibile con certezza. Esporta e recupera i dati prima del reset.',changed:'I dati sono cambiati. Riapri l’anteprima del reset.',paused:'Reset della card in sospeso. Riprendi per completare la cancellazione degli oggetti elencati.',resume:'Verifica / riprendi reset',failed:'Reset interrotto. L’elenco è conservato per riprovare.',scope:'Riguarda tutti i profili e gruppi, gli schedule elencati, i controller generati e i Quick Timer, per tutti gli utenti. Chiudi prima le altre dashboard. I dispositivi restano nello stato corrente: non vengono richieste azioni finali o ripristini.',export:'Scarica esportazione',ack:'Ho salvato l’esportazione e ho un backup Home Assistant. L’esportazione da sola non è un backup completo ripristinabile.',type:'Digita CANCELLA TUTTO per confermare:',confirm:'Elimina gli oggetti elencati',done:'Reset completato. La card è vuota. Configurazione dashboard e oggetti Home Assistant non elencati sono conservati.',counts:'{profiles} profili · {schedules} schedule · {automations} automazioni · {helpers} helper di esecuzione',ignored:'Schedule non assegnati conservati: {count}',error:'Reset non disponibile' },
     card:{ title:'Pianificazione Settimanale',new_profile:'Nuovo profilo',groups:'Gruppi',no_entities:'Nessuna entità configurata',no_entities_sub:'Aggiungi entità via YAML o crea un Gruppo per iniziare.',manage_groups:'Gestisci Gruppi',layout_rows_view:'Vista righe',layout_cols_view:'Vista colonne',no_schedule_now:'Nessuno schedule attivo ora',empty_schedule:'Nessuno schedule' },
     layout:{ focus:'Focus',compact:'Compatta' },
     qtimer:{ more_options:'Altre opzioni',live_state:'Stato attuale',restore_hint:'A scadenza o annullando vengono ripristinate le impostazioni originali. Se subentra uno schedule, il timer termina senza ripristino.',cool:'Freddo',heat:'Caldo',heat_cool:'Caldo/freddo',fan_only:'Solo ventola',dry:'Deumidifica',auto:'Auto',low:'Bassa',medium:'Media',high:'Alta',forward:'Avanti',reverse:'Indietro',during:'Impostazioni durante il timer',current_state:'Stato attuale (sola lettura)',effect:'Effetto',direction:'Direzione',humidity:'Umidità',bad_range:'La temperatura minima non può superare la massima.',draft_hint:'Scegli le impostazioni qui sotto, poi premi Avvia timer. Le modifiche si applicano solo con Avvia.',timer:'Timer',no_entity:'Imposta un\'entità nella configurazione della card.',on:'Acceso',off:'Spento',temperature:'Temperatura',brightness:'Luminosità',color:'Colore',speed:'Velocità',open:'Apri',close:'Chiudi',stop:'Ferma',position:'Posizione',duration:'Durata',until:'Fine alle',custom:'pers.',minutes:'min',start:'Avvia timer',cancel:'Annulla (ripristina ora)',holding:'Mantiene',bad_duration:'Imposta una durata / orario di fine valido.',start_failed:'Impossibile avviare il timer (vedi console).',acquiring:'Stato in acquisizione…',acquired:'Stato acquisito: {state}',acquire_failed:'Stato non acquisito',starting:'Avvio timer…',cover_open:'Apri',cover_close:'Chiudi',cover_stop:'Ferma',cover_position:'Posizione',editor:{entity:'Entità',name:'Nome',default_minutes:'Durata predefinita (min)',presets:'Preset (min)',presets_help:'Minuti separati da virgola, es. 5, 10, 15, 30, 45, 60',language:'Lingua',lang_auto:'Auto',no_form:'Form di configurazione non disponibile — modifica in YAML.'} },
@@ -50,6 +55,7 @@ const LOCALES = {
     serp:{ title_default:'Pianificazione Settimanale',many_entities:'Oltre 3 entità la leggibilità cala — raggrupparne meno mantiene la card pulita.',no_entities:'Aggiungi entità nella configurazione della card per vederle qui.',now:'Ora' }
   },
   fr: {
+    storage:{ unavailable:'Données des profils indisponibles. Nouvelle tentative automatique ; les données existantes ne seront pas remplacées.' },
     card:{ title:'Planning Hebdomadaire',new_profile:'Nouveau profil',groups:'Groupes',no_entities:'Aucune entité configurée',no_entities_sub:'Ajoutez des entités via la config YAML, ou créez un Groupe pour commencer.',manage_groups:'Gérer les Groupes',layout_rows_view:'Vue lignes',layout_cols_view:'Vue colonnes',no_schedule_now:'Aucun planning actif',empty_schedule:'Aucun planning' },
     layout:{ focus:'Focus',compact:'Compacte' },
     qtimer:{ more_options:'Autres options',live_state:'État actuel',restore_hint:'À la fin ou en annulant, les réglages initiaux sont rétablis. Si un programme prend le relais, le minuteur est annulé sans restauration.',cool:'Froid',heat:'Chaud',heat_cool:'Chaud/froid',fan_only:'Ventilation',dry:'Déshumidification',auto:'Auto',low:'Faible',medium:'Moyenne',high:'Élevée',forward:'Avant',reverse:'Arrière',during:'Réglages pendant le minuteur',current_state:'État actuel (lecture seule)',effect:'Effet',direction:'Direction',humidity:'Humidité',bad_range:'La température minimale ne peut pas dépasser la maximale.',draft_hint:'Choisissez les réglages, puis Démarrer. Les modifications sont appliquées uniquement au démarrage.',timer:'Minuteur',no_entity:'Définissez une entité dans la configuration de la carte.',on:'Allumé',off:'Éteint',temperature:'Température',brightness:'Luminosité',color:'Couleur',speed:'Vitesse',open:'Ouvrir',close:'Fermer',stop:'Arrêter',position:'Position',duration:'Durée',until:'Jusqu\'à',custom:'perso',minutes:'min',start:'Démarrer',cancel:'Annuler (restaurer)',holding:'Maintient',bad_duration:'Définissez une durée / heure de fin valide.',start_failed:'Impossible de démarrer le minuteur (voir console).',acquiring:'Acquisition de l\'état…',acquired:'État acquis : {state}',acquire_failed:'État non acquis',starting:'Démarrage du minuteur…',cover_open:'Ouvrir',cover_close:'Fermer',cover_stop:'Arrêter',cover_position:'Position',editor:{entity:'Entité',name:'Nom',default_minutes:'Durée par défaut (min)',presets:'Préréglages (min)',presets_help:'Minutes séparées par des virgules, ex. 5, 10, 15, 30, 45, 60',language:'Langue',lang_auto:'Auto',no_form:'Formulaire de configuration indisponible — modifiez en YAML.'} },
@@ -304,6 +310,11 @@ export default class WeeklyScheduleBase extends HTMLElement {
   set hass(hass) {
     const prev = this._prevHass;
     this._prevHass = hass;
+    if (WeeklyScheduleBase._isResetPaused(hass)) {
+      this._hass = hass;
+      if (!this._resetting && !this._dialogOpen) this._showResetPending();
+      return;
+    }
     const externalActive = WeeklyScheduleBase._profileActiveEntity;
     if (prev && this._storageData && prev.states?.[externalActive]?.state !== hass.states?.[externalActive]?.state)
       this._reconcileExternalActive(hass.states?.[externalActive]?.state).catch(e => console.warn('[WSC] External active-profile reconciliation failed', e));
@@ -318,16 +329,18 @@ export default class WeeklyScheduleBase extends HTMLElement {
       const storeRe = /^input_text\.wsc_store_/;
       const storeKeys = new Set([...Object.keys(prev.states), ...Object.keys(hass.states)].filter(k => storeRe.test(k)));
       for (const k of storeKeys) { if (prev.states[k]?.state !== hass.states[k]?.state) { storeChanged = true; break; } }
-      if (addedOrRemoved && currKeys.length < prevSet.size) {
-        this._orphanCleanupDone = false;
-        this._cleanupOrphanAutomations().catch(e => console.warn('WSC cleanup failed', e));
-      }
       if (addedOrRemoved || storeChanged) {
         this._loadingStorage = true;
         const ver = this._wsWriteCount; // se scriviamo localmente durante il fetch, scartiamo il risultato
         WeeklyScheduleBase._sharedGet(hass, 'weekly_schedule_card').then(data => {
           // applica SOLO se: lettura valida (non null/mid-write) E nessuna scrittura locale nel frattempo
-          if (data && this._wsWriteCount === ver) this._storageData = data;
+          if (data && this._wsWriteCount === ver) {
+            this._storageData = data;
+            if (addedOrRemoved && currKeys.length < prevSet.size) {
+              this._orphanCleanupDone = false;
+              this._cleanupOrphanAutomations().catch(e => console.warn('WSC cleanup failed', e));
+            }
+          }
           this._loadingStorage = false;
           if (!this._popupState && !this._profilesMode && !this._groupsMode && !this._dialogOpen) this.render();
         }).catch(() => { this._loadingStorage = false; });
@@ -335,31 +348,56 @@ export default class WeeklyScheduleBase extends HTMLElement {
       }
     }
     if (!this._storageData && !this._loadingStorage) {
-      this._loadingStorage = true;
-      this._wsGet().then(async data => {
-        this._storageData = data;
-        this._ensureDefaultProfile();
-        if (hass.states?.[WeeklyScheduleBase._profileActiveEntity])
-          await this._reconcileExternalActive(hass.states[WeeklyScheduleBase._profileActiveEntity].state);
-        this._loadingStorage = false;
-        this._migrateConditionalSchedules().catch(e => console.error('WSC condition migration failed', e));
-        this._cleanupOrphanAutomations().catch(() => {});
-        this._cleanupExpiredOneShots().catch(() => {});
-        this._hideStoreHelpers().catch(() => {});
-        this._syncExternalProfileControl().catch(e => console.warn('[WSC] External profile control initialization failed', e));
-        if (!this._popupState && !this._profilesMode && !this._groupsMode && !this._dialogOpen) this.render();
-      }).catch(() => {
-        this._storageData = { groups: [], profiles: [], activeProfiles: [] };
-        this._ensureDefaultProfile();
-        this._loadingStorage = false;
-        if (!this._popupState && !this._profilesMode && !this._groupsMode && !this._dialogOpen) this.render();
-      });
+      if (!this._storageRetryTimer) this._loadProfileStorage();
     } else if (!this._popupState && !this._profilesMode && !this._groupsMode && !this._dialogOpen) {
       this._scheduleRender(prev);
       if (prev && Object.keys(hass.states).some(id => id.startsWith('switch.schedule_') &&
           prev.states[id]?.attributes?.current_slot != null && hass.states[id]?.attributes?.current_slot == null))
         this._migrateConditionalSchedules().catch(e => console.error('WSC condition migration failed', e));
     }
+  }
+
+  async _loadProfileStorage() {
+    if (this._loadingStorage) return;
+    this._loadingStorage = true;
+    let loaded;
+    try {
+      const data = await this._wsGet();
+      // A same-page card may have delivered newer data while the read was pending.
+      if (!this._storageData) this._storageData = data;
+      if (this._storageData.resetPending) { this._showResetPending(); return; }
+      loaded = this._storageData;
+      this._storageError = null;
+      // Finish the first store commit before creating external profile helpers.
+      await this._ensureDefaultProfile();
+      const active = this._hass.states?.[WeeklyScheduleBase._profileActiveEntity];
+      if (active) await this._reconcileExternalActive(active.state);
+      this._migrateConditionalSchedules().catch(e => console.error('WSC condition migration failed', e));
+      this._cleanupOrphanAutomations().catch(() => {});
+      this._cleanupExpiredOneShots().catch(() => {});
+      this._hideStoreHelpers().catch(() => {});
+      this._syncExternalProfileControl().catch(e => console.warn('[WSC] External profile control initialization failed', e));
+      if (!this._popupState && !this._profilesMode && !this._groupsMode && !this._dialogOpen) this.render();
+    } catch (e) {
+      // A restart, permission error or partial helper write is NOT first installation.
+      // In particular, do not adopt every schedule into Default or run cleanup here.
+      this._storageError = e;
+      if (loaded && this._storageData === loaded) this._storageData = null;
+      if (!this._storageData) {
+        this._ensureRoot().innerHTML = `<ha-card><div role="status" style="padding:16px;color:var(--secondary-text-color)">${this._esc(this.t('storage.unavailable'))}</div></ha-card>`;
+        this._retryProfileStorage();
+      }
+    } finally {
+      this._loadingStorage = false;
+    }
+  }
+
+  _retryProfileStorage() {
+    if (this._storageRetryTimer || !this.isConnected) return;
+    this._storageRetryTimer = setTimeout(() => {
+      this._storageRetryTimer = null;
+      if (this.isConnected && !this._storageData) this._loadProfileStorage();
+    }, 5000);
   }
 
   // Wrap a render() call with a View Transition (crossfade) when supported.
@@ -543,28 +581,94 @@ export default class WeeklyScheduleBase extends HTMLElement {
     throw lastErr;
   }
 
-  // Ritorna l'oggetto salvato, oppure null se non inizializzato / incompleto / corrotto
-  // (mid-write: il chiamante fa fallback in modo fail-safe e si auto-corregge al prossimo update).
+  // null means unreadable, NOT evidence of first installation. Profile bootstrap must
+  // establish absence server-side before migrating legacy data or creating Default.
   static async _sharedGet(hass, key) {
+    return WeeklyScheduleBase._readShared(hass, key);
+  }
+
+  static _readShared(hass, key) {
     try {
       const meta = hass?.states?.[WeeklyScheduleBase._metaEntity(key)];
       if (!meta) return null;
-      const n = parseInt(meta.state, 10);
-      if (!Number.isFinite(n) || n < 1) return null;
+      if (!/^[1-9]\d*$/.test(meta.state)) return null;
+      const n = Number(meta.state);
+      if (!Number.isSafeInteger(n) || n > Object.keys(hass.states).length) return null;
       let payload = '';
       for (let i = 0; i < n; i++) {
         const s = hass.states[WeeklyScheduleBase._chunkEntity(key, i)];
-        if (!s) return null;
-        payload += s.state || '';
+        if (!s || !s.state || ['unknown', 'unavailable'].includes(s.state)) return null;
+        payload += s.state;
       }
-      if (!payload) return null;
+      if (!/^[A-Za-z0-9+/]+={0,3}$/.test(payload) || payload.length % 4) return null;
       const json = decompressFromBase64(payload);
       if (json == null) return null;
-      return JSON.parse(json);
+      const data = JSON.parse(json);
+      if (key === 'weekly_schedule_card' && !WeeklyScheduleBase._validProfileStore(data)) return null;
+      return data;
     } catch (e) { console.error('WSC sharedGet failed', e); return null; }
   }
 
-  static async _sharedSet(hass, key, data) {
+  static _isResetPaused(hass) {
+    return !!(WeeklyScheduleBase._resetSessions?.has(hass?.connection)
+      || WeeklyScheduleBase._readShared(hass, 'weekly_schedule_card')?.resetPending);
+  }
+
+  static _validProfileStore(data) {
+    if (!data || typeof data !== 'object' || Array.isArray(data)) return false;
+    if (!Array.isArray(data.profiles) && !Array.isArray(data.groups)) return false;
+    for (const key of ['profiles', 'groups', 'activeProfiles'])
+      if (data[key] !== undefined && !Array.isArray(data[key])) return false;
+    return (data.profiles || []).every(p => p && typeof p.id === 'string'
+      && ['groups', 'schedules', 'scheduleLinks'].every(k => p[k] === undefined || Array.isArray(p[k])));
+  }
+
+  // A fresh server snapshot avoids treating missing browser states as missing helpers.
+  // null is returned ONLY after HA is running and helper configuration confirms absence.
+  static async _profileStoreSnapshot(hass) {
+    const fail = reason => { throw new Error(`WSC profile storage unavailable: ${reason}`); };
+    try {
+      const entries = await hass.connection.sendMessagePromise({ type: 'get_states' });
+      if (!Array.isArray(entries)) return fail('invalid state response');
+      const snapshot = { ...hass, states: Object.fromEntries(entries.map(s => [s.entity_id, s])) };
+      const data = await WeeklyScheduleBase._sharedGet(snapshot, 'weekly_schedule_card');
+      if (data) return { data, snapshot };
+      const hasEvidence = Object.keys(snapshot.states).some(id => /^input_text\.wsc_(store_|profile_)/.test(id)
+        || id === 'automation.wsc_external_profile_control');
+      if (hasEvidence) return fail('existing helpers are incomplete or unreadable');
+      const config = await hass.connection.sendMessagePromise({ type: 'get_config' });
+      if (config?.state !== 'RUNNING') return fail('Home Assistant is starting');
+      const helpers = await hass.connection.sendMessagePromise({ type: 'input_text/list' });
+      if (!Array.isArray(helpers)) return fail('cannot establish helper absence');
+      if (helpers.some(h => /^wsc_(store_|profile_)/.test(h.id)
+        || /^WSC (Store|Profile)( |$)/i.test(h.name || '')))
+        return fail('configured helpers have no readable states');
+      // Recheck after the async configuration reads: another card may have initialized.
+      const latest = await hass.connection.sendMessagePromise({ type: 'get_states' });
+      if (!Array.isArray(latest)) return fail('invalid state response');
+      snapshot.states = Object.fromEntries(latest.map(s => [s.entity_id, s]));
+      const latestData = await WeeklyScheduleBase._sharedGet(snapshot, 'weekly_schedule_card');
+      if (latestData) return { data: latestData, snapshot };
+      if (Object.keys(snapshot.states).some(id => /^input_text\.wsc_(store_|profile_)/.test(id)
+        || id === 'automation.wsc_external_profile_control'))
+        return fail('helpers appeared while reading');
+      return { data: null, snapshot };
+    } catch (e) {
+      return fail(e?.message || 'read failed');
+    }
+  }
+
+  static async _sharedSet(hass, key, data, options = {}) {
+    if (WeeklyScheduleBase._isResetPaused(hass) && !options.resetId) throw new Error('WSC reset in progress');
+    if (key === 'weekly_schedule_card') {
+      if (!WeeklyScheduleBase._validProfileStore(data)) throw new Error('WSC profile storage: invalid data');
+      // Refuse writes over broken existing data; use current server entity IDs when
+      // provisioning so an old browser snapshot cannot create duplicate helpers.
+      const current = await WeeklyScheduleBase._profileStoreSnapshot(hass);
+      if (current.data?.resetPending && current.data.resetPending.id !== options.resetId) throw new Error('WSC reset in progress');
+      hass = current.snapshot;
+    }
+    if (WeeklyScheduleBase._resetSessions?.has(hass?.connection) && !options.resetId) throw new Error('WSC reset in progress');
     // Guardia anti-doppia-creazione: gli helper appena creati non sono ancora nel snapshot
     // hass.states; due _sharedSet sullo stesso snapshot (es. migrazione + _ensureDefaultProfile)
     // li ricreerebbero con slug duplicato. Set statico di sessione (lazy-init: niente static field
@@ -617,19 +721,23 @@ export default class WeeklyScheduleBase extends HTMLElement {
   // Vecchia lettura per-utente, tenuta SOLO per la migrazione una-tantum verso lo store condiviso.
   async _userDataGet(key) {
     const result = await this._hass.connection.sendMessagePromise({ type: 'frontend/get_user_data', key });
-    return result?.value || null;
+    if (!result || !Object.prototype.hasOwnProperty.call(result, 'value'))
+      throw new Error('WSC profile storage: invalid legacy response');
+    return result.value ?? null;
   }
 
   async _wsGet() {
     const shared = await WeeklyScheduleBase._sharedGet(this._hass, 'weekly_schedule_card');
     if (shared) return shared;
+    const { data: server } = await WeeklyScheduleBase._profileStoreSnapshot(this._hass);
+    if (server) return server;
     // migrazione: vecchi dati per-utente → store condiviso (una volta, solo da admin)
-    let legacy = null;
-    try { legacy = await this._userDataGet('weekly_schedule_card'); } catch {}
+    const legacy = await this._userDataGet('weekly_schedule_card');
+    if (legacy !== null && !WeeklyScheduleBase._validProfileStore(legacy))
+      throw new Error('WSC profile storage: invalid legacy data');
     const data = legacy || { groups: [], profiles: [], activeProfiles: [] };
     if (legacy && WeeklyScheduleBase._isAdmin(this._hass)) {
-      try { await WeeklyScheduleBase._sharedSet(this._hass, 'weekly_schedule_card', data); }
-      catch (e) { console.error('WSC migration failed', e); }
+      await WeeklyScheduleBase._sharedSet(this._hass, 'weekly_schedule_card', data);
     }
     return data;
   }
@@ -677,7 +785,7 @@ export default class WeeklyScheduleBase extends HTMLElement {
     const profiles = this._storageData?.profiles || [];
     const offProfiles = profile.exclusive === false ? [] : profiles.filter(p => p.id !== profile.id && p.exclusive !== false);
     const offIds = [...new Set(offProfiles.flatMap(p => p.schedules || []))];
-    if (profile.exclusive !== false) {
+    if (profile.exclusive !== false && !this._storageData?.resetAt) {
       const claimed = new Set([
         ...profiles.flatMap(p => p.schedules || []),
         ...profiles.flatMap(p => (p.scheduleLinks || []).map(l => l.autoChildId).filter(Boolean)),
@@ -701,6 +809,7 @@ export default class WeeklyScheduleBase extends HTMLElement {
   }
 
   async _syncExternalProfileControl() {
+    if (WeeklyScheduleBase._isResetPaused(this._hass)) return;
     if (!this._hass || !this._storageData?.profiles) return;
     const command = WeeklyScheduleBase._profileCommandEntity;
     const active = WeeklyScheduleBase._profileActiveEntity;
@@ -730,6 +839,7 @@ export default class WeeklyScheduleBase extends HTMLElement {
       trigger: [{ platform: 'state', entity_id: command }], condition: [],
       action: [{ choose: choices, default: [{ service: 'system_log.write', data: { level: 'warning', message: "WSC profile command ignored: {{ trigger.to_state.state }}" } }] }],
     };
+    if (WeeklyScheduleBase._isResetPaused(this._hass)) return;
     await this._recreateAutomation('wsc_external_profile_control', config);
     this._externalProfileControlSignature = signature;
   }
@@ -791,7 +901,7 @@ export default class WeeklyScheduleBase extends HTMLElement {
     }
     // Rete di sicurezza orfani: ogni switch.schedule_* (non auto-child) non rivendicato da ALCUN
     // profilo torna nel default → nessuno schedule resta invisibile/orfano (anche se creato da un bug).
-    if (this._hass) {
+    if (this._hass && !data.resetAt) {
       const claimed = new Set();
       for (const p of data.profiles) for (const id of p.schedules || []) claimed.add(id);
       const def = data.profiles.find(p => p.id === 'default') || data.profiles[0];
@@ -805,9 +915,12 @@ export default class WeeklyScheduleBase extends HTMLElement {
         }
       }
     }
-    if (dirty) this._wsSet(data).catch(() => {});
     if (!this._selectedProfileId || !data.profiles.find(p => p.id === this._selectedProfileId))
       this._selectedProfileId = data.activeProfiles[0] || data.profiles[0]?.id || null;
+    const saved = dirty ? this._wsSet(data) : Promise.resolve();
+    // Older callers need not await; bootstrap awaits and handles errors explicitly.
+    saved.catch(() => {});
+    return saved;
   }
 
   _getSelectedProfile() {
@@ -2382,6 +2495,66 @@ export default class WeeklyScheduleBase extends HTMLElement {
     });
   }
 
+  _showResetPending() {
+    this._groupsMode = false; this._profilesMode = false;
+    const root = this._ensureRoot();
+    root.innerHTML = `<ha-card style="padding:16px"><p role="status">${this._esc(this.t('reset.paused'))}</p>${WeeklyScheduleBase._isAdmin(this._hass) ? `<button class="wsc-reset-resume">${this._esc(this.t('reset.resume'))}</button>` : ''}</ha-card>`;
+    root.querySelector('.wsc-reset-resume')?.addEventListener('click', () => this._showResetDialog());
+  }
+
+  async _showResetDialog() {
+    if (this._resetting || this._dialogOpen) return;
+    this._resetting = true;
+    try {
+      const plan = await prepareReset(this, WeeklyScheduleBase);
+      const count = this.t('reset.counts', { profiles: plan.original.profiles?.length || 0, schedules: plan.schedules.length, automations: plan.automations.length, helpers: plan.helpers.length });
+      const ids = [...plan.schedules.map(s => s.entity_id), ...plan.automations.map(a => a.entityId), ...plan.helpers.map(h => h.entityId)];
+      const confirmed = await this._openModal(`
+        <strong>${this._esc(this.t('reset.title'))}</strong>
+        <div class="wsc-modal-msg">${this._esc(this.t('reset.scope'))}</div>
+        <div>${this._esc(count)}</div>
+        <div style="max-height:140px;overflow:auto;font-size:.75em;overflow-wrap:anywhere">${ids.map(id => `<div>${this._esc(id)}</div>`).join('')}</div>
+        <div>${this._esc(this.t('reset.ignored', { count: plan.ignored.length }))}</div>
+        <button class="wsc-modal-btn reset-export">${this._esc(this.t('reset.export'))}</button>
+        <label><input type="checkbox" class="reset-ack"> ${this._esc(this.t('reset.ack'))}</label>
+        <label>${this._esc(this.t('reset.type'))}<input class="wsc-modal-inp reset-phrase" autocomplete="off" spellcheck="false"></label>
+        <div class="wsc-modal-footer"><button class="wsc-modal-btn reset-cancel">${this._esc(this.t('popup.cancel'))}</button><button disabled class="wsc-modal-btn reset-confirm" style="background:var(--error-color,#b00020);color:white">${this._esc(this.t('reset.confirm'))}</button></div>`, {
+        cancelValue: false,
+        setup: (dlg, close) => {
+          const box = dlg.querySelector('.wsc-modal-box');
+          box.style.maxHeight = '85vh'; box.style.overflowY = 'auto';
+          let exported = false;
+          const input = dlg.querySelector('.reset-phrase');
+          const ack = dlg.querySelector('.reset-ack');
+          const confirm = dlg.querySelector('.reset-confirm');
+          const ready = () => exported && ack.checked && input.value === RESET_PHRASE;
+          const update = () => { confirm.disabled = !ready(); };
+          dlg.querySelector('.reset-cancel').addEventListener('click', () => close(false));
+          confirm.addEventListener('click', () => { if (ready()) close(true); });
+          input.addEventListener('input', update); ack.addEventListener('change', update);
+          dlg.querySelector('.reset-export').addEventListener('click', () => {
+            const url = URL.createObjectURL(new Blob([JSON.stringify(plan, null, 2)], { type: 'application/json' }));
+            const a = document.createElement('a'); a.href = url; a.download = `weekly-schedule-card-${plan.id}.json`;
+            dlg.appendChild(a); a.click(); a.remove();
+            setTimeout(() => URL.revokeObjectURL(url), 1000);
+            exported = true; update();
+          });
+          dlg.querySelector('.reset-cancel').focus();
+        },
+      });
+      if (!confirmed) return;
+      await executeReset(this, WeeklyScheduleBase, plan, RESET_PHRASE);
+      this._groupsMode = false; this._profilesMode = false;
+      this.render();
+      await this._alert(this.t('reset.done'));
+    } catch (e) {
+      await this._alert(`${this.t('reset.error')}: ${e.message || e}`);
+      if (WeeklyScheduleBase._isResetPaused(this._hass)) this._showResetPending();
+    } finally {
+      this._resetting = false;
+    }
+  }
+
   // ── Profile create / duplicate / cancel ───────────────────────────────────
 
   _showNewProfileDialog() {
@@ -2828,11 +3001,13 @@ export default class WeeklyScheduleBase extends HTMLElement {
   }
 
   connectedCallback() {
+    if (this._storageError && !this._storageData) this._retryProfileStorage();
     if (!this._storageListener) {
       this._storageListener = e => {
         if (e.detail?.source === this) return;
         if (!e.detail?.data) return;
         this._storageData = e.detail.data;
+        if (this._storageData.resetPending) { if (!this._dialogOpen) this._showResetPending(); return; }
         if (!this._popupState && !this._profilesMode && !this._groupsMode && !this._dialogOpen) this.render();
       };
       window.addEventListener('wsc-storage-changed', this._storageListener);
@@ -2856,6 +3031,7 @@ export default class WeeklyScheduleBase extends HTMLElement {
   }
 
   disconnectedCallback() {
+    if (this._storageRetryTimer) { clearTimeout(this._storageRetryTimer); this._storageRetryTimer = null; }
     if (this._timeInterval) { clearInterval(this._timeInterval); this._timeInterval = null; }
     if (this._renderTimer) { clearTimeout(this._renderTimer); this._renderTimer = null; }
     if (this._storageListener) {
@@ -4284,7 +4460,7 @@ export default class WeeklyScheduleBase extends HTMLElement {
         ...profiles.flatMap(pr => pr.schedules || []),
         ...profiles.flatMap(pr => (pr.scheduleLinks || []).map(l => l.autoChildId).filter(Boolean)),
       ]);
-      for (const s of Object.values(this._hass.states))
+      for (const s of (data.resetAt ? [] : Object.values(this._hass.states)))
         if (s.entity_id.startsWith('switch.schedule_') && !profSched.has(s.entity_id)
           && !this._isQuickTimerSchedule(s) && s.state !== 'off')
           try { await this._hass.callService('switch', 'turn_off', { entity_id: s.entity_id }); } catch {}
@@ -4870,8 +5046,10 @@ export default class WeeklyScheduleBase extends HTMLElement {
         </div>
         <button class="btn-create">Create Group</button>
       </div>
+      ${WeeklyScheduleBase._isAdmin(this._hass) ? `<div style="margin-top:24px;border-top:1px solid var(--divider-color);padding-top:16px"><button class="btn-reset-card" style="padding:10px;border:1px solid var(--error-color);border-radius:8px;background:none;color:var(--error-color)">${this._esc(this.t('reset.button'))}</button></div>` : ''}
     </ha-card>`;
 
+    root.querySelector('.btn-reset-card')?.addEventListener('click', () => this._showResetDialog());
     root.querySelector('.btn-back').addEventListener('click',()=>{this._groupsMode=false;this.render();});
     root.querySelectorAll('.btn-del').forEach(btn=>btn.addEventListener('click',async()=>{
       if(!await this._confirm(this.t('group.delete_confirm'))) return;
