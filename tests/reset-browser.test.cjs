@@ -22,11 +22,9 @@ const { chromium } = require(process.env.WSC_PLAYWRIGHT_MODULE || 'playwright');
     await page.setContent('<style>body{font-family:sans-serif;--primary-text-color:#111;--card-background-color:#fff;--divider-color:#ddd;--error-color:#b00020}</style>');
     await page.addScriptTag({ path: path.join(__dirname, '../dist/weekly-schedule-card.js') });
     await page.evaluate(({ states, data }) => {
-      const Base = Object.getPrototypeOf(customElements.get('quick-timer-card').prototype).constructor;
-      customElements.define('wsc-reset-test', class extends Base { connectedCallback() {} });
       window.writes = [];
-      window.card = document.createElement('wsc-reset-test');
-      card._config = { language: 'it' };
+      window.card = document.createElement('weekly-schedule-card');
+      card.setConfig({ language: 'it', entities: [] });
       card._storageData = data;
       card._selectedProfileId = 'summer';
       card._hass = { states, language: 'it', user: { is_admin: true },
