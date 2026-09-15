@@ -19,6 +19,7 @@ jobs:
       - run: node tests/conditional-card.test.mjs
       - run: node tests/profile-storage.test.mjs
       - run: node tests/reset-card.test.mjs
+      - run: node tests/maintenance-card.test.mjs
       - run: npm install --no-save --package-lock=false playwright@1.63.0
       - run: npx playwright install --with-deps chromium --only-shell
       - run: npm run test:browser
