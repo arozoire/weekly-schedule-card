@@ -14,5 +14,5 @@
     "test:browser": "node tests/quick-timer-browser.test.cjs",
     "watch": "rollup -c --watch"
   },
-  "version": "1.5.2"
+  "version": "1.5.3"
 }
