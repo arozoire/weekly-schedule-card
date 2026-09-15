@@ -91,7 +91,7 @@ blocks overwriting such data. No automatic restore from possibly stale backups.
 
 ## Explicit reset
 
-The editing card exposes an admin-only **Reset Weekly Schedule Card…** button at
+The editing card exposes an admin-only **Groups → Maintenance → RESET** button at
 the bottom of Groups. It is separate from profile actions and storage error notices.
 
 1. Build a read-only inventory with exact IDs/counts: profiles, groups, owned
@@ -99,8 +99,8 @@ the bottom of Groups. It is separate from profile actions and storage error noti
 2. Download an inventory export containing profile metadata, schedule states,
    generated automation configurations, helper configurations and timer data.
    This is diagnostic evidence, not an automatically importable HA backup.
-3. Require requesting the export, acknowledging a saved export and HA backup,
-   typing exactly `CANCELLA TUTTO`, and clicking the destructive button. Enter in
+3. Require requesting the report, acknowledging a separate WSC or HA backup,
+   typing exactly `RESET`, and clicking the destructive button. Enter in
    the text field does not confirm. Cancel/Escape leave everything untouched.
 4. Stop owned controllers first, without target restore/end actions; then delete
    inventoried owned objects. Report failures and retain enough inventory for retry.

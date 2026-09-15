@@ -10,7 +10,7 @@
     "build": "rollup -c",
     "check": "npm run build && node -e \"const fs=require('fs');for(const f of ['dist/weekly-schedule-card.js','dist/weekly-schedule-view-card.js','dist/quick-timer-card.js','dist/weekly-serpentine-card.js']){const c=fs.readFileSync(f,'utf8');if(c.length<500||c.trimStart().startsWith('import')||!c.includes('customElements.define')){console.error('FAIL '+f+' is not a self-contained IIFE bundle');process.exit(1)}console.log('OK '+f+' '+c.length+'b')}\"",
     "deploy": "npm run build && node scripts/deploy.js",
-    "test": "npm run build --silent && node tests/quick-timer-card.test.mjs",
+    "test": "npm run build --silent && node tests/quick-timer-card.test.mjs && node tests/conditional-card.test.mjs && node tests/profile-storage.test.mjs && node tests/reset-card.test.mjs && node tests/maintenance-card.test.mjs",
     "test:browser": "node tests/quick-timer-browser.test.cjs",
     "watch": "rollup -c --watch"
   },

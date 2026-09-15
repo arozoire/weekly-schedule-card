@@ -43,18 +43,31 @@ all on top of the [Scheduler Component](https://github.com/nielsfaber/scheduler-
 
 ---
 
-## Profile storage and reset
+## Profile storage and maintenance
 
 Profiles are shared through automatically managed Home Assistant helpers. If a
 saved store is temporarily unreadable during startup or an update, the card retries
 without replacing it with Default. Data already overwritten requires inspection of
 the helpers and a previous backup; see [profile recovery](docs/profile-storage-recovery.md).
 
-Administrators can open **Groups → Reset Weekly Schedule Card…** in the editing
-card. The preview lists the schedules, generated controllers and runtime helpers
-to delete across all profiles and users, including Quick Timers. Download the
-export, acknowledge a saved HA backup, and type **CANCELLA TUTTO** before confirming.
-Close other dashboards first. This is irreversible deletion, not profile recovery.
+Administrators can open **Groups → Maintenance** in the editing card. It provides
+four independent operations:
+
+- **Save configuration** downloads a versioned, restorable JSON backup with
+  profiles, groups, complete linked Scheduler configurations, generated WSC
+  automations and referenced runtime helpers. It intentionally excludes target
+  device states, running Quick Timers and dashboard YAML.
+- **Restore from backup** accepts only a validated WSC backup and only when the
+  destination is empty. Schedules are created on a future date, switched off,
+  then configured with remapped IDs. Restored profiles remain inactive, so the
+  import itself sends no command to target devices. Activate a profile manually
+  after checking the result. Treat backup files as trusted configuration.
+- **Clean unused objects** inventories first and removes only unreferenced
+  schedules, automations and helpers whose WSC ownership is unambiguous. Changed
+  or ambiguous objects are preserved.
+- **RESET** lists every object in scope across all profiles and users, including
+  Quick Timers. Download the reset report, acknowledge a separate backup, and
+  type exactly **RESET**. Close other dashboards first; deletion is irreversible.
 
 The reset stops generated controllers before deleting the listed objects, without
 requesting device restores or end actions. An interrupted deletion retains its
@@ -62,6 +75,8 @@ inventory for an explicit retry. Unassigned Scheduler entries, dashboard setting
 and unrelated HA objects are preserved. Empty storage helpers remain so old
 per-user data cannot reappear. If existing storage cannot be read reliably, reset
 is blocked pending recovery. No manual YAML, token or helper creation is needed.
+See [maintenance, backup and restore](docs/maintenance-backup-restore.md) for the
+exact safety model and limitations.
 
 ## The cards
 
