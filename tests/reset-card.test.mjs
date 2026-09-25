@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import vm from 'node:vm';
 import { compressToBase64 } from '../src/lz-string.js';
-import { prepareReset, executeReset, RESET_PHRASE } from '../src/reset-card.js';
+import { prepareReset, executeReset, withResetChoices, RESET_PHRASE } from '../src/reset-card.js';
 globalThis.HTMLElement = class { attachShadow() { this.shadowRoot = { querySelector() { return null; }, querySelectorAll() { return []; } }; } };
 globalThis.customElements = { m: new Map(), get(k) { return this.m.get(k); }, define(k, v) { this.m.set(k, v); } };
 globalThis.window = { customCards: [], dispatchEvent() {} };
@@ -93,11 +93,11 @@ function fixture() {
         assert.equal(payload.entity_id, aid); assert.equal(service, 'turn_off'); assert.equal(payload.stop_actions, true);
         states[aid].state = 'off'; return;
       }
-      assert.equal(domain, 'scheduler'); assert.equal(service, 'remove'); assert.equal(payload.entity_id, sid);
+      assert.equal(domain, 'scheduler'); assert.equal(service, 'remove'); assert(states[payload.entity_id]);
       delete states[payload.entity_id];
     },
   };
-  return { card, calls, states, configs, helpers, writeStore, data, fail(value) { failure = value; } };
+  return { card, calls, states, configs, helpers, registry, writeStore, data, fail(value) { failure = value; } };
 }
 const mutations = calls => calls.filter(x => x.domain || x.method === 'DELETE' || /create|delete|update|set_user_data/.test(x.type || ''));
 
@@ -190,5 +190,38 @@ for (const target of ['automation', 'schedule', 'helper']) {
   await new Promise(resolve => setImmediate(resolve));
   assert.deepEqual(timer._timers, {});
   assert(!timer._resetWasPending);
+}
+{
+  // A schedule disabled in the registry is listed for manual removal, not a blocker.
+  const f = fixture(); const off = 'switch.schedule_disabled';
+  f.data.profiles[0].schedules.push(off); f.writeStore(f.data);
+  f.registry.push({ entity_id: off, unique_id: 'disabled', platform: 'scheduler' });
+  const p = await prepareReset(f.card, Base);
+  assert.deepEqual(p.manual, [off]); assert(!p.schedules.some(s => s.entity_id === off));
+  await executeReset(f.card, Base, p, RESET_PHRASE);
+  assert(!f.states[sid]);
+}
+{
+  // Ticked ignored schedules are deleted; the others and unknown IDs are not.
+  const f = fixture(); const other = 'switch.schedule_kept';
+  f.states[other] = state(other, 'on', { actions: [] });
+  const p = await prepareReset(f.card, Base);
+  assert.throws(() => withResetChoices(p, f.card._hass, { extra: [sid] }), /Invalid reset target/);
+  const chosen = withResetChoices(p, f.card._hass, { extra: [foreign] });
+  assert.equal(p.schedules.length, 1, 'the preview itself is not changed');
+  await executeReset(f.card, Base, chosen, RESET_PHRASE);
+  assert(!f.states[foreign]); assert(f.states[other]);
+  assert(f.states['input_text.wsc_store_meta'], 'store helpers are kept by default');
+}
+{
+  // Uninstall removes the storage helpers too, and only those.
+  const f = fixture();
+  f.states['input_text.wsc_qt_store_0'] = state('input_text.wsc_qt_store_0', compressToBase64('{"timers":{}}'));
+  f.states['input_text.wsc_qt_store_meta'] = state('input_text.wsc_qt_store_meta', '1');
+  f.helpers.push({ id: 'wsc_qt_store_0' }, { id: 'wsc_qt_store_meta' });
+  const p = withResetChoices(await prepareReset(f.card, Base), f.card._hass, { removeStore: true });
+  await executeReset(f.card, Base, p, RESET_PHRASE);
+  assert.deepEqual(f.helpers.filter(h => /^wsc_(qt_)?store_/.test(h.id)), []);
+  assert(f.states['input_text.personal']); assert(f.states[foreign]);
 }
 console.log('Reset inventory, confirmation, ordering and retry tests passed');
