@@ -1,4 +1,7 @@
-# v1.5.4 — Project closed, reset fixes
+# v1.5.5 — Project closed, reset fixes
+
+v1.5.4 was published without these changes (same code as v1.5.3); this is
+the release that contains them.
 
 weekly-schedule-card is no longer developed. Its successor is
 [Schedule Creator](https://github.com/arozoire/schedule_creator), which imports
