@@ -8,6 +8,20 @@
   <img src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png" alt="Buy Me A Coffee" height="40">
 </a>
 
+> [!IMPORTANT]
+> **This project is closed and no longer developed.** Its successor is
+> **[Schedule Creator](https://github.com/arozoire/schedule_creator)**: the
+> schedules run inside Home Assistant, without Scheduler, helpers or generated
+> automations, and it imports your weekly-schedule-card configuration.
+>
+> Moving takes about ten minutes: **Groups → Maintenance → Save configuration**
+> here → import the file in Schedule Creator → **RESET** here → activate the
+> imported profile there. Step by step:
+> [English guide](https://github.com/arozoire/schedule_creator/blob/main/docs/migrating-from-weekly-schedule-card.md)
+> · [Guida in italiano](https://github.com/arozoire/schedule_creator/blob/main/docs/migrazione-da-weekly-schedule-card.md).
+>
+> The card keeps working as it is; the documentation below still applies.
+
 A visual weekly schedule card for Home Assistant — drag-and-drop time slots,
 color-coded profiles, multi-entity groups, conditions and notifications,
 all on top of the [Scheduler Component](https://github.com/nielsfaber/scheduler-component).
